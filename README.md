@@ -10,7 +10,7 @@ A collaborative neighbourhood platform that lets residents exchange services, si
 |---|---|
 | Back-end | Node.js + NestJS |
 | Language | TypeScript |
-| Main database | MongoDB, Mysql |
+| Main database | MongoDB |
 | Social graph | Neo4j |
 | Local database (Java) | SQLite |
 | Auth | JWT + MFA (TOTP) + SSO |
@@ -49,8 +49,7 @@ npm run dev
 |---|---|
 | API | `http://localhost:3000` |
 | Swagger | `http://localhost:3000/api-docs` |
-| React (client) | `http://localhost:5173` |
-| React (admin) | `http://localhost:5174` |
+| React | `http://localhost:5173` |
 | Neo4j Browser | `http://localhost:7474` |
 
 ---
@@ -69,21 +68,20 @@ Copy `.env.example` and fill in the values:
 
 ```env
 # MongoDB
-MONGO_URI=mongodb://localhost:27017/hoodly
+MONGODB_URI=mongodb://localhost:27017/hoodly
+
+# SQLite
+SQLITE_PATH=./hoodly_local.db
 
 # Neo4j
-NEO4J_URI=bolt://localhost:7687
+NEO4J_URI=neo4j://localhost:7687
 NEO4J_USER=neo4j
 NEO4J_PASSWORD=
 
 # JWT
 JWT_SECRET=
-JWT_REFRESH_SECRET=
-JWT_ACCESS_EXPIRES_IN=15m
-JWT_REFRESH_EXPIRES_IN=7d
-
-# MFA
-MFA_APP_NAME=Hoodly
+JWT_EXPIRES_IN=15m
+REFRESH_TOKEN_EXPIRES_IN=7d
 
 # App
 PORT=3000
@@ -96,7 +94,7 @@ NODE_ENV=development
 
 ```
 hoodly/
-├── api/                          # Node.js + Express back-end
+├── api/                          # Node.js + NestJS back-end
 │   ├── src/
 │   │   ├── auth/
 │   │   ├── users/
@@ -110,14 +108,9 @@ hoodly/
 │   │   ├── query-lang/           # Custom Lex/Yacc parser (Jison)
 │   │   └── index.ts
 │   └── Dockerfile
-├── web-client/                   # React — resident interface
-├── web-admin/                    # React — admin back-office
-├── desktop/                      # Java JavaFX desktop app
+├── web/                          # React — resident interface
+├── java/                         # Java JavaFX desktop app
 │   └── src/main/java/
-│       ├── controllers/
-│       ├── services/
-│       ├── sync/
-│       └── plugins/
 ├── docker-compose.dev.yml
 ├── docker-compose.prod.yml
 └── .env.example
