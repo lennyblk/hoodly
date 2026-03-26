@@ -1,7 +1,7 @@
 import {
-  IsBoolean,
   IsEmail,
   IsEnum,
+  IsNotEmpty,
   IsOptional,
   IsString,
   IsStrongPassword,
@@ -10,32 +10,28 @@ import {
 } from 'class-validator';
 import { UserLang } from '../../entities/mongodb/User';
 
-export class UpdateUserDto {
-  @IsOptional()
+export class SignupDto {
   @IsEmail()
-  email?: string;
+  @IsNotEmpty()
+  email: string;
 
-  @IsOptional()
   @IsStrongPassword()
-  password?: string;
+  @IsNotEmpty()
+  password: string;
 
-  @IsOptional()
   @IsString()
+  @IsNotEmpty()
   @MinLength(2)
   @MaxLength(50)
-  firstName?: string;
+  firstName: string;
 
-  @IsOptional()
   @IsString()
+  @IsNotEmpty()
   @MinLength(2)
   @MaxLength(50)
-  lastName?: string;
+  lastName: string;
 
   @IsOptional()
   @IsEnum(UserLang)
   lang?: UserLang;
-
-  @IsOptional()
-  @IsBoolean()
-  isActive?: boolean;
 }

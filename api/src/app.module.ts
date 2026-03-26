@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { UsersModule } from './users/users.module';
 
 // MongoDB entities
 import { User } from './entities/mongodb/User';
@@ -37,6 +38,7 @@ import { SyncLog } from './entities/sqlite/SyncLog';
       synchronize: true,
       logging: process.env.NODE_ENV === 'development',
     }),
+    UsersModule,
   ],
 })
 export class AppModule {}
