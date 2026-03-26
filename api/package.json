@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "main": "dist/main.js",
   "scripts": {
-    "dev": "docker compose -f docker-compose.dev.yaml up -d && ts-node-dev --respawn src/main.ts",
+    "dev": "docker compose -f docker-compose.dev.yaml up",
+    "prod": "docker compose -f docker-compose.prod.yaml up",
     "build": "tsc",
     "start": "node dist/main.js"
   },
