@@ -27,7 +27,7 @@ export class UsersService {
   }
 
   async findOne(id: string) {
-    const user = await this.usersRepository.findOne({ where: { _id: new ObjectId(id) } as any });
+    const user = await this.usersRepository.findOneBy({ _id: new ObjectId(id) });
     if (!user) {
       throw new NotFoundException(`User with id ${id} not found`);
     }
@@ -54,7 +54,7 @@ export class UsersService {
 
     if (updateUserDto.email) {
       const userWithSameEmail = await this.findByEmail(updateUserDto.email);
-      if (userWithSameEmail && userWithSameEmail.id.toString() !== id) {
+      if (userWithSameEmail && userWithSameEmail._id.toString() !== id) {
         throw new ConflictException(
           `User with email ${updateUserDto.email} already exists`,
         );
@@ -66,7 +66,7 @@ export class UsersService {
   }
 
   async delete(id: string) {
-    const user = await this.usersRepository.findOne({ where: { _id: new ObjectId(id) } as any });
+    const user = await this.usersRepository.findOneBy({ _id: new ObjectId(id) });
     if (!user) {
       return { message: `User with id ${id} not found` };
     }

@@ -14,7 +14,7 @@ export enum UserLang {
 @Entity('users')
 export class User {
   @ObjectIdColumn()
-  id: ObjectId;
+  _id: ObjectId;
 
   @Column({ unique: true })
   email: string;

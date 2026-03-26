@@ -3,7 +3,7 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY tsconfig.json ./
-CMD ["npx", "ts-node-dev", "--respawn", "--transpile-only", "src/main.ts"]
+CMD ["npx", "ts-node-dev", "--respawn", "src/main.ts"]
 
 FROM node:22-alpine AS builder
 WORKDIR /app

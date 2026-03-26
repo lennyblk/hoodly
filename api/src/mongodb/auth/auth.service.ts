@@ -26,7 +26,7 @@ export class AuthService {
   }
 
   findOne(id: string) {
-    return this.userRepository.findOne({ where: { _id: new ObjectId(id) } as any });
+    return this.userRepository.findOneBy({ _id: new ObjectId(id) });
   }
 
   findByEmail(email: string) {
@@ -62,7 +62,7 @@ export class AuthService {
       this.userRepository.create({ ...dto, password: hash }),
     );
 
-    return this.getTokens(newUser.id, newUser.email);
+    return this.getTokens(newUser._id.toString(), newUser.email);
   }
 
   async signin(dto: SigninDto): Promise<Tokens> {
@@ -76,7 +76,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    return this.getTokens(user.id, user.email);
+    return this.getTokens(user._id.toString(), user.email);
   }
 
   logout() { }
