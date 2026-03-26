@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersModule } from './mongodb/users/users.module';
+import { AuthModule } from './mongodb/auth/auth.module';
 
 // MongoDB entities
 import { User } from './entities/mongodb/User';
@@ -39,6 +40,7 @@ import { SyncLog } from './entities/sqlite/SyncLog';
       logging: process.env.NODE_ENV === 'development',
     }),
     UsersModule,
+    AuthModule,
   ],
 })
 export class AppModule {}
