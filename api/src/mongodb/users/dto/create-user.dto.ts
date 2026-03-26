@@ -8,7 +8,7 @@ import {
   MaxLength,
   MinLength,
 } from 'class-validator';
-import { UserLang } from '../../entities/mongodb/User';
+import { UserLang } from '../../../entities/mongodb/User';
 
 export class CreateUserDto {
   @IsEmail()

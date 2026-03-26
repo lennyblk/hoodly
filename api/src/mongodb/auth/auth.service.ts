@@ -9,7 +9,7 @@ import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { SignupDto } from './dto/signup.dto';
 import { SigninDto } from './dto/signin.dto';
-import { User } from '../entities/mongodb/User';
+import { User } from '../../entities/mongodb/User';
 import { Tokens } from './types';
 import { ObjectId } from 'mongodb';
 

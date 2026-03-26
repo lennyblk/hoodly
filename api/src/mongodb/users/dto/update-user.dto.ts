@@ -1,37 +1,41 @@
 import {
+  IsBoolean,
   IsEmail,
   IsEnum,
-  IsNotEmpty,
   IsOptional,
   IsString,
   IsStrongPassword,
   MaxLength,
   MinLength,
 } from 'class-validator';
-import { UserLang } from '../../entities/mongodb/User';
+import { UserLang } from '../../../entities/mongodb/User';
 
-export class SignupDto {
+export class UpdateUserDto {
+  @IsOptional()
   @IsEmail()
-  @IsNotEmpty()
-  email: string;
+  email?: string;
 
+  @IsOptional()
   @IsStrongPassword()
-  @IsNotEmpty()
-  password: string;
+  password?: string;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
   @MinLength(2)
   @MaxLength(50)
-  firstName: string;
+  firstName?: string;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
   @MinLength(2)
   @MaxLength(50)
-  lastName: string;
+  lastName?: string;
 
   @IsOptional()
   @IsEnum(UserLang)
   lang?: UserLang;
+
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
 }
