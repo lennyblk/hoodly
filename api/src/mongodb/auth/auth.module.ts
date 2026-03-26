@@ -6,10 +6,11 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { AtStrategy, RtStrategy } from './strategies';
 import { User } from '../../entities/mongodb/User';
+import { RefreshToken } from '../../entities/mongodb/RefreshToken';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User], 'mongodb'),
+    TypeOrmModule.forFeature([User, RefreshToken], 'mongodb'),
     JwtModule.register({}),
     PassportModule,
   ],
