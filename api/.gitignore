@@ -1,0 +1,12 @@
+# Node
+node_modules/
+dist/
+.env
+
+# Java
+desktop/target/
+*.jar
+*.class
+
+# Docker
+.env.local
