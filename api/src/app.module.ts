@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersModule } from './mongodb/users/users.module';
 import { AuthModule } from './mongodb/auth/auth.module';
+import { AnnouncementsModule } from './mongodb/announcements/announcements.module';
+import { NeighbourhoodsModule } from './mongodb/neighbourhoods/neighbourhoods.module';
 
 // MongoDB entities
 import { User } from './entities/mongodb/User';
@@ -41,6 +43,8 @@ import { SyncLog } from './entities/sqlite/SyncLog';
     }),
     UsersModule,
     AuthModule,
+    AnnouncementsModule,
+    NeighbourhoodsModule,
   ],
 })
 export class AppModule {}
