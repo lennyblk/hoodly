@@ -8,39 +8,53 @@ import {
   Patch,
   Delete,
 } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 
+@ApiTags('Users')
 @Controller('users')
 export class UsersController {
   constructor(private usersService: UsersService) { }
 
-  // Get /users
+  @ApiOperation({ summary: 'Récupérer tous les utilisateurs' })
+  @ApiResponse({ status: 200, description: 'Liste des utilisateurs retournée.' })
   @Get()
   findAll() {
     return this.usersService.findAll();
   }
 
-  // Get /users/:id
+  @ApiOperation({ summary: 'Récupérer un utilisateur par ID' })
+  @ApiParam({ name: 'id', description: 'ObjectId MongoDB de l\'utilisateur' })
+  @ApiResponse({ status: 200, description: 'Utilisateur trouvé.' })
+  @ApiResponse({ status: 404, description: 'Utilisateur non trouvé.' })
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.usersService.findOne(id);
   }
 
-  // Post /users
+  @ApiOperation({ summary: 'Créer un nouvel utilisateur' })
+  @ApiResponse({ status: 201, description: 'Utilisateur créé.' })
+  @ApiResponse({ status: 400, description: 'Données invalides.' })
   @Post()
   create(@Body() createUserDto: CreateUserDto) {
     return this.usersService.create(createUserDto);
   }
 
-  // Patch /users/:id
+  @ApiOperation({ summary: 'Mettre à jour un utilisateur' })
+  @ApiParam({ name: 'id', description: 'ObjectId MongoDB de l\'utilisateur' })
+  @ApiResponse({ status: 200, description: 'Utilisateur mis à jour.' })
+  @ApiResponse({ status: 404, description: 'Utilisateur non trouvé.' })
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
     return this.usersService.update(id, updateUserDto);
   }
 
-  // Delete /users/:id
+  @ApiOperation({ summary: 'Supprimer un utilisateur' })
+  @ApiParam({ name: 'id', description: 'ObjectId MongoDB de l\'utilisateur' })
+  @ApiResponse({ status: 200, description: 'Utilisateur supprimé.' })
+  @ApiResponse({ status: 404, description: 'Utilisateur non trouvé.' })
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.usersService.delete(id);
