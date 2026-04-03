@@ -14,6 +14,7 @@ services:
       - .env
     depends_on:
       - mongodb
+      - neo4j
     networks:
       - hoodly
 
@@ -47,8 +48,24 @@ services:
     networks:
       - hoodly
 
+  neo4j:
+    image: neo4j:5
+    container_name: hoodly_neo4j_dev
+    restart: unless-stopped
+    ports:
+      - "7474:7474" # interface web
+      - "7687:7687" # utilisé parl'api
+    volumes:
+      - neo4j_dev_data:/data
+    environment:
+      NEO4J_AUTH: neo4j/password
+    networks:
+      - hoodly
+
 volumes:
   mongo_dev_data:
+    driver: local
+  neo4j_dev_data:
     driver: local
 
 networks:

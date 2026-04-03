@@ -54,7 +54,7 @@ export default function SignupPage({ onGoToLogin }: Props) {
   }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault(); // empeche le chargement de la page pour pas perdre les données
+    e.preventDefault(); // empeche le chargement de la page au submit pour laisser le tamps a await auth.signup de s'executé sans ca la page refresh au submit et on perd les données
     if (!isPasswordValid(form.password)) return;
     setError('');
     setLoading(true);
