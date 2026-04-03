@@ -1,4 +1,4 @@
-import { useState, FormEvent } from 'react';
+import React, { useState } from 'react';
 import axios from 'axios';
 import { authApi } from '../api/auth';
 
@@ -53,8 +53,8 @@ export default function SignupPage({ onGoToLogin }: Props) {
     setForm((f) => ({ ...f, [field]: value }));
   }
 
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault(); // empeche le chargement de la page pour pas perdre les données
     if (!isPasswordValid(form.password)) return;
     setError('');
     setLoading(true);
@@ -213,7 +213,7 @@ export default function SignupPage({ onGoToLogin }: Props) {
                     type="email"
                     value={form.email}
                     onChange={(e) => update('email', e.target.value)}
-                    placeholder="vous@exemple.com"
+                    placeholder="johndoe@email.com"
                     required
                     className={inputClass}
                   />

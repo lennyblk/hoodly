@@ -1,4 +1,4 @@
-import { useState, FormEvent } from 'react';
+import React, { useState } from 'react';
 import axios from 'axios';
 import { authApi } from '../api/auth';
 
@@ -13,7 +13,7 @@ export default function LoginPage({ onGoToSignup, onLoggedIn }: Props) {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  async function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError('');
     setLoading(true);
