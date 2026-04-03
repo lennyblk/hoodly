@@ -4,9 +4,10 @@ import { authApi } from '../api/auth';
 
 interface Props {
   onGoToSignup: () => void;
+  onLoggedIn: () => void;
 }
 
-export default function LoginPage({ onGoToSignup }: Props) {
+export default function LoginPage({ onGoToSignup, onLoggedIn }: Props) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -21,8 +22,7 @@ export default function LoginPage({ onGoToSignup }: Props) {
       const { data } = await authApi.signin({ email, password });
       localStorage.setItem('access_token', data.access_token);
       localStorage.setItem('refresh_token', data.refresh_token);
-
-      alert('Connexion réussie !');
+      onLoggedIn();
     } catch (err) {
       if (axios.isAxiosError(err)) {
         const msg = err.response?.data?.message;

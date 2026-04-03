@@ -73,6 +73,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/auth/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Récupérer le profil connecté */
+        get: operations["AuthController_me"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/logout": {
         parameters: {
             query?: never;
@@ -183,6 +200,34 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        User: {
+            /** @example 64a1f2c3e4b5f6a7b8c9d0e1 */
+            _id: string;
+            /** @example john.doe@email.com */
+            email: string;
+            /** @example John */
+            firstName: string;
+            /** @example Doe */
+            lastName: string;
+            /**
+             * @default habitant
+             * @enum {string}
+             */
+            role: "habitant" | "moderateur" | "admin";
+            /** @example 64a1f2c3e4b5f6a7b8c9d0e2 */
+            neighbourhoodId?: string;
+            /** @example 0 */
+            points: number;
+            /** @example true */
+            isActive: boolean;
+            /**
+             * @default fr
+             * @enum {string}
+             */
+            lang: "fr" | "en";
+            /** Format: date-time */
+            createdAt: string;
+        };
         CreateUserDto: {
             /** @example john.doe@email.com */
             email: string;
@@ -277,6 +322,44 @@ export interface components {
              */
             status: "open" | "accepted" | "done";
         };
+        Announcement: {
+            /** @example 64a1f2c3e4b5f6a7b8c9d0e1 */
+            id: string;
+            /** @example 64a1f2c3e4b5f6a7b8c9d0e2 */
+            authorId: string;
+            /** @example 64a1f2c3e4b5f6a7b8c9d0e3 */
+            neighbourhoodId: string;
+            /** @example Tonte de pelouse */
+            title: string;
+            /** @example Je propose de tondre la pelouse de mes voisins. */
+            description: string;
+            /**
+             * @example offer
+             * @enum {string}
+             */
+            type: "offer" | "request";
+            /**
+             * @default false
+             * @example false
+             */
+            isPaid: boolean;
+            /**
+             * @default 0
+             * @example 0
+             */
+            points: number;
+            /**
+             * @default open
+             * @enum {string}
+             */
+            status: "open" | "accepted" | "done";
+            /** @example 64a1f2c3e4b5f6a7b8c9d0e4 */
+            acceptedBy?: string;
+            /** @example 64a1f2c3e4b5f6a7b8c9d0e5 */
+            contractId?: string;
+            /** Format: date-time */
+            createdAt: string;
+        };
         UpdateAnnouncementDto: {
             /** @example 64a1f2c3e4b5f6a7b8c9d0e1 */
             authorId?: string;
@@ -335,6 +418,46 @@ export interface components {
             /** @example 64a1f2c3e4b5f6a7b8c9d0e1 */
             createdBy: string;
         };
+        Neighbourhood: {
+            /** @example 64a1f2c3e4b5f6a7b8c9d0e1 */
+            id: string;
+            /** @example Montmartre */
+            name: string;
+            /**
+             * @example {
+             *       "type": "Polygon",
+             *       "coordinates": [
+             *         [
+             *           [
+             *             2.33,
+             *             48.88
+             *           ],
+             *           [
+             *             2.34,
+             *             48.88
+             *           ],
+             *           [
+             *             2.34,
+             *             48.89
+             *           ],
+             *           [
+             *             2.33,
+             *             48.89
+             *           ],
+             *           [
+             *             2.33,
+             *             48.88
+             *           ]
+             *         ]
+             *       ]
+             *     }
+             */
+            geometry?: Record<string, never>;
+            /** @example 64a1f2c3e4b5f6a7b8c9d0e2 */
+            createdBy: string;
+            /** Format: date-time */
+            createdAt: string;
+        };
         UpdateNeighbourhoodDto: {
             /** @example Belleville */
             name?: string;
@@ -389,12 +512,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Liste des utilisateurs retournée. */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["User"][];
+                };
             };
         };
     };
@@ -411,12 +535,13 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Utilisateur créé. */
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["User"];
+                };
             };
             /** @description Données invalides. */
             400: {
@@ -439,12 +564,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Utilisateur trouvé. */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["User"];
+                };
             };
             /** @description Utilisateur non trouvé. */
             404: {
@@ -499,12 +625,13 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Utilisateur mis à jour. */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["User"];
+                };
             };
             /** @description Utilisateur non trouvé. */
             404: {
@@ -557,6 +684,32 @@ export interface operations {
             };
         };
     };
+    AuthController_me: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["User"];
+                };
+            };
+            /** @description Non authentifié. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     AuthController_logout: {
         parameters: {
             query?: never;
@@ -600,12 +753,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Liste des annonces retournée. */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["Announcement"][];
+                };
             };
         };
     };
@@ -622,12 +776,13 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Annonce créée. */
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["Announcement"];
+                };
             };
             /** @description Données invalides. */
             400: {
@@ -650,12 +805,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Annonce trouvée. */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["Announcement"];
+                };
             };
             /** @description Annonce non trouvée. */
             404: {
@@ -710,12 +866,13 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Annonce mise à jour. */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["Announcement"];
+                };
             };
             /** @description Annonce non trouvée. */
             404: {
@@ -735,12 +892,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Liste des quartiers retournée. */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["Neighbourhood"][];
+                };
             };
         };
     };
@@ -757,12 +915,13 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Quartier créé. */
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["Neighbourhood"];
+                };
             };
             /** @description Données invalides. */
             400: {
@@ -785,12 +944,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Quartier trouvé. */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["Neighbourhood"];
+                };
             };
             /** @description Quartier non trouvé. */
             404: {
@@ -845,12 +1005,13 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Quartier mis à jour. */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["Neighbourhood"];
+                };
             };
             /** @description Quartier non trouvé. */
             404: {
