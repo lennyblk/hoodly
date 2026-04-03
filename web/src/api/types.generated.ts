@@ -112,8 +112,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** Récupérer toutes les annonces */
         get: operations["AnnouncementsController_findAll"];
         put?: never;
+        /** Créer une annonce */
         post: operations["AnnouncementsController_create"];
         delete?: never;
         options?: never;
@@ -128,12 +130,15 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** Récupérer une annonce par ID */
         get: operations["AnnouncementsController_findOne"];
         put?: never;
         post?: never;
+        /** Supprimer une annonce */
         delete: operations["AnnouncementsController_remove"];
         options?: never;
         head?: never;
+        /** Mettre à jour une annonce */
         patch: operations["AnnouncementsController_update"];
         trace?: never;
     };
@@ -144,8 +149,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** Récupérer tous les quartiers */
         get: operations["NeighbourhoodsController_findAll"];
         put?: never;
+        /** Créer un quartier */
         post: operations["NeighbourhoodsController_create"];
         delete?: never;
         options?: never;
@@ -160,12 +167,15 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** Récupérer un quartier par ID */
         get: operations["NeighbourhoodsController_findOne"];
         put?: never;
         post?: never;
+        /** Supprimer un quartier */
         delete: operations["NeighbourhoodsController_remove"];
         options?: never;
         head?: never;
+        /** Mettre à jour un quartier */
         patch: operations["NeighbourhoodsController_update"];
         trace?: never;
     };
@@ -225,6 +235,11 @@ export interface components {
             firstName: string;
             /** @example Doe */
             lastName: string;
+            /**
+             * @default fr
+             * @enum {string}
+             */
+            lang: "fr" | "en";
         };
         SigninDto: {
             /** @example john.doe@gmail.com */
@@ -585,6 +600,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Liste des annonces retournée. */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -606,7 +622,15 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Annonce créée. */
             201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Données invalides. */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -619,13 +643,22 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description ObjectId MongoDB de l'annonce */
                 id: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
+            /** @description Annonce trouvée. */
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Annonce non trouvée. */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -638,13 +671,22 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description ObjectId MongoDB de l'annonce */
                 id: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
+            /** @description Annonce supprimée. */
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Annonce non trouvée. */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -657,6 +699,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description ObjectId MongoDB de l'annonce */
                 id: string;
             };
             cookie?: never;
@@ -667,7 +710,15 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Annonce mise à jour. */
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Annonce non trouvée. */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -684,6 +735,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Liste des quartiers retournée. */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -705,7 +757,15 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Quartier créé. */
             201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Données invalides. */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -718,13 +778,22 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description ObjectId MongoDB du quartier */
                 id: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
+            /** @description Quartier trouvé. */
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Quartier non trouvé. */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -737,13 +806,22 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description ObjectId MongoDB du quartier */
                 id: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
+            /** @description Quartier supprimé. */
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Quartier non trouvé. */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -756,6 +834,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /** @description ObjectId MongoDB du quartier */
                 id: string;
             };
             cookie?: never;
@@ -766,7 +845,15 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Quartier mis à jour. */
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Quartier non trouvé. */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

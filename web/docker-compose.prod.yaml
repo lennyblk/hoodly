@@ -1,0 +1,21 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: hoodly_web_prod
+    restart: unless-stopped
+    ports:
+      - "5174:5173"
+    volumes:
+      - ./src:/app/src
+      - ./index.html:/app/index.html
+      - ./vite.config.ts:/app/vite.config.ts
+      - ./public:/app/public
+    networks:
+      - hoodly
+
+networks:
+  hoodly:
+    external: true
