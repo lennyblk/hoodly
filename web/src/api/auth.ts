@@ -1,28 +1,15 @@
 import api from './axios';
+import type { components } from './types.generated';
 
-export interface SigninPayload {
-  email: string;
-  password: string;
-}
-
-export interface SignupPayload {
-  firstName: string;
-  lastName: string;
-  email: string;
-  password: string;
-  lang?: 'fr' | 'en';
-}
-
-export interface AuthTokens {
-  access_token: string;
-  refresh_token: string;
-}
+type SigninDto = components['schemas']['SigninDto'];
+type SignupDto = components['schemas']['SignupDto'];
+type AuthTokens = { access_token: string; refresh_token: string };
 
 export const authApi = {
-  signin: (payload: SigninPayload) =>
+  signin: (payload: SigninDto) =>
     api.post<AuthTokens>('/auth/signin', payload),
 
-  signup: (payload: SignupPayload) =>
+  signup: (payload: SignupDto) =>
     api.post<AuthTokens>('/auth/signup', payload),
 
   logout: () =>
