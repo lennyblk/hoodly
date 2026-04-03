@@ -14,6 +14,8 @@ services:
       - .env
     depends_on:
       - mongodb
+    networks:
+      - hoodly
 
   mongodb:
     image: mongo:7
@@ -27,6 +29,8 @@ services:
       MONGO_INITDB_DATABASE: hoodly
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: root
+    networks:
+      - hoodly
 
   mongo-express:
     image: mongo-express:latest
@@ -40,7 +44,13 @@ services:
       ME_CONFIG_MONGODB_URL: mongodb://root:root@mongodb:27017/
     depends_on:
       - mongodb
+    networks:
+      - hoodly
 
 volumes:
   mongo_dev_data:
     driver: local
+
+networks:
+  hoodly:
+    external: true

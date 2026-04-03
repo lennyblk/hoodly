@@ -8,7 +8,7 @@ import {
   MaxLength,
   MinLength,
 } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { UserLang } from '../../../entities/mongodb/User';
 
 export class SignupDto {
@@ -36,6 +36,7 @@ export class SignupDto {
   @MaxLength(50)
   lastName: string;
 
+  @ApiPropertyOptional({ enum: UserLang, default: UserLang.FR })
   @IsOptional()
   @IsEnum(UserLang)
   lang?: UserLang;

@@ -7,7 +7,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { MongoRepository } from 'typeorm';
 import { ObjectId } from 'mongodb';
-import { User } from '../../entities/mongodb/User';
+import { User, UserRole, UserLang } from '../../entities/mongodb/User';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 
@@ -45,7 +45,13 @@ export class UsersService {
       );
     }
 
-    const user = this.usersRepository.create(createUserDto);
+    const user = this.usersRepository.create({
+      role: UserRole.HABITANT,
+      points: 0,
+      isActive: true,
+      lang: UserLang.FR,
+      ...createUserDto,
+    });
     return this.usersRepository.save(user);
   }
 
