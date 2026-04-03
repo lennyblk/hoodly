@@ -232,10 +232,130 @@ export interface components {
             /** @example MonMotDePasse1! */
             password: string;
         };
-        CreateAnnouncementDto: Record<string, never>;
-        UpdateAnnouncementDto: Record<string, never>;
-        CreateNeighbourhoodDto: Record<string, never>;
-        UpdateNeighbourhoodDto: Record<string, never>;
+        CreateAnnouncementDto: {
+            /** @example 64a1f2c3e4b5f6a7b8c9d0e1 */
+            authorId: string;
+            /** @example 64a1f2c3e4b5f6a7b8c9d0e2 */
+            neighbourhoodId: string;
+            /** @example Tonte de pelouse */
+            title: string;
+            /** @example Je propose de tondre la pelouse de mes voisins. */
+            description: string;
+            /**
+             * @example offer
+             * @enum {string}
+             */
+            type: "offer" | "request";
+            /**
+             * @default false
+             * @example false
+             */
+            isPaid: boolean;
+            /**
+             * @default 0
+             * @example 10
+             */
+            points: number;
+            /**
+             * @default open
+             * @enum {string}
+             */
+            status: "open" | "accepted" | "done";
+        };
+        UpdateAnnouncementDto: {
+            /** @example 64a1f2c3e4b5f6a7b8c9d0e1 */
+            authorId?: string;
+            /** @example 64a1f2c3e4b5f6a7b8c9d0e2 */
+            neighbourhoodId?: string;
+            /** @example Tonte de pelouse */
+            title?: string;
+            /** @example Je propose de tondre la pelouse de mes voisins. */
+            description?: string;
+            /** @enum {string} */
+            type?: "offer" | "request";
+            /** @example false */
+            isPaid?: boolean;
+            /** @example 10 */
+            points?: number;
+            /** @enum {string} */
+            status?: "open" | "accepted" | "done";
+            /** @example 64a1f2c3e4b5f6a7b8c9d0e3 */
+            acceptedBy?: string;
+            /** @example 64a1f2c3e4b5f6a7b8c9d0e4 */
+            contractId?: string;
+        };
+        CreateNeighbourhoodDto: {
+            /** @example Montmartre */
+            name: string;
+            /**
+             * @example {
+             *       "type": "Polygon",
+             *       "coordinates": [
+             *         [
+             *           [
+             *             2.33,
+             *             48.88
+             *           ],
+             *           [
+             *             2.34,
+             *             48.88
+             *           ],
+             *           [
+             *             2.34,
+             *             48.89
+             *           ],
+             *           [
+             *             2.33,
+             *             48.89
+             *           ],
+             *           [
+             *             2.33,
+             *             48.88
+             *           ]
+             *         ]
+             *       ]
+             *     }
+             */
+            geometry?: Record<string, never>;
+            /** @example 64a1f2c3e4b5f6a7b8c9d0e1 */
+            createdBy: string;
+        };
+        UpdateNeighbourhoodDto: {
+            /** @example Belleville */
+            name?: string;
+            /**
+             * @example {
+             *       "type": "Polygon",
+             *       "coordinates": [
+             *         [
+             *           [
+             *             2.33,
+             *             48.88
+             *           ],
+             *           [
+             *             2.34,
+             *             48.88
+             *           ],
+             *           [
+             *             2.34,
+             *             48.89
+             *           ],
+             *           [
+             *             2.33,
+             *             48.89
+             *           ],
+             *           [
+             *             2.33,
+             *             48.88
+             *           ]
+             *         ]
+             *       ]
+             *     }
+             */
+            geometry?: Record<string, never>;
+            /** @example 64a1f2c3e4b5f6a7b8c9d0e1 */
+            createdBy?: string;
+        };
     };
     responses: never;
     parameters: never;
