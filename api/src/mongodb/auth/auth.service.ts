@@ -9,7 +9,7 @@ import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { SignupDto } from './dto/signup.dto';
 import { SigninDto } from './dto/signin.dto';
-import { User } from '../../entities/mongodb/User';
+import { User, UserRole, UserLang } from '../../entities/mongodb/User';
 import { RefreshToken } from '../../entities/mongodb/RefreshToken';
 import { Tokens } from './types';
 import { ObjectId } from 'mongodb';
@@ -72,7 +72,14 @@ export class AuthService {
 
     const hash = await this.hashData(dto.password);
     const newUser = await this.userRepository.save(
-      this.userRepository.create({ ...dto, password: hash }),
+      this.userRepository.create({
+        role: UserRole.HABITANT,
+        points: 0,
+        isActive: true,
+        lang: UserLang.FR,
+        ...dto,
+        password: hash,
+      }),
     );
 
     const tokens = await this.getTokens(newUser._id.toString(), newUser.email);

@@ -1,0 +1,19 @@
+services:
+  web-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: dev
+    container_name: hoodly_web_dev
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    networks:
+      - hoodly
+
+networks:
+  hoodly:
+    external: true
