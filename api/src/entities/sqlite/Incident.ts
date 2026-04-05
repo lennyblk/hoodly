@@ -31,8 +31,8 @@ export class Incident {
   @Column()
   reportedAt: Date;
 
-  @Column({ nullable: true })
-  syncedAt: Date;
+  @Column({ type: 'datetime', nullable: true })
+  syncedAt: Date | null;
 
   @Column({ type: 'int', default: 0 })
   isDirty: number; // 0 or 1 (offline flag)

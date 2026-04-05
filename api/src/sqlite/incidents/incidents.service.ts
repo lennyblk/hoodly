@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { randomUUID } from 'crypto';
-import { Incident } from '../../entities/sqlite/Incident';
+import { Incident, IncidentStatus } from '../../entities/sqlite/Incident';
 import { CreateIncidentDto } from './dto/create-incident.dto';
 import { UpdateIncidentDto } from './dto/update-incident.dto';
 import { UsersService } from '../../mongodb/users/users.service';
@@ -36,16 +36,18 @@ export class IncidentsService {
       });
     }
 
-    const payload: any = {
-      ...createIncidentDto,
-      id: createIncidentDto.id || randomUUID(),
-      reportedAt: createIncidentDto.reportedAt ? new Date(createIncidentDto.reportedAt) : new Date(),
-    };
-    if (createIncidentDto.syncedAt) {
-      payload.syncedAt = new Date(createIncidentDto.syncedAt);
-    }
+    const incident = new Incident();
+    incident.id = createIncidentDto.id || randomUUID();
+    incident.title = createIncidentDto.title;
+    incident.description = createIncidentDto.description;
+    incident.category = createIncidentDto.category;
+    incident.status = createIncidentDto.status ?? IncidentStatus.OPEN;
+    incident.reportedBy = createIncidentDto.reportedBy;
+    incident.neighborhoodId = createIncidentDto.neighborhoodId;
+    incident.reportedAt = createIncidentDto.reportedAt ? new Date(createIncidentDto.reportedAt) : new Date();
+    incident.syncedAt = createIncidentDto.syncedAt ? new Date(createIncidentDto.syncedAt) : null;
+    incident.isDirty = createIncidentDto.isDirty ?? 0;
 
-    const incident = this.incidentsRepository.create(payload as any);
     return this.incidentsRepository.save(incident);
   }
 
