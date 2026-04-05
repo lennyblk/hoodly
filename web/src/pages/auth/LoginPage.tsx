@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { authApi } from '../api/auth';
+import { authApi } from '../../api/auth';
 
 interface Props {
   onGoToSignup: () => void;

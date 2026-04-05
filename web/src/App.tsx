@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import LoginPage from './pages/LoginPage';
-import SignupPage from './pages/SignupPage';
-import DashboardPage from './pages/DashboardPage';
+import LoginPage from './pages/auth/LoginPage';
+import SignupPage from './pages/auth/SignupPage';
+import DashboardPage from './pages/dashboard/DashboardPage';
 import AppLayout from './components/layout/AppLayout';
 import { UserProvider, useUser } from './contexts/UserContext';
 

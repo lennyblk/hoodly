@@ -1,11 +1,11 @@
-import TopBar from '../components/layout/TopBar';
-import { useUser } from '../contexts/UserContext';
-import NeighbourhoodBanner from '../components/dashboard/NeighbourhoodBanner';
-import StatCard from '../components/dashboard/StatCard';
-import QuickActionCard from '../components/dashboard/QuickActionCard';
-import RecommendedSection from '../components/dashboard/RecommendedSection';
-import UpcomingEvents from '../components/dashboard/UpcomingEvents';
-import RecentActivity from '../components/dashboard/RecentActivity';
+import TopBar from '../../components/layout/TopBar';
+import { useUser } from '../../contexts/UserContext';
+import NeighbourhoodBanner from '../../components/dashboard/NeighbourhoodBanner';
+import StatCard from '../../components/dashboard/StatCard';
+import QuickActionCard from '../../components/dashboard/QuickActionCard';
+import RecommendedSection from '../../components/dashboard/RecommendedSection';
+import UpcomingEvents from '../../components/dashboard/UpcomingEvents';
+import RecentActivity from '../../components/dashboard/RecentActivity';
 
 const stats = [
   {
