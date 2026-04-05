@@ -5,11 +5,8 @@ import { UsersModule } from './mongodb/users/users.module';
 import { AuthModule } from './mongodb/auth/auth.module';
 import { AnnouncementsModule } from './mongodb/announcements/announcements.module';
 import { NeighbourhoodsModule } from './mongodb/neighbourhoods/neighbourhoods.module';
-<<<<<<< Updated upstream
 import { IncidentsModule } from './sqlite/incidents/incidents.module';
-=======
 import { UsersSqliteModule } from './sqlite/users/users.module';
->>>>>>> Stashed changes
 
 // MongoDB entities
 import { User } from './entities/mongodb/User';
@@ -53,13 +50,9 @@ import { NeighbourhoodsSqliteModule } from './sqlite/neighbourhoods/neighbourhoo
     AuthModule,
     AnnouncementsModule,
     NeighbourhoodsModule,
-<<<<<<< Updated upstream
     IncidentsModule,
-  ],
-=======
     UsersSqliteModule,
     NeighbourhoodsSqliteModule,
   ]
->>>>>>> Stashed changes
 })
 export class AppModule {}
