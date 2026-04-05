@@ -4,6 +4,7 @@ import { UsersModule } from './mongodb/users/users.module';
 import { AuthModule } from './mongodb/auth/auth.module';
 import { AnnouncementsModule } from './mongodb/announcements/announcements.module';
 import { NeighbourhoodsModule } from './mongodb/neighbourhoods/neighbourhoods.module';
+import { IncidentsModule } from './sqlite/incidents/incidents.module';
 
 // MongoDB entities
 import { User } from './entities/mongodb/User';
@@ -45,6 +46,7 @@ import { SyncLog } from './entities/sqlite/SyncLog';
     AuthModule,
     AnnouncementsModule,
     NeighbourhoodsModule,
+    IncidentsModule,
   ],
 })
 export class AppModule {}

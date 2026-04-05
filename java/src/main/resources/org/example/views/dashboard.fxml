@@ -12,6 +12,7 @@
    </padding>
 
    <HBox alignment="CENTER_RIGHT" spacing="10">
+       <Button text="Changer de Thème 🌙" onAction="#handleToggleTheme" />
        <Button text="Synchroniser données (Internet)" onAction="#handleSync" />
        <Button text="Déconnexion" onAction="#handleLogout" style="-fx-background-color: #f44336; -fx-text-fill: white;" />
    </HBox>
@@ -20,16 +21,16 @@
    <Label fx:id="dbStatusLabel" text="Connexion base..." />
 
    <HBox alignment="CENTER" spacing="20">
-       <VBox alignment="CENTER" spacing="10" style="-fx-border-color: #ddd; -fx-border-width: 1; -fx-background-color: #fafafa; -fx-padding: 30;">
+       <VBox alignment="CENTER" spacing="10" style="-fx-border-color: #ddd; -fx-border-width: 1; -fx-background-color: transparent; -fx-padding: 30;" styleClass="vbox-card">
            <Label text="Gestion des Incidents/Alertes" style="-fx-font-size: 18; -fx-font-weight: bold;"/>
            <Label text="Fonctionnera offline-first." />
-           <Button text="Afficher Incidents" />
+           <Button text="Afficher Incidents" onAction="#showIncidents" styleClass="button-primary"/>
        </VBox>
        
-       <VBox alignment="CENTER" spacing="10" style="-fx-border-color: #ddd; -fx-border-width: 1; -fx-background-color: #fafafa; -fx-padding: 30;">
+       <VBox alignment="CENTER" spacing="10" style="-fx-border-color: #ddd; -fx-border-width: 1; -fx-background-color: transparent; -fx-padding: 30;" styleClass="vbox-card">
            <Label text="Statistiques Globales" style="-fx-font-size: 18; -fx-font-weight: bold;"/>
            <Label text="Participation quartier." />
-           <Button text="Afficher Stats" />
+           <Button text="Afficher Stats" onAction="#showStatistics" styleClass="button-primary"/>
         </VBox>
    </HBox>
 </VBox>

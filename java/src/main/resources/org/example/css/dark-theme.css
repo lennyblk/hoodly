@@ -1,0 +1,83 @@
+.root {
+    -fx-background-color: #2b2b2b;
+    -fx-text-inner-color: #e0e0e0;
+    -fx-base: #3c3f41;
+    -fx-control-inner-background: #323232;
+    -fx-color: #2b2b2b;
+    -fx-text-fill: #e0e0e0;
+}
+
+.label {
+    -fx-text-fill: #e0e0e0;
+}
+
+.button {
+    -fx-background-color: #555555;
+    -fx-text-fill: white;
+}
+.button:hover {
+    -fx-background-color: #666666;
+}
+
+.table-view {
+    -fx-background-color: #323232;
+    -fx-base: #3c3f41;
+    -fx-control-inner-background: #323232;
+    -fx-table-cell-border-color: #444444;
+    -fx-table-header-border-color: #444444;
+}
+
+.table-row-cell {
+    -fx-background-color: #323232;
+    -fx-text-background-color: #e0e0e0;
+}
+
+.table-row-cell:odd {
+    -fx-background-color: #3c3f41;
+}
+
+.table-row-cell:selected {
+    -fx-background-color: #1565C0;
+}
+
+.text-field, .text-area {
+    -fx-background-color: #444444;
+    -fx-text-fill: #e0e0e0;
+    -fx-prompt-text-fill: #aaaaaa;
+}
+
+/* Fix VBox with custom backgrounds */
+.vbox-card {
+    -fx-background-color: #3a3a3a !important;
+    -fx-border-color: #555555 !important;
+}
+
+.incidents-detail-box {
+    -fx-background-color: #1e3a5f !important;
+    -fx-border-color: #4fc3f7 !important;
+}
+
+.detail-title {
+    -fx-text-fill: #90caf9 !important;
+}
+
+.incidents-create-box {
+    -fx-background-color: #323232 !important;
+    -fx-border-color: #555555 !important;
+}
+
+.text-area-detail {
+    -fx-control-inner-background: #2b2b2b !important;
+    -fx-text-fill: #e0e0e0 !important;
+}
+
+/* Keep primary buttons colored */
+.button-primary {
+    -fx-background-color: #2196F3;
+}
+.button-success {
+    -fx-background-color: #4caf50;
+}
+.button-danger {
+    -fx-background-color: #f44336;
+}

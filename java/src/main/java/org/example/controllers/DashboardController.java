@@ -39,7 +39,38 @@ public class DashboardController {
 
     @FXML
     private void handleSync() {
-        dbStatusLabel.setText("Syncing with online server...");
-        // TODO: Sync API logic using JWT Token
+        dbStatusLabel.setText("Synchronisation en cours...");
+        
+        new Thread(() -> {
+            try {
+                org.example.services.SyncService.sync();
+                javafx.application.Platform.runLater(() -> dbStatusLabel.setText("Synchronisation OK !"));
+            } catch (Exception e) {
+                javafx.application.Platform.runLater(() -> dbStatusLabel.setText("Erreur Sync : " + e.getMessage()));
+            }
+        }).start();
+    }
+
+    @FXML
+    private void showIncidents() {
+        try {
+            Main.setRoot("views/incidents.fxml");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @FXML
+    private void showStatistics() {
+        try {
+            Main.setRoot("views/statistics.fxml");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @FXML
+    private void handleToggleTheme() {
+        Main.toggleTheme();
     }
 }

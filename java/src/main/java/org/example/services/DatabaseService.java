@@ -8,28 +8,34 @@ import java.sql.Statement;
 public class DatabaseService {
 
     private static final String DB_URL = "jdbc:sqlite:hoodly_local.db";
-    private static Connection connection;
+    private static boolean initialized = false;
 
     public static Connection getConnection() {
-        if (connection == null) {
-            try {
-                // Initialize the database connection
-                connection = DriverManager.getConnection(DB_URL);
-                createTables();
-            } catch (SQLException e) {
-                System.err.println("Failed to connect to SQLite database: " + e.getMessage());
+        try {
+            Connection conn = DriverManager.getConnection(DB_URL);
+            if (!initialized) {
+                createTables(conn);
+                initialized = true;
             }
+            return conn;
+        } catch (SQLException e) {
+            System.err.println("Failed to connect to SQLite database: " + e.getMessage());
+            return null;
         }
-        return connection;
     }
 
-    private static void createTables() {
+    private static void createTables(Connection conn) {
         String incidentsTable = "CREATE TABLE IF NOT EXISTS incidents (" +
-                "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                "id TEXT PRIMARY KEY," +
                 "title TEXT NOT NULL," +
                 "description TEXT," +
+                "category TEXT," +
                 "status TEXT," +
-                "created_at DATETIME DEFAULT CURRENT_TIMESTAMP" +
+                "reported_by TEXT," +
+                "neighborhood_id TEXT," +
+                "reported_at TEXT," +
+                "synced_at TEXT," +
+                "is_dirty INTEGER DEFAULT 0" +
                 ");";
 
         String statsTable = "CREATE TABLE IF NOT EXISTS status_participations (" +
@@ -39,7 +45,7 @@ public class DatabaseService {
                 "status TEXT" +
                 ");";
 
-        try (Statement stmt = connection.createStatement()) {
+        try (Statement stmt = conn.createStatement()) {
             stmt.execute(incidentsTable);
             stmt.execute(statsTable);
         } catch (SQLException e) {

@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox alignment="TOP_CENTER" spacing="15.0" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.controllers.IncidentsController">
+   <padding>
+      <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+   </padding>
+
+   <HBox alignment="CENTER_LEFT" spacing="10">
+       <Button text="← Retour" onAction="#goBack" styleClass="button-primary" style="-fx-text-fill: white;"/>
+       <Label text="Gestion des Incidents Quartier" style="-fx-font-size: 24; -fx-font-weight: bold; -fx-padding: 0 0 0 20;" />
+       <HBox alignment="CENTER_RIGHT" HBox.hgrow="ALWAYS">
+           <Button text="Changer de Thème 🌙" onAction="#handleToggleTheme" />
+       </HBox>
+   </HBox>
+
+   <TableView fx:id="incidentsTable" prefHeight="250.0" prefWidth="600.0">
+     <columns>
+       <TableColumn fx:id="titleCol" prefWidth="200.0" text="Titre" />
+       <TableColumn fx:id="categoryCol" prefWidth="120.0" text="Catégorie" />
+       <TableColumn fx:id="statusCol" prefWidth="100.0" text="Statut" />
+       <TableColumn fx:id="dirtyCol" prefWidth="150.0" text="Mise à jour en attente?" />
+     </columns>
+   </TableView>
+
+   <!-- SECTION GESTION D'INCIDENT (AJOUTEE POUR L'ADMIN) -->
+   <VBox styleClass="incidents-detail-box" spacing="10" style="-fx-border-color: #2196F3; -fx-border-radius: 5; -fx-padding: 15; -fx-background-color: #E3F2FD;">
+      <Label styleClass="detail-title" text="Détails de l'incident sélectionné" style="-fx-font-weight: bold; -fx-text-fill: #1565C0; -fx-font-size: 16;" />
+      
+      <GridPane hgap="10" vgap="5">
+          <Label text="Signalé par :" GridPane.rowIndex="0" GridPane.columnIndex="0" style="-fx-font-weight: bold;" />
+          <Label fx:id="detailReportedBy" text="-" GridPane.rowIndex="0" GridPane.columnIndex="1" />
+          
+          <Label text="Date / Heure :" GridPane.rowIndex="0" GridPane.columnIndex="2" style="-fx-font-weight: bold;" />
+          <Label fx:id="detailReportedAt" text="-" GridPane.rowIndex="0" GridPane.columnIndex="3" />
+
+          <Label text="Quartier ID :" GridPane.rowIndex="1" GridPane.columnIndex="0" style="-fx-font-weight: bold;" />
+          <Label fx:id="detailNeighborhood" text="-" GridPane.rowIndex="1" GridPane.columnIndex="1" />
+
+          <Label text="ID Interne :" GridPane.rowIndex="1" GridPane.columnIndex="2" style="-fx-font-weight: bold;" />
+          <Label fx:id="detailId" text="-" GridPane.rowIndex="1" GridPane.columnIndex="3" />
+      </GridPane>
+
+      <Label text="Description :" style="-fx-font-weight: bold;" />
+      <TextArea fx:id="detailDescription" editable="false" prefHeight="60.0" wrapText="true" styleClass="text-area-detail" style="-fx-control-inner-background: #F5F5F5;" />
+
+      <HBox alignment="CENTER_LEFT" spacing="10" style="-fx-padding: 10 0 0 0;">
+          <Button fx:id="resolveBtn" text="✓ Marquer comme Résolu" onAction="#handleResolve" style="-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-weight: bold;" disable="true"/>
+          <Label fx:id="managementInfoLabel" textFill="#D32F2F" />
+      </HBox>
+   </VBox>
+
+   <!-- SECTION CREATION D'INCIDENT (MINIMISEE) -->
+   <VBox styleClass="incidents-create-box" spacing="10" style="-fx-border-color: #ccc; -fx-padding: 15; -fx-background-color: #f9f9f9;">
+      <Label text="Signaler un nouvel incident (Mode Offline)" style="-fx-font-weight: bold;" />
+      
+      <HBox spacing="10">
+          <TextField fx:id="titleField" promptText="Titre de l'incident" prefWidth="250"/>
+          <TextField fx:id="categoryField" promptText="Catégorie (ex: Dégradation)" prefWidth="150"/>
+      </HBox>
+      <TextField fx:id="descField" promptText="Description complète" />
+      
+      <HBox alignment="CENTER_LEFT" spacing="10">
+          <Button text="Enregistrer l'incident" onAction="#handleAddIncident" style="-fx-background-color: #4caf50; -fx-text-fill: white;"/>
+          <Label fx:id="infoLabel" textFill="#2196F3" />
+      </HBox>
+   </VBox>
+</VBox>
