@@ -1,10 +1,12 @@
-import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Module, OnApplicationBootstrap } from '@nestjs/common'; 
+import { TypeOrmModule, getRepositoryToken, InjectRepository } from '@nestjs/typeorm';
 import { UsersModule } from './mongodb/users/users.module';
 import { AuthModule } from './mongodb/auth/auth.module';
 import { AnnouncementsModule } from './mongodb/announcements/announcements.module';
 import { NeighbourhoodsModule } from './mongodb/neighbourhoods/neighbourhoods.module';
 import { IncidentsModule } from './sqlite/incidents/incidents.module';
+import { UsersSqliteModule } from './sqlite/users/users.module';
 
 // MongoDB entities
 import { User } from './entities/mongodb/User';
@@ -23,6 +25,8 @@ import { Incident } from './entities/sqlite/Incident';
 import { StatusParticipation } from './entities/sqlite/StatusParticipation';
 import { NeighbourhoodSqlite } from './entities/sqlite/NeighbourhoodSqlite';
 import { SyncLog } from './entities/sqlite/SyncLog';
+import { NeighbourhoodsSqliteModule } from './sqlite/neighbourhoods/neighbourhoods.module';
+
 
 @Module({
   imports: [
@@ -47,6 +51,8 @@ import { SyncLog } from './entities/sqlite/SyncLog';
     AnnouncementsModule,
     NeighbourhoodsModule,
     IncidentsModule,
-  ],
+    UsersSqliteModule,
+    NeighbourhoodsSqliteModule,
+  ]
 })
 export class AppModule {}

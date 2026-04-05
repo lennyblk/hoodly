@@ -1,4 +1,4 @@
-import { Entity, PrimaryColumn, Column, CreateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from 'typeorm';
 
 export enum IncidentStatus {
   OPEN = 'open',
@@ -7,7 +7,7 @@ export enum IncidentStatus {
 
 @Entity('incidents')
 export class Incident {
-  @PrimaryColumn()
+  @PrimaryGeneratedColumn('uuid')
   id: string;
 
   @Column()
@@ -23,7 +23,7 @@ export class Incident {
   status: IncidentStatus;
 
   @Column()
-  reportedBy: string; // FK -> users.id
+  reportedBy: string; 
 
   @Column()
   neighborhoodId: string;
@@ -35,5 +35,5 @@ export class Incident {
   syncedAt: Date | null;
 
   @Column({ type: 'int', default: 0 })
-  isDirty: number; // 0 or 1 (offline flag)
+  isDirty: number;
 }
