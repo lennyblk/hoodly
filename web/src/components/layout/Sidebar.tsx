@@ -1,16 +1,17 @@
+import { NavLink, useNavigate } from 'react-router-dom';
 import { useUser } from '../../contexts/UserContext';
 
 type NavItem = {
   label: string;
+  to: string;
   badge?: number;
-  active?: boolean;
   icon: React.ReactNode;
 };
 
 const navItems: NavItem[] = [
   {
     label: 'Tableau de bord',
-    active: true,
+    to: '/dashboard',
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
         <path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" fill="currentColor" fillOpacity="0.15" />
@@ -20,6 +21,7 @@ const navItems: NavItem[] = [
   },
   {
     label: 'Carte du quartier',
+    to: '/map',
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
         <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" stroke="currentColor" strokeWidth="2" />
@@ -29,6 +31,7 @@ const navItems: NavItem[] = [
   },
   {
     label: 'Services',
+    to: '/services',
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
         <path d="M20.42 4.58a5.4 5.4 0 00-7.65 0l-.77.78-.77-.78a5.4 5.4 0 00-7.65 7.65l8.42 8.42 8.42-8.42a5.4 5.4 0 000-7.65z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
@@ -37,6 +40,7 @@ const navItems: NavItem[] = [
   },
   {
     label: 'Événements',
+    to: '/events',
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
         <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="2" />
@@ -46,7 +50,7 @@ const navItems: NavItem[] = [
   },
   {
     label: 'Messages',
-    badge: 3,
+    to: '/messages',
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
         <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2v10z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
@@ -55,6 +59,7 @@ const navItems: NavItem[] = [
   },
   {
     label: 'Votes',
+    to: '/votes',
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
         <path d="M9 11l3 3L22 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -64,6 +69,7 @@ const navItems: NavItem[] = [
   },
   {
     label: 'Documents',
+    to: '/documents',
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
         <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
@@ -73,6 +79,7 @@ const navItems: NavItem[] = [
   },
   {
     label: 'Mon profil',
+    to: '/profile',
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
         <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="2" />
@@ -82,6 +89,7 @@ const navItems: NavItem[] = [
   },
   {
     label: 'Administration',
+    to: '/admin',
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
         <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2" />
@@ -92,11 +100,19 @@ const navItems: NavItem[] = [
 ];
 
 export default function Sidebar() {
-  const { user } = useUser();
+  const { user, clearUser } = useUser();
+  const navigate = useNavigate();
 
   const initials = user
     ? `${user.firstName[0]}${user.lastName[0]}`.toUpperCase()
     : '?';
+
+  function handleLogout() {
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    clearUser();
+    navigate('/login');
+  }
 
   return (
     <aside className="hidden lg:flex flex-col w-[210px] shrink-0 bg-vert-foret h-full">
@@ -118,12 +134,16 @@ export default function Sidebar() {
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto px-3 py-4 flex flex-col gap-0.5">
         {navItems.map((item) => (
-          <button
+          <NavLink
             key={item.label}
-            className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-left transition-colors ${item.active
+            to={item.to}
+            end={item.to !== '/services'}
+            className={({ isActive }) =>
+              `flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-left transition-colors ${isActive
                 ? 'bg-ambre text-white font-semibold'
                 : 'text-white/70 hover:bg-white/10 hover:text-white'
-              }`}
+              }`
+            }
           >
             <span className="shrink-0">{item.icon}</span>
             <span className="font-sans text-sm flex-1">{item.label}</span>
@@ -132,7 +152,7 @@ export default function Sidebar() {
                 {item.badge}
               </span>
             )}
-          </button>
+          </NavLink>
         ))}
       </nav>
 
@@ -149,7 +169,7 @@ export default function Sidebar() {
             {user ? `${user.points} pts · ${user.role}` : '—'}
           </p>
         </div>
-        <button className="text-white/50 hover:text-white shrink-0">
+        <button onClick={handleLogout} className="text-white/50 hover:text-white shrink-0" title="Se déconnecter">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
             <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>

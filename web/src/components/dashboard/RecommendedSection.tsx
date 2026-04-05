@@ -1,7 +1,7 @@
 const items = [
-  { name: 'Marc Dupont', sub: 'Aide jardinage', badge: '3 pts/h', badgeColor: 'bg-ambre', icon: '🌿' },
-  { name: 'Sophie Martin', sub: "Garde d'enfants", badge: '4 pts/h', badgeColor: 'bg-[#7C3AED]', icon: '❤️' },
-  { name: 'Atelier vélo', sub: 'Samedi 14h', badge: 'Gratuit', badgeColor: 'bg-vert-moyen', icon: '🚲' },
+  { name: 'Lenny Blackett', sub: 'Aide jardinage', badge: '3 pts/h', badgeColor: 'bg-ambre', icon: '🌿' },
+  { name: 'Sarah Garcia', sub: "Garde d'enfants", badge: '4 pts/h', badgeColor: 'bg-[#7C3AED]', icon: '❤️' },
+  { name: 'Malo Laval', sub: 'Samedi 14h', badge: 'Gratuit', badgeColor: 'bg-vert-moyen', icon: '🚲' },
 ];
 
 export default function RecommendedSection() {

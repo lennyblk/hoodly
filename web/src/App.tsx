@@ -1,40 +1,78 @@
-import { useState } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { UserProvider, useUser } from './contexts/UserContext';
+import AppLayout from './components/layout/AppLayout';
 import LoginPage from './pages/auth/LoginPage';
 import SignupPage from './pages/auth/SignupPage';
 import DashboardPage from './pages/dashboard/DashboardPage';
-import AppLayout from './components/layout/AppLayout';
-import { UserProvider, useUser } from './contexts/UserContext';
+import ServicesPage from './pages/services/ServicesPage';
+import ServiceDetailPage from './pages/services/ServiceDetailPage';
+import ProposeServicePage from './pages/services/ProposeServicePage';
+import MapPage from './pages/map/MapPage';
+import EventsPage from './pages/events/EventsPage';
+import MessagesPage from './pages/messages/MessagesPage';
+import VotesPage from './pages/votes/VotesPage';
+import DocumentsPage from './pages/documents/DocumentsPage';
+import ProfilePage from './pages/profile/ProfilePage';
+import AdminPage from './pages/admin/AdminPage';
 
-type Page = 'login' | 'signup' | 'dashboard';
+function ProtectedRoutes() {
+  const token = localStorage.getItem('access_token');
+  if (!token) return <Navigate to="/login" replace />;
+  return <Outlet />;
+}
 
-function AppContent() {
-  const [page, setPage] = useState<Page>('login');
+function AppRoutes() {
   const { fetchMe } = useUser();
+  const [ready, setReady] = useState(false);
 
-  async function handleLoggedIn() {
-    await fetchMe();
-    setPage('dashboard');
-  }
+  useEffect(() => {
+    const token = localStorage.getItem('access_token');
+    if (token) {
+      fetchMe()
+        .catch(() => {
+          localStorage.removeItem('access_token');
+          localStorage.removeItem('refresh_token');
+        })
+        .finally(() => setReady(true));
+    } else {
+      setReady(true);
+    }
+  }, []);
 
-  if (page === 'signup') {
-    return <SignupPage onGoToLogin={() => setPage('login')} />;
-  }
+  if (!ready) return null;
 
-  if (page === 'dashboard') {
-    return (
-      <AppLayout>
-        <DashboardPage />
-      </AppLayout>
-    );
-  }
-
-  return <LoginPage onGoToSignup={() => setPage('signup')} onLoggedIn={handleLoggedIn} />;
+  return (
+    <Routes>
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/signup" element={<SignupPage />} />
+      <Route element={<ProtectedRoutes />}>
+        <Route element={<AppLayout />}>
+          <Route index element={<Navigate to="/dashboard" replace />} />
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/services" element={<ServicesPage />} />
+          <Route path="/services/new" element={<ProposeServicePage />} />
+          <Route path="/services/:id" element={<ServiceDetailPage />} />
+          <Route path="/map" element={<MapPage />} />
+          <Route path="/events" element={<EventsPage />} />
+          <Route path="/messages" element={<MessagesPage />} />
+          <Route path="/votes" element={<VotesPage />} />
+          <Route path="/documents" element={<DocumentsPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/admin" element={<AdminPage />} />
+        </Route>
+      </Route>
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
 }
 
 export default function App() {
   return (
-    <UserProvider>
-      <AppContent />
-    </UserProvider>
+    <BrowserRouter>
+      <UserProvider>
+        <AppRoutes />
+      </UserProvider>
+    </BrowserRouter>
   );
 }

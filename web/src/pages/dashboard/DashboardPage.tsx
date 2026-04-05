@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import TopBar from '../../components/layout/TopBar';
 import { useUser } from '../../contexts/UserContext';
 import NeighbourhoodBanner from '../../components/dashboard/NeighbourhoodBanner';
@@ -6,10 +7,14 @@ import QuickActionCard from '../../components/dashboard/QuickActionCard';
 import RecommendedSection from '../../components/dashboard/RecommendedSection';
 import UpcomingEvents from '../../components/dashboard/UpcomingEvents';
 import RecentActivity from '../../components/dashboard/RecentActivity';
+import api from 'axios';
+import type { components } from '../../api/types.generated';
 
-const stats = [
+type User = components['schemas']['User'];
+
+const STATS_CONFIG = [
   {
-    value: 143,
+    id: 'activeNeighbours',
     label: 'Voisins actifs',
     bg: 'bg-[#D8F3DC]',
     iconBg: 'bg-[#B7E4C7]',
@@ -23,8 +28,8 @@ const stats = [
     ),
   },
   {
-    value: 28,
-    label: 'Services dispo.',
+    id: 'availableServices',
+    label: 'Annonces dispo.',
     bg: 'bg-[#FDE8D8]',
     iconBg: 'bg-[#FBBF9E]',
     icon: (
@@ -34,7 +39,7 @@ const stats = [
     ),
   },
   {
-    value: 5,
+    id: 'events',
     label: 'Événements',
     bg: 'bg-[#E8E4F7]',
     iconBg: 'bg-[#C4B8F0]',
@@ -46,7 +51,7 @@ const stats = [
     ),
   },
   {
-    value: 127,
+    id: 'userPoints',
     label: 'Mes points',
     bg: 'bg-[#FDF6C3]',
     iconBg: 'bg-[#F9E784]',
@@ -100,11 +105,35 @@ const quickActions = [
 ];
 
 export default function DashboardPage() {
-  const { user } = useUser();
+  const { user } = useUser() as { user: User | null };
+  const [dashboardMetrics, setDashboardMetrics] = useState({
+    activeNeighbours: 0,
+    availableServices: 0,
+    events: 0,
+  });
 
-  const statsWithUser = stats.map((s) =>
-    s.label === 'Mes points' ? { ...s, value: user?.points ?? 0 } : s
-  );
+  useEffect(() => {
+    const fetchMetrics = async () => {
+      try {
+        // const response = await api.get('/dashboard/metrics');
+        // setDashboardMetrics(response.data);
+      } catch (error) {
+        console.error("Erreur lors de la récupération des statistiques du quartier", error);
+      }
+    };
+
+    fetchMetrics();
+  }, []);
+
+  const statsWithUser = STATS_CONFIG.map((config) => {
+    let value = 0;
+    if (config.id === 'userPoints') {
+      value = user?.points ?? 0;
+    } else {
+      value = dashboardMetrics[config.id as keyof typeof dashboardMetrics] ?? 0;
+    }
+    return { ...config, value };
+  });
 
   return (
     <div className="flex flex-col h-full">
@@ -116,7 +145,7 @@ export default function DashboardPage() {
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
           {statsWithUser.map((s) => (
-            <StatCard key={s.label} {...s} />
+            <StatCard key={s.id} {...s} />
           ))}
         </div>
 
