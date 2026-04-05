@@ -10,6 +10,7 @@ services:
       - "3000:3000"
     volumes:
       - ./src:/app/src
+      - sqlite_dev_data:/app/data  # SQLite
     env_file:
       - .env
     depends_on:
@@ -53,8 +54,8 @@ services:
     container_name: hoodly_neo4j_dev
     restart: unless-stopped
     ports:
-      - "7474:7474" # interface web
-      - "7687:7687" # utilisé parl'api
+      - "7474:7474"
+      - "7687:7687"
     volumes:
       - neo4j_dev_data:/data
     environment:
@@ -62,10 +63,25 @@ services:
     networks:
       - hoodly
 
+  sqlite-web:
+    image: coleifer/sqlite-web
+    container_name: hoodly_sqlite_web
+    restart: unless-stopped
+    ports:
+      - "8082:8080"
+    volumes:
+      - sqlite_dev_data:/data
+    environment:
+      SQLITE_DATABASE: hoodly_local.db
+    networks:
+      - hoodly
+
 volumes:
   mongo_dev_data:
     driver: local
   neo4j_dev_data:
+    driver: local
+  sqlite_dev_data:
     driver: local
 
 networks:
