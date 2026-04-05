@@ -14,6 +14,6 @@ export class StatusParticipation {
   @Column()
   participatedAt: Date;
 
-  @Column({ nullable: true })
-  syncedAt: Date;
+  @Column({ type: 'datetime', nullable: true })
+  syncedAt: Date | null;
 }

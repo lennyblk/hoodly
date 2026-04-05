@@ -28,10 +28,10 @@ export class UserSqlite {
   @Column({ nullable: true })
   neighbourhoodId: string;
 
-  @Column({ nullable: true })
-  syncedAt: Date;
+  @Column({ type: 'datetime', nullable: true })
+  syncedAt: Date | null;
 
   @ApiPropertyOptional()
-  @Column({ nullable: true, unique: true })
-  mongoId?: string;
+  @Column({ type: 'text', nullable: true, unique: true })
+  mongoId: string | null;
 }

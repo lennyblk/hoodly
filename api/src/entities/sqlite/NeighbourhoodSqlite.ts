@@ -29,6 +29,6 @@ export class NeighbourhoodSqlite {
   @CreateDateColumn()
   createdAt: Date;
 
-  @Column({ nullable: true })
-  syncedAt: Date;
+  @Column({ type: 'datetime', nullable: true })
+  syncedAt: Date | null;
 }
