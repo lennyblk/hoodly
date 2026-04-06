@@ -45,4 +45,9 @@ export class UpdateUserDto {
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
+
+  @ApiPropertyOptional({ example: '64a1f2c3e4b5f6a7b8c9d0e1' })
+  @IsOptional()
+  @IsString()
+  neighbourhoodId?: string;
 }
