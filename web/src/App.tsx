@@ -14,12 +14,20 @@ import MessagesPage from './pages/messages/MessagesPage';
 import VotesPage from './pages/votes/VotesPage';
 import DocumentsPage from './pages/documents/DocumentsPage';
 import ProfilePage from './pages/profile/ProfilePage';
+import EditProfilePage from './pages/profile/EditProfilePage';
 import AdminPage from './pages/admin/AdminPage';
 import SelectNeighbourhoodPage from './pages/neighbourhood/SelectNeighbourhoodPage';
 
 function ProtectedRoutes() {
   const token = localStorage.getItem('access_token');
   if (!token) return <Navigate to="/login" replace />;
+  return <Outlet />;
+}
+
+function AdminRoutes() {
+  const { user } = useUser();
+  if (!user) return null;
+  if (user.role !== 'admin') return <Navigate to="/dashboard" replace />;
   return <Outlet />;
 }
 
@@ -60,7 +68,10 @@ function AppRoutes() {
           <Route path="/votes" element={<VotesPage />} />
           <Route path="/documents" element={<DocumentsPage />} />
           <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/admin" element={<AdminPage />} />
+          <Route path="/profile/edit" element={<EditProfilePage />} />
+          <Route element={<AdminRoutes />}>
+            <Route path="/admin" element={<AdminPage />} />
+          </Route>
           <Route path="/select-neighbourhood" element={<SelectNeighbourhoodPage />} />
         </Route>
       </Route>
