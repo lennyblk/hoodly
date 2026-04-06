@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../../contexts/UserContext';
-import api from 'axios';
+import api from '../../api/axios';
 import type { components } from '../../api/types.generated';
 
 type CreateAnnouncementDto = components['schemas']['CreateAnnouncementDto'];
@@ -53,6 +53,7 @@ export default function ProposeServicePage() {
   const navigate = useNavigate();
   const { user } = useUser() as { user: User | null };
   const [step, setStep] = useState<1 | 2 | 3>(1);
+
   const [form, setForm] = useState<FormState>({
     type: 'offer',
     category: '',
@@ -67,13 +68,13 @@ export default function ProposeServicePage() {
   });
 
   const handleSubmit = async () => {
-    if (!user?._id || !user?.neighbourhoodId) {
-      console.error("Utilisateur ou quartier manquant");
+    if (!user?._id) return;
+
+    if (!user.neighbourhoodId) {
+      navigate('/select-neighbourhood', { state: { from: '/services/new' } });
       return;
     }
 
-    // Le backend n'a pas encore de champs dédiés pour la catégorie, les horaires, etc.
-    // On les intègre donc joliment dans la description pour l'instant.
     const enrichedDescription = `${form.description}\n\n📍 Catégorie: ${form.category}\n⏱ Durée: ${form.duration}\n📅 Dispo: ${form.days.join(', ')} de ${form.startTime} à ${form.endTime}\n🏠 Lieu: ${form.location}`;
 
     const payload: CreateAnnouncementDto = {

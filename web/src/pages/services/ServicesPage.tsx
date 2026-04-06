@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from 'axios';
+import api from '../../api/axios';
 import type { components } from '../../api/types.generated';
 
 type Announcement = components['schemas']['Announcement'];
@@ -115,7 +115,7 @@ export default function ServicesPage() {
               : 'text-sable hover:text-charbon'
               }`}
           >
-            🧡 Offres ({offresCount})
+            Offres ({offresCount})
           </button>
           <button
             onClick={() => setTab('request')}
@@ -124,7 +124,7 @@ export default function ServicesPage() {
               : 'text-sable hover:text-charbon'
               }`}
           >
-            🙋 Demandes ({demandesCount})
+            Demandes ({demandesCount})
           </button>
         </div>
 

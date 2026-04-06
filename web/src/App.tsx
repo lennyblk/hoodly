@@ -15,6 +15,7 @@ import VotesPage from './pages/votes/VotesPage';
 import DocumentsPage from './pages/documents/DocumentsPage';
 import ProfilePage from './pages/profile/ProfilePage';
 import AdminPage from './pages/admin/AdminPage';
+import SelectNeighbourhoodPage from './pages/neighbourhood/SelectNeighbourhoodPage';
 
 function ProtectedRoutes() {
   const token = localStorage.getItem('access_token');
@@ -60,6 +61,7 @@ function AppRoutes() {
           <Route path="/documents" element={<DocumentsPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/admin" element={<AdminPage />} />
+          <Route path="/select-neighbourhood" element={<SelectNeighbourhoodPage />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

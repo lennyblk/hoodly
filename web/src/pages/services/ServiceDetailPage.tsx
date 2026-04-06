@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import api from 'axios';
+import api from '../../api/axios';
 import type { components } from '../../api/types.generated';
+import { useUser } from '../../contexts/UserContext';
 
 type Announcement = components['schemas']['Announcement'];
 
 export default function ServiceDetailPage() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
+  const { user } = useUser();
   const [announcement, setAnnouncement] = useState<Announcement | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -92,11 +94,11 @@ export default function ServiceDetailPage() {
         <div className="rounded-2xl bg-white border border-sable/40 p-5">
           <div className="flex items-center gap-4">
             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-vert-foret font-sans text-lg font-bold text-white shrink-0">
-              U
+              User
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-sans text-base font-bold text-charbon">Utilisateur ID: {announcement.authorId}</span>
+                <span className="font-sans text-base font-bold text-charbon">{user?.firstName} {user?.lastName}</span>
               </div>
             </div>
           </div>
