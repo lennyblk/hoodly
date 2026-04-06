@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { randomUUID } from 'crypto';
-import { Incident, IncidentStatus } from '../../entities/sqlite/Incident';
+import { Incident } from '../../entities/sqlite/Incident';
 import { CreateIncidentDto } from './dto/create-incident.dto';
 import { UpdateIncidentDto } from './dto/update-incident.dto';
 import { UsersService } from '../../mongodb/users/users.service';
@@ -13,7 +13,7 @@ export class IncidentsService {
     @InjectRepository(Incident, 'sqlite')
     private incidentsRepository: Repository<Incident>,
     private usersService: UsersService,
-  ) {}
+  ) { }
 
   async findAll(): Promise<Incident[]> {
     return this.incidentsRepository.find();
@@ -28,45 +28,41 @@ export class IncidentsService {
   }
 
   async create(createIncidentDto: CreateIncidentDto): Promise<Incident> {
-    // Basic verification of the reporting user
     if (createIncidentDto.reportedBy) {
-      // In a real scenario we'd do a specific error mapping, but we rely on usersService to throw if invalid.
       await this.usersService.findOne(createIncidentDto.reportedBy).catch(() => {
-         throw new NotFoundException(`User ${createIncidentDto.reportedBy} not found`);
+        throw new NotFoundException(`User ${createIncidentDto.reportedBy} not found`);
       });
     }
 
-    const incident = new Incident();
-    incident.id = createIncidentDto.id || randomUUID();
-    incident.title = createIncidentDto.title;
-    incident.description = createIncidentDto.description;
-    incident.category = createIncidentDto.category;
-    incident.status = createIncidentDto.status ?? IncidentStatus.OPEN;
-    incident.reportedBy = createIncidentDto.reportedBy;
-    incident.neighborhoodId = createIncidentDto.neighborhoodId;
-    incident.reportedAt = createIncidentDto.reportedAt ? new Date(createIncidentDto.reportedAt) : new Date();
-    incident.syncedAt = createIncidentDto.syncedAt ? new Date(createIncidentDto.syncedAt) : null;
-    incident.isDirty = createIncidentDto.isDirty ?? 0;
+    const payload: any = {
+      ...createIncidentDto,
+      id: createIncidentDto.id || randomUUID(),
+      reportedAt: createIncidentDto.reportedAt ? new Date(createIncidentDto.reportedAt) : new Date(),
+    };
+    if (createIncidentDto.syncedAt) {
+      payload.syncedAt = new Date(createIncidentDto.syncedAt);
+    }
 
+    const incident = this.incidentsRepository.create(payload as any) as unknown as Incident;
     return this.incidentsRepository.save(incident);
   }
 
   async update(id: string, updateIncidentDto: UpdateIncidentDto): Promise<Incident> {
     const incident = await this.findOne(id);
-    
+
     if (updateIncidentDto.reportedBy) {
       await this.usersService.findOne(updateIncidentDto.reportedBy).catch(() => {
-         throw new NotFoundException(`User ${updateIncidentDto.reportedBy} not found`);
+        throw new NotFoundException(`User ${updateIncidentDto.reportedBy} not found`);
       });
     }
 
     Object.assign(incident, updateIncidentDto);
-    
+
     if (updateIncidentDto.reportedAt) {
-        incident.reportedAt = new Date(updateIncidentDto.reportedAt);
+      incident.reportedAt = new Date(updateIncidentDto.reportedAt);
     }
     if (updateIncidentDto.syncedAt) {
-        incident.syncedAt = new Date(updateIncidentDto.syncedAt);
+      incident.syncedAt = new Date(updateIncidentDto.syncedAt);
     }
 
     return this.incidentsRepository.save(incident);
