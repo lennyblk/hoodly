@@ -33,7 +33,6 @@ const mobileNavItems = [
   {
     label: 'Messages',
     to: '/messages',
-    badge: 3,
     icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
         <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2v10z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
@@ -61,8 +60,7 @@ export default function MobileBottomNav() {
           to={item.to}
           end={item.to !== '/services'}
           className={({ isActive }) =>
-            `flex flex-1 flex-col items-center gap-1 py-3 transition-colors relative ${
-              isActive ? 'text-ambre' : 'text-sable hover:text-charbon'
+            `flex flex-1 flex-col items-center gap-1 py-3 transition-colors relative ${isActive ? 'text-ambre' : 'text-sable hover:text-charbon'
             }`
           }
         >

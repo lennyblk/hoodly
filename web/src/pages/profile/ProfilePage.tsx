@@ -65,12 +65,6 @@ export default function ProfilePage() {
             <div className="flex h-20 w-20 lg:h-24 lg:w-24 items-center justify-center rounded-full bg-ambre border-4 border-creme shadow-md">
               <span className="font-heading text-2xl lg:text-3xl font-bold text-white">{initials}</span>
             </div>
-            <button className="absolute bottom-0 right-0 flex h-6 w-6 items-center justify-center rounded-full bg-charbon border-2 border-creme">
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-              </svg>
-            </button>
           </div>
         </div>
 
