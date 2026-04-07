@@ -12,14 +12,12 @@ public class DashboardController {
 
     @FXML
     private Label welcomeLabel;
-    
     @FXML
     private Label dbStatusLabel;
 
     @FXML
     public void initialize() {
         welcomeLabel.setText("Welcome Administrateur!" + (AuthService.isAuthenticated() ? " (Authenticated via SSO)" : ""));
-        
         if (DatabaseService.getConnection() != null) {
             dbStatusLabel.setText("SQLite Local Database Connected");
         } else {
@@ -40,7 +38,6 @@ public class DashboardController {
     @FXML
     private void handleSync() {
         dbStatusLabel.setText("Synchronisation en cours...");
-        
         new Thread(() -> {
             try {
                 org.example.services.SyncService.sync();

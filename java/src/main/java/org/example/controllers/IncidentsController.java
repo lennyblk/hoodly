@@ -28,8 +28,6 @@ public class IncidentsController {
     @FXML private TextField titleField;
     @FXML private TextField categoryField;
     @FXML private TextField descField;
-    
-    // Nouveaux champs pour les détails complets de l'incident (mode lecture)
     @FXML private Label detailReportedBy;
     @FXML private Label detailReportedAt;
     @FXML private Label detailNeighborhood;
@@ -46,14 +44,11 @@ public class IncidentsController {
     @FXML
     public void initialize() {
         repo = new IncidentRepository();
-        
-        // Match table columns to model properties
         titleCol.setCellValueFactory(new PropertyValueFactory<>("title"));
         categoryCol.setCellValueFactory(new PropertyValueFactory<>("category"));
         statusCol.setCellValueFactory(new PropertyValueFactory<>("status"));
         dirtyCol.setCellValueFactory(new PropertyValueFactory<>("isDirty"));
 
-        // Add selection listener for the resolve button and details loading
         incidentsTable.getSelectionModel().selectedItemProperty().addListener((obs, oldSel, newSel) -> {
             boolean hasSelection = newSel != null;
             if (hasSelection) {
@@ -61,7 +56,6 @@ public class IncidentsController {
                 resolveBtn.setDisable(isAlreadyResolved);
                 managementInfoLabel.setText(isAlreadyResolved ? "L'incident est déjà résolu." : "");
 
-                // Update detailed fields
                 detailReportedBy.setText(newSel.getReportedBy());
                 detailReportedAt.setText(newSel.getReportedAt());
                 detailNeighborhood.setText(newSel.getNeighborhoodId());
@@ -70,8 +64,6 @@ public class IncidentsController {
             } else {
                 resolveBtn.setDisable(true);
                 managementInfoLabel.setText("");
-                
-                // Clear fields
                 detailReportedBy.setText("-");
                 detailReportedAt.setText("-");
                 detailNeighborhood.setText("-");
@@ -93,14 +85,12 @@ public class IncidentsController {
         Incident selected = incidentsTable.getSelectionModel().getSelectedItem();
         if (selected != null) {
             selected.setStatus("resolved");
-            selected.setIsDirty(1); // Mettre isDirty à 1 pour synchroniser ce changement avec le serveur
-            
-            repo.insertOrUpdateIncident(selected); // Mise à jour dans SQLite local
+            selected.setIsDirty(1);
+            repo.insertOrUpdateIncident(selected);
 
             managementInfoLabel.setText("Incident marqué comme résolu (Attente Synchro)");
             managementInfoLabel.setStyle("-fx-text-fill: green;");
             resolveBtn.setDisable(true);
-            
             loadIncidents();
         }
     }
@@ -118,21 +108,20 @@ public class IncidentsController {
                 descField.getText(),
                 categoryField.getText(),
                 "open",
-                "FAKE-USER-ID", // Hardcoded fake user (MongoDB)
-                "FAKE-NEIGHBORHOOD-ID", // Hardcoded neighborhood
+                "FAKE-USER-ID",
+                "FAKE-NEIGHBORHOOD-ID",
                 Instant.now().toString(),
                 null,
                 1 // isDirty = 1 means created offline and needs sync
+                1
         );
 
         repo.insertOrUpdateIncident(req);
         infoLabel.setText("Incident ajouté (Mode Local - Non synchronisé)");
 
-        // Clear fields
         titleField.clear();
         categoryField.clear();
         descField.clear();
-        
         loadIncidents();
     }
 

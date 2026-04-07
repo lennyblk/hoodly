@@ -35,7 +35,6 @@ public class StatisticsController {
     }
 
     private void loadStatistics() {
-        // 1. Filtrer les incidents strictement sur les 7 derniers jours
         Instant oneWeekAgo = Instant.now().minus(7, ChronoUnit.DAYS);
 
         List<Incident> recentIncidents = repo.getAllIncidents().stream()
@@ -52,7 +51,6 @@ public class StatisticsController {
                 })
                 .collect(Collectors.toList());
 
-        // --- 2. Graphique Pie (Camembert) pour les Statuts (sur la dernière semaine)
         Map<String, Long> statusCount = recentIncidents.stream()
                 .collect(Collectors.groupingBy(
                         inc -> inc.getStatus() != null ? inc.getStatus() : "Inconnu",
@@ -66,7 +64,6 @@ public class StatisticsController {
         });
         statusChart.setData(pieData);
 
-        // --- 3. Graphique en barres pour les types de tickets (sur la dernière semaine)
         Map<String, Long> categoryCount = recentIncidents.stream()
                 .collect(Collectors.groupingBy(
                         inc -> (inc.getCategory() != null && !inc.getCategory().trim().isEmpty()) ? inc.getCategory() : "Non spécifié",
@@ -75,11 +72,9 @@ public class StatisticsController {
 
         XYChart.Series<String, Number> series = new XYChart.Series<>();
         series.setName("Thèmes de la semaine");
-        
         categoryCount.forEach((cat, count) -> {
             series.getData().add(new XYChart.Data<>(cat, count));
         });
-        
         categoryChart.getData().clear();
         categoryChart.getData().add(series);
     }
