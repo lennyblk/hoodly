@@ -1,5 +1,5 @@
 import { Repository } from 'typeorm';
-import { Module, OnApplicationBootstrap } from '@nestjs/common'; 
+import { Module, OnApplicationBootstrap } from '@nestjs/common';
 import { TypeOrmModule, getRepositoryToken, InjectRepository } from '@nestjs/typeorm';
 import { UsersModule } from './mongodb/users/users.module';
 import { AuthModule } from './mongodb/auth/auth.module';
@@ -26,6 +26,7 @@ import { StatusParticipation } from './entities/sqlite/StatusParticipation';
 import { NeighbourhoodSqlite } from './entities/sqlite/NeighbourhoodSqlite';
 import { SyncLog } from './entities/sqlite/SyncLog';
 import { NeighbourhoodsSqliteModule } from './sqlite/neighbourhoods/neighbourhoods.module';
+import { OtpModule } from './mongodb/otp/otp.module';
 
 
 @Module({
@@ -53,6 +54,7 @@ import { NeighbourhoodsSqliteModule } from './sqlite/neighbourhoods/neighbourhoo
     IncidentsModule,
     UsersSqliteModule,
     NeighbourhoodsSqliteModule,
+    OtpModule,
   ]
 })
-export class AppModule {}
+export class AppModule { }
