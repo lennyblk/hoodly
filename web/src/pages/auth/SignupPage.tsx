@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
 import { authApi } from '../../api/auth';
+import { otpApi } from '../../api/otp';
 
 const PASSWORD_CHECKS = [
   { label: '8 caractères minimum', test: (p: string) => p.length >= 8 },
@@ -34,7 +35,6 @@ export default function SignupPage() {
   const [form, setForm] = useState({ firstName: '', lastName: '', email: '', password: '', lang: 'fr' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
   const navigate = useNavigate();
 
   function update(field: string, value: string) {
@@ -47,8 +47,9 @@ export default function SignupPage() {
     setError('');
     setLoading(true);
     try {
-      await authApi.signup({ ...form, lang: form.lang as 'fr' | 'en' });
-      setSuccess(true);
+      const { data } = await authApi.signup({ ...form, lang: form.lang as 'fr' | 'en' });
+      await otpApi.send(form.email, form.firstName);
+      navigate('/verify-email', { state: { email: form.email, firstName: form.firstName, tokens: data } });
     } catch (err) {
       if (axios.isAxiosError(err)) {
         const msg = err.response?.data?.message;
@@ -109,71 +110,49 @@ export default function SignupPage() {
             <span className="font-sans text-lg font-bold tracking-tight text-charbon">Hoodly</span>
           </div>
 
-          {success ? (
-            <div className="flex flex-col items-center gap-6 text-center">
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-vert-clair/20">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
-                  <path d="M5 13l4 4L19 7" stroke="#2D6A4F" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
+          <div className="mb-8">
+            <h2 className="font-heading text-3xl font-bold tracking-tight text-charbon">Créer un compte</h2>
+            <p className="mt-1.5 font-sans text-sm text-sable">Rejoignez votre communauté de quartier</p>
+          </div>
+          <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="firstName" className="font-sans text-sm font-semibold text-charbon">Prénom</label>
+                <input id="firstName" type="text" value={form.firstName} onChange={(e) => update('firstName', e.target.value)} placeholder="Marie" minLength={2} maxLength={50} required className={inputClass} />
               </div>
-              <div>
-                <h2 className="font-heading text-2xl font-bold text-charbon">Compte créé !</h2>
-                <p className="mt-2 font-sans text-sm text-sable">Votre compte a bien été créé. Vous pouvez maintenant vous connecter.</p>
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="lastName" className="font-sans text-sm font-semibold text-charbon">Nom</label>
+                <input id="lastName" type="text" value={form.lastName} onChange={(e) => update('lastName', e.target.value)} placeholder="Leblanc" minLength={2} maxLength={50} required className={inputClass} />
               </div>
-              <button
-                onClick={() => navigate('/login')}
-                className="w-full rounded-xl bg-ambre py-3.5 font-sans text-sm font-semibold text-white transition-opacity hover:opacity-90"
-              >
-                Se connecter
-              </button>
             </div>
-          ) : (
-            <>
-              <div className="mb-8">
-                <h2 className="font-heading text-3xl font-bold tracking-tight text-charbon">Créer un compte</h2>
-                <p className="mt-1.5 font-sans text-sm text-sable">Rejoignez votre communauté de quartier</p>
-              </div>
-              <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="flex flex-col gap-1.5">
-                    <label htmlFor="firstName" className="font-sans text-sm font-semibold text-charbon">Prénom</label>
-                    <input id="firstName" type="text" value={form.firstName} onChange={(e) => update('firstName', e.target.value)} placeholder="Marie" minLength={2} maxLength={50} required className={inputClass} />
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <label htmlFor="lastName" className="font-sans text-sm font-semibold text-charbon">Nom</label>
-                    <input id="lastName" type="text" value={form.lastName} onChange={(e) => update('lastName', e.target.value)} placeholder="Leblanc" minLength={2} maxLength={50} required className={inputClass} />
-                  </div>
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label htmlFor="email" className="font-sans text-sm font-semibold text-charbon">Adresse e-mail</label>
-                  <input id="email" type="email" value={form.email} onChange={(e) => update('email', e.target.value)} placeholder="johndoe@email.com" required className={inputClass} />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label htmlFor="password" className="font-sans text-sm font-semibold text-charbon">Mot de passe</label>
-                  <input id="password" type="password" value={form.password} onChange={(e) => update('password', e.target.value)} placeholder="••••••••" required className={inputClass} />
-                  <PasswordStrength password={form.password} />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label htmlFor="lang" className="font-sans text-sm font-semibold text-charbon">Langue</label>
-                  <select id="lang" value={form.lang} onChange={(e) => update('lang', e.target.value)} className={inputClass}>
-                    <option value="fr">Français</option>
-                    <option value="en">English</option>
-                  </select>
-                </div>
-                {error && <p className="rounded-lg bg-red-100 px-4 py-2.5 font-sans text-sm text-red-700">{error}</p>}
-                <button
-                  type="submit" disabled={loading || !isPasswordValid(form.password)}
-                  className="mt-1 w-full rounded-xl bg-ambre py-3.5 font-sans text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70"
-                >
-                  {loading ? 'Création du compte…' : 'Créer mon compte'}
-                </button>
-              </form>
-              <p className="mt-7 text-center font-sans text-sm text-sable">
-                Déjà un compte ?{' '}
-                <Link to="/login" className="font-semibold text-vert-moyen hover:underline">Se connecter</Link>
-              </p>
-            </>
-          )}
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="email" className="font-sans text-sm font-semibold text-charbon">Adresse e-mail</label>
+              <input id="email" type="email" value={form.email} onChange={(e) => update('email', e.target.value)} placeholder="johndoe@email.com" required className={inputClass} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="password" className="font-sans text-sm font-semibold text-charbon">Mot de passe</label>
+              <input id="password" type="password" value={form.password} onChange={(e) => update('password', e.target.value)} placeholder="••••••••" required className={inputClass} />
+              <PasswordStrength password={form.password} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="lang" className="font-sans text-sm font-semibold text-charbon">Langue</label>
+              <select id="lang" value={form.lang} onChange={(e) => update('lang', e.target.value)} className={inputClass}>
+                <option value="fr">Français</option>
+                <option value="en">English</option>
+              </select>
+            </div>
+            {error && <p className="rounded-lg bg-red-100 px-4 py-2.5 font-sans text-sm text-red-700">{error}</p>}
+            <button
+              type="submit" disabled={loading || !isPasswordValid(form.password)}
+              className="mt-1 w-full rounded-xl bg-ambre py-3.5 font-sans text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              {loading ? 'Création du compte…' : 'Créer mon compte'}
+            </button>
+          </form>
+          <p className="mt-7 text-center font-sans text-sm text-sable">
+            Déjà un compte ?{' '}
+            <Link to="/login" className="font-semibold text-vert-moyen hover:underline">Se connecter</Link>
+          </p>
         </div>
       </div>
     </div>

@@ -12,4 +12,35 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// Si 401 → tente un refresh, sinon déconnecte
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const original = error.config;
+    if (error.response?.status === 401 && !original._retry) {
+      original._retry = true;
+      const refreshToken = localStorage.getItem('refresh_token');
+      if (refreshToken) {
+        try {
+          const { data } = await axios.post('http://localhost:3000/auth/refresh', {}, {
+            headers: { Authorization: `Bearer ${refreshToken}` },
+          });
+          localStorage.setItem('access_token', data.access_token);
+          localStorage.setItem('refresh_token', data.refresh_token);
+          original.headers.Authorization = `Bearer ${data.access_token}`;
+          return api(original);
+        } catch {
+          localStorage.removeItem('access_token');
+          localStorage.removeItem('refresh_token');
+          window.location.href = '/login';
+        }
+      } else {
+        localStorage.removeItem('access_token');
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
+  },
+);
+
 export default api;
