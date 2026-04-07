@@ -52,9 +52,7 @@ public class Main extends Application {
     }
 
     public static void main(String[] args) {
-        // Initialisation de la BDD locale en arrière-plan avant de lancer l'UI
         new Thread(() -> org.example.services.DatabaseService.getConnection()).start();
-        
         launch();
     }
 }
