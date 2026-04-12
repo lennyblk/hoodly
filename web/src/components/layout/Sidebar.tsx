@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom';
-import { useUser } from '../../contexts/UserContext';
+import { useUser } from '../../contexts/useUser';
 
 type NavItem = {
   label: string;

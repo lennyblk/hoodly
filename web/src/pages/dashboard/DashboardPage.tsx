@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import TopBar from '../../components/layout/TopBar';
-import { useUser } from '../../contexts/UserContext';
+import { useUser } from '../../contexts/useUser';
 import NeighbourhoodBanner from '../../components/dashboard/NeighbourhoodBanner';
 import StatCard from '../../components/dashboard/StatCard';
 import QuickActionCard from '../../components/dashboard/QuickActionCard';

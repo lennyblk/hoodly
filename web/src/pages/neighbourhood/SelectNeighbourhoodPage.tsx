@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useUser } from '../../contexts/UserContext';
+import { useUser } from '../../contexts/useUser';
 import api from '../../api/axios';
 import type { components } from '../../api/types.generated';
 

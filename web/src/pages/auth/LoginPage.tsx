@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
 import { authApi } from '../../api/auth';
-import { useUser } from '../../contexts/UserContext';
+import { useUser } from '../../contexts/useUser';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');

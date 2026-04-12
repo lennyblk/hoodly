@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import api from '../../api/axios';
 import type { components } from '../../api/types.generated';
-import { useUser } from '../../contexts/UserContext';
+import { useUser } from '../../contexts/useUser';
 
 type Announcement = components['schemas']['Announcement'];
 

@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { UserProvider, useUser } from './contexts/UserContext';
+import { UserProvider } from './contexts/UserContext';
+import { useUser } from './contexts/useUser';
 import AppLayout from './components/layout/AppLayout';
 import LoginPage from './pages/auth/LoginPage';
 import SignupPage from './pages/auth/SignupPage';

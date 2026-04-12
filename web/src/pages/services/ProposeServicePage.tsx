@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useUser } from '../../contexts/UserContext';
+import { useUser } from '../../contexts/useUser';
 import api from '../../api/axios';
 import type { components } from '../../api/types.generated';
 
@@ -53,6 +53,7 @@ export default function ProposeServicePage() {
   const navigate = useNavigate();
   const { user } = useUser() as { user: User | null };
   const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const [form, setForm] = useState<FormState>({
     type: 'offer',
@@ -69,6 +70,7 @@ export default function ProposeServicePage() {
 
   const handleSubmit = async () => {
     if (!user?._id) return;
+    setSubmitError(null);
 
     if (!user.neighbourhoodId) {
       navigate('/select-neighbourhood', { state: { from: '/services/new' } });
@@ -83,16 +85,17 @@ export default function ProposeServicePage() {
       type: form.type,
       isPaid: form.points > 0,
       points: form.points,
-      authorId: user._id,
-      neighbourhoodId: user.neighbourhoodId,
+      authorId: String(user._id),
+      neighbourhoodId: String(user.neighbourhoodId),
       status: 'open',
     };
 
     try {
       await api.post('/announcements', payload);
       navigate('/services');
-    } catch (error) {
-      console.error("Erreur lors de la création de l'annonce", error);
+    } catch (err: any) {
+      const msg = err?.response?.data?.message;
+      setSubmitError(Array.isArray(msg) ? msg[0] : (msg ?? "Erreur lors de la création de l'annonce."));
     }
   };
 
@@ -352,6 +355,11 @@ export default function ProposeServicePage() {
                 </div>
               </div>
 
+              {submitError && (
+                <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3">
+                  <p className="font-sans text-sm text-red-600">{submitError}</p>
+                </div>
+              )}
               <button
                 disabled={form.days.length === 0}
                 onClick={handleSubmit}

@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useState } from 'react';
 import api from '../api/axios';
 import type { components } from '../api/types.generated';
 
@@ -10,7 +10,7 @@ interface UserContextType {
   clearUser: () => void;
 }
 
-const UserContext = createContext<UserContextType | null>(null);
+export const UserContext = createContext<UserContextType | null>(null);
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<CurrentUser | null>(null);
@@ -31,8 +31,3 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function useUser() {
-  const ctx = useContext(UserContext);
-  if (!ctx) throw new Error('useUser must be used within UserProvider');
-  return ctx;
-}

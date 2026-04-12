@@ -1,4 +1,4 @@
-import { useUser } from '../../contexts/UserContext';
+import { useUser } from '../../contexts/useUser';
 
 export default function TopBar() {
   const { user } = useUser();
