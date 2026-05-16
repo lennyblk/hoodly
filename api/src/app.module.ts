@@ -5,6 +5,7 @@ import { AuthModule } from './mongodb/auth/auth.module';
 import { AnnouncementsModule } from './mongodb/announcements/announcements.module';
 import { NeighbourhoodsModule } from './mongodb/neighbourhoods/neighbourhoods.module';
 import { EventsModule } from './mongodb/events/events.module';
+import { MessagesModule } from './mongodb/messages/messages.module';
 import { IncidentsModule } from './sqlite/incidents/incidents.module';
 import { UsersSqliteModule } from './sqlite/users/users.module';
 
@@ -27,6 +28,7 @@ import { NeighbourhoodSqlite } from './entities/sqlite/NeighbourhoodSqlite';
 import { SyncLog } from './entities/sqlite/SyncLog';
 import { NeighbourhoodsSqliteModule } from './sqlite/neighbourhoods/neighbourhoods.module';
 import { OtpModule } from './mongodb/otp/otp.module';
+import { ChatModule } from './chat/chat.module';
 
 
 @Module({
@@ -52,10 +54,12 @@ import { OtpModule } from './mongodb/otp/otp.module';
     AnnouncementsModule,
     NeighbourhoodsModule,
     EventsModule,
+    MessagesModule,
     IncidentsModule,
     UsersSqliteModule,
     NeighbourhoodsSqliteModule,
     OtpModule,
+    ChatModule,
   ]
 })
 export class AppModule { }
