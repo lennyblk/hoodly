@@ -10,7 +10,7 @@ services:
       - "3000:3000"
     volumes:
       - ./src:/app/src
-      - sqlite_dev_data:/app/data  # SQLite
+      - sqlite_dev_data:/app/data # SQLite
     env_file:
       - .env
     depends_on:
@@ -87,3 +87,4 @@ volumes:
 networks:
   hoodly:
     external: true
+
