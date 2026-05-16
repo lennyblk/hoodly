@@ -70,7 +70,7 @@ export class MessagesService {
     } catch {
       throw new BadRequestException('Invalid ID format');
     }
-    const conversation = await this.conversationsRepository.findOneBy({ id: objectId } as any);
+    const conversation = await this.conversationsRepository.findOneBy({ _id: objectId } as any);
     if (!conversation) {
       throw new NotFoundException(`Conversation with id ${id} not found`);
     }

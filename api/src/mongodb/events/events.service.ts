@@ -30,7 +30,7 @@ export class EventsService {
     } catch {
       throw new BadRequestException('Invalid ID format');
     }
-    const event = await this.eventsRepository.findOneBy({ id: objectId } as any);
+    const event = await this.eventsRepository.findOneBy({ _id: objectId } as any);
     if (!event) {
       throw new NotFoundException(`Event with id ${id} not found`);
     }

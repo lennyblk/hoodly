@@ -28,7 +28,6 @@ import { NeighbourhoodSqlite } from './entities/sqlite/NeighbourhoodSqlite';
 import { SyncLog } from './entities/sqlite/SyncLog';
 import { NeighbourhoodsSqliteModule } from './sqlite/neighbourhoods/neighbourhoods.module';
 import { OtpModule } from './mongodb/otp/otp.module';
-import { ChatModule } from './chat/chat.module';
 
 
 @Module({
@@ -59,7 +58,6 @@ import { ChatModule } from './chat/chat.module';
     UsersSqliteModule,
     NeighbourhoodsSqliteModule,
     OtpModule,
-    ChatModule,
   ]
 })
 export class AppModule { }
