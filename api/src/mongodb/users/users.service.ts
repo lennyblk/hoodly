@@ -1,5 +1,6 @@
 
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -28,7 +29,13 @@ export class UsersService {
   }
 
   async findOne(id: string) {
-    const user = await this.usersRepository.findOneBy({ _id: new ObjectId(id) });
+    let objectId: ObjectId;
+    try {
+      objectId = new ObjectId(id);
+    } catch {
+      throw new BadRequestException('Invalid ID format');
+    }
+    const user = await this.usersRepository.findOneBy({ _id: objectId });
     if (!user) {
       throw new NotFoundException(`User with id ${id} not found`);
     }
@@ -64,15 +71,16 @@ export class UsersService {
       }
     }
 
+    if (updateUserDto.password) {
+      updateUserDto.password = await bcrypt.hash(updateUserDto.password, 10);
+    }
+
     Object.assign(existingUser, updateUserDto);
     return this.usersRepository.save(existingUser);
   }
 
   async delete(id: string) {
-    const user = await this.usersRepository.findOneBy({ _id: new ObjectId(id) });
-    if (!user) {
-      return { message: `User with id ${id} not found` };
-    }
+    const user = await this.findOne(id);
     await this.usersRepository.remove(user);
     return { message: `User with id ${id} has been deleted` };
   }

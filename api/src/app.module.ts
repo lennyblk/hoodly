@@ -1,10 +1,10 @@
-import { Repository } from 'typeorm';
-import { Module, OnApplicationBootstrap } from '@nestjs/common';
-import { TypeOrmModule, getRepositoryToken, InjectRepository } from '@nestjs/typeorm';
+import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersModule } from './mongodb/users/users.module';
 import { AuthModule } from './mongodb/auth/auth.module';
 import { AnnouncementsModule } from './mongodb/announcements/announcements.module';
 import { NeighbourhoodsModule } from './mongodb/neighbourhoods/neighbourhoods.module';
+import { EventsModule } from './mongodb/events/events.module';
 import { IncidentsModule } from './sqlite/incidents/incidents.module';
 import { UsersSqliteModule } from './sqlite/users/users.module';
 
@@ -51,6 +51,7 @@ import { OtpModule } from './mongodb/otp/otp.module';
     AuthModule,
     AnnouncementsModule,
     NeighbourhoodsModule,
+    EventsModule,
     IncidentsModule,
     UsersSqliteModule,
     NeighbourhoodsSqliteModule,
