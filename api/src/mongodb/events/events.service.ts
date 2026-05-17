@@ -78,20 +78,24 @@ export class EventsService {
   async rsvp(id: string, userId: string) {
     const event = await this.findOne(id);
     if (!event.participants) event.participants = [];
-    if (!event.participants.includes(userId)) {
+    const idx = event.participants.indexOf(userId);
+    if (idx === -1) {
       event.participants.push(userId);
-      return this.eventsRepository.save(event);
+    } else {
+      event.participants.splice(idx, 1);
     }
-    return event;
+    return this.eventsRepository.save(event);
   }
 
   async interest(id: string, userId: string) {
     const event = await this.findOne(id);
     if (!event.interestUsers) event.interestUsers = [];
-    if (!event.interestUsers.includes(userId)) {
+    const idx = event.interestUsers.indexOf(userId);
+    if (idx === -1) {
       event.interestUsers.push(userId);
-      return this.eventsRepository.save(event);
+    } else {
+      event.interestUsers.splice(idx, 1);
     }
-    return event;
+    return this.eventsRepository.save(event);
   }
 }
