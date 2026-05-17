@@ -1,4 +1,3 @@
-
 import {
   Controller,
   Get,
@@ -8,16 +7,17 @@ import {
   Patch,
   Delete,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags, ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from '../../entities/mongodb/User';
 
 @ApiTags('Users')
+@ApiBearerAuth()
 @Controller('users')
 export class UsersController {
-  constructor(private usersService: UsersService) { }
+  constructor(private usersService: UsersService) {}
 
   @ApiOperation({ summary: 'Récupérer tous les utilisateurs' })
   @ApiResponse({ status: 200, type: [User] })
@@ -29,15 +29,17 @@ export class UsersController {
   @ApiOperation({ summary: 'Récupérer un utilisateur par ID' })
   @ApiParam({ name: 'id', description: 'ObjectId MongoDB de l\'utilisateur' })
   @ApiResponse({ status: 200, type: User })
+  @ApiResponse({ status: 400, description: 'ID invalide.' })
   @ApiResponse({ status: 404, description: 'Utilisateur non trouvé.' })
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.usersService.findOne(id);
   }
 
-  @ApiOperation({ summary: 'Créer un nouvel utilisateur' })
+  @ApiOperation({ summary: 'Créer un utilisateur (admin)' })
   @ApiResponse({ status: 201, type: User })
   @ApiResponse({ status: 400, description: 'Données invalides.' })
+  @ApiResponse({ status: 409, description: 'Email déjà utilisé.' })
   @Post()
   create(@Body() createUserDto: CreateUserDto) {
     return this.usersService.create(createUserDto);
@@ -46,6 +48,7 @@ export class UsersController {
   @ApiOperation({ summary: 'Mettre à jour un utilisateur' })
   @ApiParam({ name: 'id', description: 'ObjectId MongoDB de l\'utilisateur' })
   @ApiResponse({ status: 200, type: User })
+  @ApiResponse({ status: 400, description: 'ID invalide.' })
   @ApiResponse({ status: 404, description: 'Utilisateur non trouvé.' })
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
@@ -55,6 +58,7 @@ export class UsersController {
   @ApiOperation({ summary: 'Supprimer un utilisateur' })
   @ApiParam({ name: 'id', description: 'ObjectId MongoDB de l\'utilisateur' })
   @ApiResponse({ status: 200, description: 'Utilisateur supprimé.' })
+  @ApiResponse({ status: 400, description: 'ID invalide.' })
   @ApiResponse({ status: 404, description: 'Utilisateur non trouvé.' })
   @Delete(':id')
   remove(@Param('id') id: string) {
