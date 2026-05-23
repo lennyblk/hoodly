@@ -102,17 +102,17 @@ public class IncidentsController {
             return;
         }
 
+        String userId = org.example.services.AuthService.getUserId();
         Incident req = new Incident(
                 UUID.randomUUID().toString(),
                 titleField.getText(),
                 descField.getText(),
                 categoryField.getText(),
                 "open",
-                "FAKE-USER-ID",
-                "FAKE-NEIGHBORHOOD-ID",
+                userId != null ? userId : "offline-user",
+                "local",
                 Instant.now().toString(),
                 null,
-                1 // isDirty = 1 means created offline and needs sync
                 1
         );
 
