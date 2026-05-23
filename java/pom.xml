@@ -13,6 +13,7 @@
         <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <javafx.version>21</javafx.version>
+        <main.class>org.example.Main</main.class>
     </properties>
 
     <dependencies>
@@ -35,7 +36,7 @@
             <version>3.45.2.0</version>
         </dependency>
 
-        <!-- JSON parsing for JWT token handling -->
+        <!-- JSON parsing for API communication -->
         <dependency>
             <groupId>org.json</groupId>
             <artifactId>json</artifactId>
@@ -53,14 +54,49 @@
 
     <build>
         <plugins>
-            <!-- Plugin JavaFX pour lancer avec mvn javafx:run -->
+            <!-- JavaFX plugin: mvn javafx:run -->
             <plugin>
                 <groupId>org.openjfx</groupId>
                 <artifactId>javafx-maven-plugin</artifactId>
                 <version>0.0.8</version>
                 <configuration>
-                    <mainClass>org.example.Main</mainClass>
+                    <mainClass>${main.class}</mainClass>
                 </configuration>
+            </plugin>
+
+            <!-- Fat JAR: mvn package → hoodly-desktop-1.0-SNAPSHOT-jar-with-dependencies.jar -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>3.6.0</version>
+                <configuration>
+                    <descriptorRefs>
+                        <descriptorRef>jar-with-dependencies</descriptorRef>
+                    </descriptorRefs>
+                    <archive>
+                        <manifest>
+                            <mainClass>${main.class}</mainClass>
+                        </manifest>
+                    </archive>
+                    <finalName>hoodly-desktop</finalName>
+                    <appendAssemblyId>false</appendAssemblyId>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>make-assembly</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Surefire for JUnit 5 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.2.5</version>
             </plugin>
         </plugins>
     </build>

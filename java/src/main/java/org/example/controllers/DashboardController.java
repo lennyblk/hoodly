@@ -2,27 +2,24 @@ package org.example.controllers;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
+import org.example.Main;
 import org.example.services.AuthService;
 import org.example.services.DatabaseService;
-import org.example.Main;
 
 import java.io.IOException;
 
 public class DashboardController {
 
-    @FXML
-    private Label welcomeLabel;
-    @FXML
-    private Label dbStatusLabel;
+    @FXML private Label welcomeLabel;
+    @FXML private Label dbStatusLabel;
 
     @FXML
     public void initialize() {
-        welcomeLabel.setText("Welcome Administrateur!" + (AuthService.isAuthenticated() ? " (Authenticated via SSO)" : ""));
-        if (DatabaseService.getConnection() != null) {
-            dbStatusLabel.setText("SQLite Local Database Connected");
-        } else {
-            dbStatusLabel.setText("SQLite Local Database Offline");
-        }
+        String name = AuthService.getUserEmail() != null ? AuthService.getUserEmail() : "Administrateur";
+        welcomeLabel.setText("Bienvenue " + name + (AuthService.isAuthenticated() ? " (SSO ✓)" : ""));
+        dbStatusLabel.setText(DatabaseService.getConnection() != null
+                ? "Base SQLite locale connectée"
+                : "Base SQLite hors ligne");
     }
 
     @FXML
@@ -41,9 +38,9 @@ public class DashboardController {
         new Thread(() -> {
             try {
                 org.example.services.SyncService.sync();
-                javafx.application.Platform.runLater(() -> dbStatusLabel.setText("Synchronisation OK !"));
+                javafx.application.Platform.runLater(() -> dbStatusLabel.setText("Synchronisation réussie !"));
             } catch (Exception e) {
-                javafx.application.Platform.runLater(() -> dbStatusLabel.setText("Erreur Sync : " + e.getMessage()));
+                javafx.application.Platform.runLater(() -> dbStatusLabel.setText("Erreur sync : " + e.getMessage()));
             }
         }).start();
     }
@@ -61,6 +58,15 @@ public class DashboardController {
     private void showStatistics() {
         try {
             Main.setRoot("views/statistics.fxml");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @FXML
+    private void showPlugins() {
+        try {
+            Main.setRoot("views/plugins.fxml");
         } catch (IOException e) {
             e.printStackTrace();
         }
