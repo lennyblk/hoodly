@@ -72,6 +72,12 @@ public class LoginController {
         }).start();
     }
 
+    @FXML
+    private void handleOfflineAccess() {
+        org.example.services.AuthService.loginOffline();
+        navigateToDashboard();
+    }
+
     private void navigateToDashboard() {
         try {
             Main.setRoot("views/dashboard.fxml");

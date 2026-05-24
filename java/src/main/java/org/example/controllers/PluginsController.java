@@ -188,10 +188,6 @@ public class PluginsController {
         }
     }
 
-    @FXML
-    private void handleToggleTheme() {
-        Main.toggleTheme();
-    }
 
     private String safe(String v) { return v != null ? v : ""; }
 }

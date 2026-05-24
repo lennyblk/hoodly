@@ -88,8 +88,4 @@ public class StatisticsController {
         }
     }
 
-    @FXML
-    private void handleToggleTheme() {
-        Main.toggleTheme();
-    }
 }

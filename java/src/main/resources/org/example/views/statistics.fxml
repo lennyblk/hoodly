@@ -18,9 +18,6 @@
    <HBox alignment="CENTER_LEFT" spacing="10">
        <Button text="← Retour" onAction="#goBack" styleClass="button-primary" style="-fx-text-fill: white;"/>
        <Label text="Statistiques globales des Incidents" style="-fx-font-size: 24; -fx-font-weight: bold; -fx-padding: 0 0 0 20;" />
-       <HBox alignment="CENTER_RIGHT" HBox.hgrow="ALWAYS">
-           <Button text="Changer de Thème 🌙" onAction="#handleToggleTheme" />
-       </HBox>
    </HBox>
 
    <HBox spacing="30" alignment="CENTER" style="-fx-padding: 20 0 0 0;">

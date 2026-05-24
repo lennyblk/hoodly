@@ -134,8 +134,4 @@ public class IncidentsController {
         }
     }
 
-    @FXML
-    private void handleToggleTheme() {
-        Main.toggleTheme();
-    }
 }

@@ -22,6 +22,7 @@ public class AuthService {
     private static String userId = null;
     private static String userRole = null;
     private static String userEmail = null;
+    private static boolean offlineMode = false;
 
     public static String login(String email, String password) {
         try {
@@ -103,9 +104,15 @@ public class AuthService {
 
     public static String getJwtToken() { return accessToken; }
     public static boolean isAuthenticated() { return accessToken != null && !accessToken.isEmpty(); }
+    public static boolean isOfflineMode() { return offlineMode; }
     public static String getUserId() { return userId; }
     public static String getUserRole() { return userRole; }
     public static String getUserEmail() { return userEmail; }
+
+    /** Enters offline mode without any API call. */
+    public static void loginOffline() {
+        offlineMode = true;
+    }
 
     public static void logout() {
         accessToken = null;
@@ -113,6 +120,7 @@ public class AuthService {
         userId = null;
         userRole = null;
         userEmail = null;
+        offlineMode = false;
     }
 
     private static void storeTokens(JSONObject json) {

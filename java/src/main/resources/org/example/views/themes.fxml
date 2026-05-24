@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox alignment="TOP_CENTER" spacing="20.0"
+      xmlns="http://javafx.com/javafx/8.0.171"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="org.example.controllers.ThemesController">
+    <padding><Insets bottom="30.0" left="30.0" right="30.0" top="20.0"/></padding>
+
+    <HBox alignment="CENTER_LEFT" spacing="10">
+        <Button text="← Retour" onAction="#goBack" styleClass="button-primary" style="-fx-text-fill: white;"/>
+        <Label text="Gestion des thèmes" style="-fx-font-size: 24; -fx-font-weight: bold; -fx-padding: 0 0 0 20;"/>
+    </HBox>
+
+    <HBox alignment="CENTER_LEFT" spacing="15" style="-fx-padding: 10 0 0 0;">
+        <Label text="Préréglage :" style="-fx-font-weight: bold;"/>
+        <ComboBox fx:id="presetCombo" promptText="Choisir un thème..." minWidth="200"/>
+        <Label text="Choisissez un préréglage ou personnalisez ci-dessous."
+               style="-fx-text-fill: #777; -fx-font-style: italic;"/>
+    </HBox>
+
+    <Separator/>
+
+    <!-- Couleurs -->
+    <GridPane hgap="20" vgap="14">
+        <padding><Insets left="10"/></padding>
+
+        <Label text="Couleurs" style="-fx-font-size: 15; -fx-font-weight: bold;"
+               GridPane.columnIndex="0" GridPane.rowIndex="0" GridPane.columnSpan="2"/>
+
+        <Label text="Fond de l'application :" GridPane.columnIndex="0" GridPane.rowIndex="1" style="-fx-min-width: 220;"/>
+        <ColorPicker fx:id="bgColorPicker" GridPane.columnIndex="1" GridPane.rowIndex="1" minWidth="160"/>
+
+        <Label text="Couleur du texte :" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+        <ColorPicker fx:id="textColorPicker" GridPane.columnIndex="1" GridPane.rowIndex="2" minWidth="160"/>
+
+        <Label text="Couleur principale (boutons, accents) :" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
+        <ColorPicker fx:id="primaryColorPicker" GridPane.columnIndex="1" GridPane.rowIndex="3" minWidth="160"/>
+
+        <Label text="Fond des contrôles (champs, tables) :" GridPane.columnIndex="0" GridPane.rowIndex="4"/>
+        <ColorPicker fx:id="controlBgPicker" GridPane.columnIndex="1" GridPane.rowIndex="4" minWidth="160"/>
+
+        <Label text="Couleur des bordures :" GridPane.columnIndex="0" GridPane.rowIndex="5"/>
+        <ColorPicker fx:id="borderColorPicker" GridPane.columnIndex="1" GridPane.rowIndex="5" minWidth="160"/>
+    </GridPane>
+
+    <Separator/>
+
+    <!-- Police -->
+    <HBox alignment="CENTER_LEFT" spacing="15">
+        <padding><Insets left="10"/></padding>
+        <Label text="Police :" style="-fx-font-weight: bold; -fx-min-width: 220;"/>
+        <ComboBox fx:id="fontCombo" minWidth="250" editable="true"/>
+    </HBox>
+
+    <Separator/>
+
+    <!-- Actions -->
+    <HBox alignment="CENTER" spacing="15">
+        <Button text="👁  Aperçu" onAction="#handleApply"
+                style="-fx-background-color: #FF9800; -fx-text-fill: white; -fx-font-weight: bold; -fx-min-width: 130;"/>
+        <Button text="💾  Sauvegarder" onAction="#handleSave"
+                styleClass="button-success" style="-fx-text-fill: white; -fx-font-weight: bold; -fx-min-width: 130;"/>
+        <Button text="↺  Réinitialiser" onAction="#handleReset"
+                style="-fx-background-color: #9E9E9E; -fx-text-fill: white; -fx-font-weight: bold; -fx-min-width: 130;"/>
+    </HBox>
+
+    <Label fx:id="statusLabel" wrapText="true" style="-fx-font-size: 13;"/>
+
+</VBox>
