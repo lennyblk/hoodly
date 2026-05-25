@@ -7,7 +7,8 @@
     "prod": "docker compose -f docker-compose.prod.yaml up",
     "build": "tsc",
     "start": "node dist/main.js",
-    "start:dev": "node dist/main.js --watch"
+    "start:dev": "node dist/main.js --watch",
+    "test": "jest"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.17",
@@ -52,6 +53,7 @@
     "@types/express": "^5.0.0",
     "@types/jest": "^30.0.0",
     "@types/jsonwebtoken": "^9.0.7",
+    "@types/mocha": "^10.0.10",
     "@types/node": "^22.0.0",
     "@types/passport-jwt": "^4.0.1",
     "@types/react": "^19.2.14",
