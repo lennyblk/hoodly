@@ -36,8 +36,8 @@ export class AuthService {
     return this.userRepository.findOne({ where: { email } });
   }
 
-  async getTokens(userId: string, email: string): Promise<Tokens> {
-    const payload = { userId, email };
+  async getTokens(userId: string, email: string, role: UserRole, neighbourhoodId: string | null): Promise<Tokens> {
+    const payload = { userId, email, role, neighbourhoodId };
 
     const [access_token, refresh_token] = await Promise.all([
       this.jwtService.signAsync(payload, {
@@ -82,7 +82,7 @@ export class AuthService {
       }),
     );
 
-    const tokens = await this.getTokens(newUser._id.toString(), newUser.email);
+    const tokens = await this.getTokens(newUser._id.toString(), newUser.email, newUser.role, newUser.neighbourhoodId);
     await this.storeRefreshToken(newUser._id.toString(), tokens.refresh_token);
     return tokens;
   }
@@ -98,7 +98,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const tokens = await this.getTokens(user._id.toString(), user.email);
+    const tokens = await this.getTokens(user._id.toString(), user.email, user.role, user.neighbourhoodId);
     await this.storeRefreshToken(user._id.toString(), tokens.refresh_token);
     return tokens;
   }
@@ -114,7 +114,9 @@ export class AuthService {
       throw new UnauthorizedException('Invalid refresh token');
     }
 
-    const tokens = await this.getTokens(userId, email);
+    const user = await this.findOne(userId);
+    if (!user) throw new UnauthorizedException('User not found');
+    const tokens = await this.getTokens(userId, email, user.role, user.neighbourhoodId);
     await this.storeRefreshToken(userId, tokens.refresh_token);
     return tokens;
   }

@@ -19,6 +19,10 @@ export class IncidentsService {
     return this.incidentsRepository.find();
   }
 
+  async findByNeighbourhood(neighbourhoodId: string): Promise<Incident[]> {
+    return this.incidentsRepository.findBy({ neighborhoodId: neighbourhoodId });
+  }
+
   async findOne(id: string): Promise<Incident> {
     const incident = await this.incidentsRepository.findOneBy({ id });
     if (!incident) {
