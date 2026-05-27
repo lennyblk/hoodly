@@ -11,7 +11,7 @@ export class OtpController {
   constructor(
     private readonly otpService: OtpService,
     private readonly usersService: UsersService,
-  ) {}
+  ) { }
 
   @ApiOperation({ summary: 'Envoyer un code OTP par email' })
   @ApiResponse({ status: 201, description: 'Code envoyé.' })
