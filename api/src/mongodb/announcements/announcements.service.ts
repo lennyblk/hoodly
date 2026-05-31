@@ -22,7 +22,10 @@ export class AnnouncementsService {
     private usersService: UsersService,
   ) {}
 
-  async findAll() {
+  async findAll(neighbourhoodId?: string) {
+    if (neighbourhoodId) {
+      return this.announcementsRepository.find({ where: { neighbourhoodId } as any });
+    }
     return this.announcementsRepository.find();
   }
 

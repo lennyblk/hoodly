@@ -8,10 +8,11 @@ import {
   Delete,
   UseGuards,
   Req,
+  Query,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Request } from 'express';
-import { ApiBearerAuth, ApiTags, ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags, ApiOperation, ApiParam, ApiQuery, ApiResponse } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -59,7 +60,7 @@ export class UsersController {
     return this.usersService.create(createUserDto);
   }
 
-  @ApiOperation({ summary: 'Modifier son propre profil (firstName, lastName, email, password, lang, neighbourhoodId)' })
+@ApiOperation({ summary: 'Modifier son propre profil (firstName, lastName, email, password, lang, neighbourhoodId)' })
   @ApiResponse({ status: 200, type: User })
   @ApiResponse({ status: 400, description: 'Données invalides.' })
   @Patch('me')

@@ -7,9 +7,10 @@ import {
   Param,
   Delete,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { ApiBearerAuth, ApiTags, ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags, ApiOperation, ApiParam, ApiQuery, ApiResponse } from '@nestjs/swagger';
 import { AnnouncementsService } from './announcements.service';
 import { CreateAnnouncementDto } from './dto/create-announcement.dto';
 import { UpdateAnnouncementDto } from './dto/update-announcement.dto';
@@ -36,10 +37,11 @@ export class AnnouncementsController {
   }
 
   @ApiOperation({ summary: 'Récupérer toutes les annonces' })
+  @ApiQuery({ name: 'neighbourhoodId', required: false, description: 'Filtrer par quartier' })
   @ApiResponse({ status: 200, type: [Announcement] })
   @Get()
-  findAll() {
-    return this.announcementsService.findAll();
+  findAll(@Query('neighbourhoodId') neighbourhoodId?: string) {
+    return this.announcementsService.findAll(neighbourhoodId);
   }
 
   @ApiOperation({ summary: 'Récupérer une annonce par ID' })

@@ -7,7 +7,7 @@ import QuickActionCard from '../../components/dashboard/QuickActionCard';
 import RecommendedSection from '../../components/dashboard/RecommendedSection';
 import UpcomingEvents from '../../components/dashboard/UpcomingEvents';
 import RecentActivity from '../../components/dashboard/RecentActivity';
-import api from 'axios';
+import api from '../../api/axios';
 import type { components } from '../../api/types.generated';
 
 type User = components['schemas']['User'];
@@ -115,8 +115,8 @@ export default function DashboardPage() {
   useEffect(() => {
     const fetchMetrics = async () => {
       try {
-        // const response = await api.get('/dashboard/metrics');
-        // setDashboardMetrics(response.data);
+        const response = await api.get('/dashboard/metrics');
+        setDashboardMetrics(response.data);
       } catch (error) {
         console.error("Erreur lors de la récupération des statistiques du quartier", error);
       }
