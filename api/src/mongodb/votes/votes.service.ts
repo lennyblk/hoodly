@@ -80,33 +80,26 @@ export class VotesService {
   async cast(id: string, dto: CastVoteDto) {
     const vote = await this.findOne(id);
 
-    // Vote expiré ?
     if (new Date() > new Date(vote.endsAt)) {
       throw new ForbiddenException('Ce vote est terminé');
     }
 
-    // Option valide ?
     if (!vote.options.includes(dto.option)) {
       throw new BadRequestException(
         `Option invalide. Choix possibles : ${vote.options.join(', ')}`,
       );
     }
 
-    // User a déjà voté ?
-    const alreadyVoted = vote.results?.some((r) =>
-      r.userIds?.some((uid) => uid.toString() === dto.userId),
-    );
-    if (alreadyVoted) {
-      throw new ForbiddenException('Vous avez déjà voté');
-    }
+    vote.results = vote.results.map((r) => ({
+      ...r,
+      userIds: r.userIds?.filter((uid) => uid.toString() !== dto.userId) ?? [],
+    }));
 
-    // Ajouter userId à l'option choisie
     const entry = vote.results.find((r) => r.option === dto.option)!;
     entry.userIds = [...entry.userIds, new ObjectId(dto.userId) as any];
 
     const saved = await this.votesRepository.save(vote);
 
-    // Si anonyme → masquer les userIds dans la réponse
     if (saved.isAnonymous) {
       saved.results = saved.results.map((r) => ({ ...r, userIds: [] }));
     }
