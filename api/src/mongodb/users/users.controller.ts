@@ -60,7 +60,15 @@ export class UsersController {
     return this.usersService.create(createUserDto);
   }
 
-@ApiOperation({ summary: 'Modifier son propre profil (firstName, lastName, email, password, lang, neighbourhoodId)' })
+  @ApiOperation({ summary: 'Nombre de voisins dans un quartier' })
+  @ApiQuery({ name: 'neighbourhoodId', required: true })
+  @ApiResponse({ status: 200 })
+  @Get('count')
+  count(@Query('neighbourhoodId') neighbourhoodId: string) {
+    return this.usersService.countByNeighbourhood(neighbourhoodId).then((n) => ({ count: n }));
+  }
+
+  @ApiOperation({ summary: 'Modifier son propre profil (firstName, lastName, email, password, lang, neighbourhoodId)' })
   @ApiResponse({ status: 200, type: User })
   @ApiResponse({ status: 400, description: 'Données invalides.' })
   @Patch('me')

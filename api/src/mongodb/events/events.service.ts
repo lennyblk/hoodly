@@ -16,7 +16,7 @@ export class EventsService {
     @InjectRepository(Neighbourhood, 'mongodb')
     private neighbourhoodsRepository: MongoRepository<Neighbourhood>,
     private neo4jService: Neo4jService,
-  ) {}
+  ) { }
 
   async findAll(neighbourhoodId?: string) {
     if (neighbourhoodId) {
@@ -89,13 +89,13 @@ export class EventsService {
          ON CREATE SET e.neighbourhoodId = $neighbourhoodId
          MERGE (u)-[:ATTENDED]->(e)`,
         { userId, eventId: id, neighbourhoodId: event.neighbourhoodId },
-      ).catch(() => {});
+      ).catch(() => { });
     } else {
       event.participants.splice(idx, 1);
       await this.neo4jService.run(
         `MATCH (u:User {id: $userId})-[r:ATTENDED]->(e:Event {id: $eventId}) DELETE r`,
         { userId, eventId: id },
-      ).catch(() => {});
+      ).catch(() => { });
     }
     return this.eventsRepository.save(event);
   }
