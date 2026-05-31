@@ -7,12 +7,15 @@ import {
   Patch,
   Delete,
   UseGuards,
+  Req,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { Request } from 'express';
 import { ApiBearerAuth, ApiTags, ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { UpdateMeDto } from './dto/update-me.dto';
 import { User } from '../../entities/mongodb/User';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -23,7 +26,7 @@ import { UserRole } from '../../entities/mongodb/User';
 @UseGuards(AuthGuard('jwt'))
 @Controller('users')
 export class UsersController {
-  constructor(private usersService: UsersService) {}
+  constructor(private usersService: UsersService) { }
 
   @ApiOperation({ summary: 'Récupérer tous les utilisateurs — admin uniquement' })
   @ApiResponse({ status: 200, type: [User] })
@@ -54,6 +57,15 @@ export class UsersController {
   @Post()
   create(@Body() createUserDto: CreateUserDto) {
     return this.usersService.create(createUserDto);
+  }
+
+  @ApiOperation({ summary: 'Modifier son propre profil (firstName, lastName, email, password, lang, neighbourhoodId)' })
+  @ApiResponse({ status: 200, type: User })
+  @ApiResponse({ status: 400, description: 'Données invalides.' })
+  @Patch('me')
+  updateMe(@Req() req: Request, @Body() dto: UpdateMeDto) {
+    const user = req.user as { userId: string };
+    return this.usersService.update(user.userId, dto);
   }
 
   @ApiOperation({ summary: 'Mettre à jour un utilisateur — admin uniquement' })
