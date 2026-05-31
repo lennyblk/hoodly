@@ -96,7 +96,7 @@ const quickActions = [
     ),
   },
   {
-    label: 'Nouveau vote',
+    label: 'Nouveau vote', 
     iconBg: 'bg-[#DBEAFE]',
     icon: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="text-[#2563EB]">
