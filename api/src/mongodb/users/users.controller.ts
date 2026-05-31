@@ -31,12 +31,27 @@ export class UsersController {
 
   @ApiOperation({ summary: 'Récupérer tous les utilisateurs — admin uniquement' })
   @ApiResponse({ status: 200, type: [User] })
-  @ApiResponse({ status: 403, description: 'Accès refusé.' })
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN)
   @Get()
   findAll() {
     return this.usersService.findAll();
+  }
+
+  @ApiOperation({ summary: 'Compter les utilisateurs d\'un quartier' })
+  @ApiQuery({ name: 'neighbourhoodId', required: true })
+  @ApiResponse({ status: 200, schema: { properties: { count: { type: 'number' } } } })
+  @Get('count')
+  countByNeighbourhood(@Query('neighbourhoodId') neighbourhoodId: string) {
+    return this.usersService.countByNeighbourhood(neighbourhoodId).then((count) => ({ count }));
+  }
+
+  @ApiOperation({ summary: 'Lister les utilisateurs d\'un quartier' })
+  @ApiQuery({ name: 'neighbourhoodId', required: true })
+  @ApiResponse({ status: 200, type: [User] })
+  @Get('neighbourhood')
+  findByNeighbourhood(@Query('neighbourhoodId') neighbourhoodId: string) {
+    return this.usersService.findByNeighbourhood(neighbourhoodId);
   }
 
   @ApiOperation({ summary: 'Récupérer un utilisateur par ID' })

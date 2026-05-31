@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, ForbiddenException } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags, ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { NeighbourhoodsService } from './neighbourhoods.service';
@@ -44,15 +44,19 @@ export class NeighbourhoodsController {
     return this.neighbourhoodsService.findOne(id);
   }
 
-  @ApiOperation({ summary: 'Mettre à jour un quartier — admin uniquement' })
+  @ApiOperation({ summary: 'Mettre à jour un quartier — admin ou modérateur (son propre quartier)' })
   @ApiParam({ name: 'id', description: 'ObjectId MongoDB du quartier' })
   @ApiResponse({ status: 200, type: Neighbourhood })
   @ApiResponse({ status: 403, description: 'Accès refusé.' })
   @ApiResponse({ status: 404, description: 'Quartier non trouvé.' })
   @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.MODERATEUR, UserRole.ADMIN)
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateNeighbourhoodDto: UpdateNeighbourhoodDto) {
+  update(@Param('id') id: string, @Body() updateNeighbourhoodDto: UpdateNeighbourhoodDto, @Req() req: Request) {
+    const reqUser = (req as any).user as { role: string; neighbourhoodId?: string };
+    if (reqUser.role === UserRole.MODERATEUR && reqUser.neighbourhoodId !== id) {
+      throw new ForbiddenException('Un modérateur ne peut modifier que son propre quartier');
+    }
     return this.neighbourhoodsService.update(id, updateNeighbourhoodDto);
   }
 

@@ -24,6 +24,10 @@ export class UsersService {
     return this.usersRepository.count({ where: { neighbourhoodId } as any });
   }
 
+  async findByNeighbourhood(neighbourhoodId: string) {
+    return this.usersRepository.find({ where: { neighbourhoodId } as any });
+  }
+
   async findAll() {
     const users = await this.usersRepository.find();
     if (users.length === 0) {
