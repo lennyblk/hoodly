@@ -26,11 +26,8 @@ import { UserRole } from '../../entities/mongodb/User';
 export class AnnouncementsController {
   constructor(private readonly announcementsService: AnnouncementsService) {}
 
-  @ApiOperation({ summary: 'Créer une annonce — modérateur ou admin' })
+  @ApiOperation({ summary: 'Créer une annonce' })
   @ApiResponse({ status: 201, type: Announcement })
-  @ApiResponse({ status: 403, description: 'Accès refusé.' })
-  @UseGuards(RolesGuard)
-  @Roles(UserRole.MODERATEUR, UserRole.ADMIN)
   @Post()
   create(@Body() createAnnouncementDto: CreateAnnouncementDto) {
     return this.announcementsService.create(createAnnouncementDto);
