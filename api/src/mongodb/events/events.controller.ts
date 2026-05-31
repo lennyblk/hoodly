@@ -17,12 +17,9 @@ import { UserRole } from '../../entities/mongodb/User';
 export class EventsController {
   constructor(private readonly eventsService: EventsService) {}
 
-  @ApiOperation({ summary: 'Créer un événement — modérateur ou admin' })
+  @ApiOperation({ summary: 'Créer un événement' })
   @ApiResponse({ status: 201, type: Event })
   @ApiResponse({ status: 400, description: 'Données invalides.' })
-  @ApiResponse({ status: 403, description: 'Accès refusé.' })
-  @UseGuards(RolesGuard)
-  @Roles(UserRole.MODERATEUR, UserRole.ADMIN)
   @Post()
   create(@Body() dto: CreateEventDto) {
     return this.eventsService.create(dto);
