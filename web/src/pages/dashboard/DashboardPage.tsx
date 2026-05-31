@@ -7,10 +7,12 @@ import QuickActionCard from '../../components/dashboard/QuickActionCard';
 import RecommendedSection from '../../components/dashboard/RecommendedSection';
 import UpcomingEvents from '../../components/dashboard/UpcomingEvents';
 import RecentActivity from '../../components/dashboard/RecentActivity';
-import api from 'axios';
+import api from '../../api/axios';
 import type { components } from '../../api/types.generated';
 
 type User = components['schemas']['User'];
+type Announcement = components['schemas']['Announcement'];
+type Event = components['schemas']['Event'];
 
 const STATS_CONFIG = [
   {
@@ -94,7 +96,7 @@ const quickActions = [
     ),
   },
   {
-    label: 'Nouveau vote',
+    label: 'Nouveau vote', 
     iconBg: 'bg-[#DBEAFE]',
     icon: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="text-[#2563EB]">
@@ -113,17 +115,25 @@ export default function DashboardPage() {
   });
 
   useEffect(() => {
-    const fetchMetrics = async () => {
-      try {
-        // const response = await api.get('/dashboard/metrics');
-        // setDashboardMetrics(response.data);
-      } catch (error) {
-        console.error("Erreur lors de la récupération des statistiques du quartier", error);
-      }
-    };
+    const nid = user?.neighbourhoodId;
+    if (!nid) return;
 
-    fetchMetrics();
-  }, []);
+    Promise.allSettled([
+      api.get<{ count: number }>('/users/count', { params: { neighbourhoodId: nid } }),
+      api.get<Announcement[]>('/announcements', { params: { neighbourhoodId: nid } }),
+      api.get<Event[]>('/events', { params: { neighbourhoodId: nid } }),
+    ]).then(([usersRes, annRes, eventsRes]) => {
+      setDashboardMetrics({
+        activeNeighbours: usersRes.status === 'fulfilled' ? usersRes.value.data.count : 0,
+        availableServices: annRes.status === 'fulfilled'
+          ? annRes.value.data.filter((a) => a.status === 'open').length
+          : 0,
+        events: eventsRes.status === 'fulfilled'
+          ? eventsRes.value.data.filter((e) => new Date(e.date as unknown as string) > new Date()).length
+          : 0,
+      });
+    });
+  }, [user?.neighbourhoodId]);
 
   const statsWithUser = STATS_CONFIG.map((config) => {
     let value = 0;

@@ -6,6 +6,7 @@ import { Event } from '../../entities/mongodb/Event';
 import { Neighbourhood } from '../../entities/mongodb/Neighbourhood';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
+import { Neo4jService } from '../../neo4j/neo4j.service';
 
 @Injectable()
 export class EventsService {
@@ -14,7 +15,8 @@ export class EventsService {
     private eventsRepository: MongoRepository<Event>,
     @InjectRepository(Neighbourhood, 'mongodb')
     private neighbourhoodsRepository: MongoRepository<Neighbourhood>,
-  ) {}
+    private neo4jService: Neo4jService,
+  ) { }
 
   async findAll(neighbourhoodId?: string) {
     if (neighbourhoodId) {
@@ -81,8 +83,19 @@ export class EventsService {
     const idx = event.participants.indexOf(userId);
     if (idx === -1) {
       event.participants.push(userId);
+      await this.neo4jService.run(
+        `MERGE (u:User {id: $userId})
+         MERGE (e:Event {id: $eventId})
+         ON CREATE SET e.neighbourhoodId = $neighbourhoodId
+         MERGE (u)-[:ATTENDED]->(e)`,
+        { userId, eventId: id, neighbourhoodId: event.neighbourhoodId },
+      ).catch(() => { });
     } else {
       event.participants.splice(idx, 1);
+      await this.neo4jService.run(
+        `MATCH (u:User {id: $userId})-[r:ATTENDED]->(e:Event {id: $eventId}) DELETE r`,
+        { userId, eventId: id },
+      ).catch(() => { });
     }
     return this.eventsRepository.save(event);
   }

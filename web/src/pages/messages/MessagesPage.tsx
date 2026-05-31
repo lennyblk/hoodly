@@ -46,11 +46,11 @@ export default function MessagesPage() {
   }, [user]);
 
   const fetchNeighbours = useCallback(async () => {
-    if (!user) return;
-    const { data } = await api.get<NeighbourUser[]>('/users');
-    setNeighbours(
-      data.filter((u) => u._id !== user._id),
-    );
+    if (!user?.neighbourhoodId) return;
+    const { data } = await api.get<NeighbourUser[]>('/users/neighbourhood', {
+      params: { neighbourhoodId: user.neighbourhoodId },
+    });
+    setNeighbours(data.filter((u) => u._id !== user._id));
   }, [user]);
 
   useEffect(() => {
@@ -203,13 +203,13 @@ export default function MessagesPage() {
               </button>
             </div>
 
-            {neighbours.filter((u) => u.neighbourhoodId === user?.neighbourhoodId).length === 0 ? (
+            {neighbours.length === 0 ? (
               <p className="text-sm text-charbon/50 py-4 text-center">
                 Aucun voisin dans votre quartier.
               </p>
             ) : (
               <div className="space-y-1 max-h-64 overflow-y-auto">
-                {neighbours.filter((u) => u.neighbourhoodId === user?.neighbourhoodId).map((n) => (
+                {neighbours.map((n) => (
                   <button
                     key={n._id}
                     onClick={() => startConversation(n._id)}

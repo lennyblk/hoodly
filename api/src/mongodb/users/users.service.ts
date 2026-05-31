@@ -20,6 +20,14 @@ export class UsersService {
     private usersRepository: MongoRepository<User>,
   ) { }
 
+  async countByNeighbourhood(neighbourhoodId: string): Promise<number> {
+    return this.usersRepository.count({ where: { neighbourhoodId } as any });
+  }
+
+  async findByNeighbourhood(neighbourhoodId: string) {
+    return this.usersRepository.find({ where: { neighbourhoodId } as any });
+  }
+
   async findAll() {
     const users = await this.usersRepository.find();
     if (users.length === 0) {
@@ -27,6 +35,7 @@ export class UsersService {
     }
     return users;
   }
+
 
   async findOne(id: string) {
     let objectId: ObjectId;

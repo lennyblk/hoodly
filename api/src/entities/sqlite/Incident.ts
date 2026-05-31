@@ -31,7 +31,7 @@ export class Incident {
   @Column()
   reportedAt: Date;
 
-  @Column({ type: 'datetime', nullable: true })
+@Column({ type: 'datetime', nullable: true })
   syncedAt: Date | null;
 
   @Column({ type: 'int', default: 0 })

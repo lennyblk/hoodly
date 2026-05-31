@@ -27,7 +27,7 @@ export default function SelectNeighbourhoodPage() {
     if (!user?._id) return;
     setSaving(neighbourhoodId);
     try {
-      await api.patch(`/users/${String(user._id)}`, { neighbourhoodId: String(neighbourhoodId) } as any);
+      await api.patch('/users/me', { neighbourhoodId: String(neighbourhoodId) });
       await fetchMe();
       navigate(from, { replace: true });
     } catch (err: any) {

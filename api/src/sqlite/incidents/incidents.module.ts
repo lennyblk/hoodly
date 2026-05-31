@@ -4,6 +4,7 @@ import { IncidentsService } from './incidents.service';
 import { IncidentsController } from './incidents.controller';
 import { Incident } from '../../entities/sqlite/Incident';
 import { UsersModule } from '../../mongodb/users/users.module';
+import { RolesGuard } from '../../common/guards/roles.guard';
 
 @Module({
   imports: [
@@ -11,7 +12,7 @@ import { UsersModule } from '../../mongodb/users/users.module';
     UsersModule,
   ],
   controllers: [IncidentsController],
-  providers: [IncidentsService],
+  providers: [IncidentsService, RolesGuard],
   exports: [IncidentsService],
 })
 export class IncidentsModule {}

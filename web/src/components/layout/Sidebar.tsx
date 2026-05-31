@@ -1,5 +1,6 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useUser } from '../../contexts/useUser';
+import api from '../../api/axios';
 
 type NavItem = {
   label: string;
@@ -107,7 +108,8 @@ export default function Sidebar() {
     ? `${user.firstName[0]}${user.lastName[0]}`.toUpperCase()
     : '?';
 
-  function handleLogout() {
+  async function handleLogout() {
+    await api.post('/auth/logout').catch(() => {});
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
     clearUser();

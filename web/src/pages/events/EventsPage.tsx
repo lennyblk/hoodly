@@ -111,6 +111,7 @@ function EventCard({
   const [intLoading, setIntLoading] = useState(false);
   const isParticipant = event.participants?.includes(userId);
   const isInterested = event.interestUsers?.includes(userId);
+  const isPast = new Date(event.date) < new Date();
   const { bg, emoji } = getThumbnail(event.id);
   const count = event.participants?.length ?? 0;
 
@@ -182,9 +183,11 @@ function EventCard({
       <div className="flex flex-col gap-2 justify-center flex-shrink-0">
         <button
           onClick={clickInterest}
-          disabled={intLoading}
+          disabled={intLoading || isPast}
           className={`px-3 py-1.5 rounded-xl text-xs font-medium border transition-colors whitespace-nowrap ${
-            isInterested
+            isPast
+              ? 'border-sable/30 text-charbon/25 cursor-not-allowed'
+              : isInterested
               ? 'border-vert-clair text-vert-foret bg-vert-clair/10'
               : 'border-sable/60 text-charbon/50 hover:border-vert-foret hover:text-vert-foret'
           }`}
@@ -193,14 +196,16 @@ function EventCard({
         </button>
         <button
           onClick={clickRsvp}
-          disabled={rsvpLoading}
+          disabled={rsvpLoading || isPast}
           className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-colors whitespace-nowrap ${
-            isParticipant
+            isPast
+              ? 'bg-sable/20 text-charbon/25 cursor-not-allowed'
+              : isParticipant
               ? 'bg-vert-foret/10 text-vert-foret border border-vert-foret/30'
               : 'bg-vert-foret text-white hover:bg-vert-moyen'
           }`}
         >
-          {rsvpLoading ? '...' : isParticipant ? '✓ Inscrit' : 'Participer'}
+          {rsvpLoading ? '...' : isPast ? 'Terminé' : isParticipant ? '✓ Inscrit' : 'Participer'}
         </button>
       </div>
     </div>
@@ -346,9 +351,12 @@ export default function EventsPage() {
   const [statusFilter, setStatusFilter] = useState<'all' | 'inscrit' | 'interesse'>('all');
 
   const fetchEvents = useCallback(async () => {
+    if (!user?.neighbourhoodId) {
+      setLoading(false);
+      return;
+    }
     try {
-      const params = user?.neighbourhoodId ? { neighbourhoodId: user.neighbourhoodId } : {};
-      const { data } = await api.get<Event[]>('/events', { params });
+      const { data } = await api.get<Event[]>('/events', { params: { neighbourhoodId: user.neighbourhoodId } });
       setEvents(data);
     } finally {
       setLoading(false);
@@ -379,7 +387,15 @@ export default function EventsPage() {
       if (statusFilter === 'interesse') return e.interestUsers?.includes(userId);
       return true;
     })
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    .sort((a, b) => {
+      const now = Date.now();
+      const aTime = new Date(a.date).getTime();
+      const bTime = new Date(b.date).getTime();
+      const aFuture = aTime >= now;
+      const bFuture = bTime >= now;
+      if (aFuture !== bFuture) return aFuture ? -1 : 1;
+      return aFuture ? aTime - bTime : bTime - aTime;
+    });
 
   return (
     <div className="flex flex-col h-full bg-creme">
@@ -428,6 +444,12 @@ export default function EventsPage() {
         {loading ? (
           <div className="flex items-center justify-center py-24 text-charbon/40">
             Chargement...
+          </div>
+        ) : !user?.neighbourhoodId ? (
+          <div className="flex flex-col items-center justify-center py-24 text-center text-charbon/40">
+            <span className="text-5xl mb-4">🏘️</span>
+            <p className="font-medium text-charbon/60">Aucun quartier assigné</p>
+            <p className="text-sm mt-1">Rejoins un quartier pour voir les événements</p>
           </div>
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-charbon/40">

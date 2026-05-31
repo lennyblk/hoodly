@@ -118,6 +118,7 @@ export default function EventDetailPage() {
 
   const isParticipant = event.participants?.includes(user?._id ?? '');
   const isInterested = event.interestUsers?.includes(user?._id ?? '');
+  const isPast = new Date(event.date) < new Date();
   const { bg, emoji } = getThumbnail(event.id);
 
   return (
@@ -211,28 +212,36 @@ export default function EventDetailPage() {
 
       {/* Bottom actions */}
       <div className="px-5 py-4 bg-white border-t border-sable/20 flex gap-3">
-        <button
-          onClick={handleInterest}
-          disabled={intLoading}
-          className={`flex-1 py-3 rounded-xl text-sm font-medium border transition-colors ${
-            isInterested
-              ? 'border-vert-clair text-vert-foret bg-vert-clair/10'
-              : 'border-sable text-charbon/70 hover:border-vert-foret hover:text-vert-foret'
-          }`}
-        >
-          {isInterested ? '★ Intéressé' : "S'intéresser"}
-        </button>
-        <button
-          onClick={handleRsvp}
-          disabled={rsvpLoading}
-          className={`flex-1 py-3 rounded-xl text-sm font-medium transition-colors ${
-            isParticipant
-              ? 'bg-vert-foret/20 text-vert-foret border border-vert-foret/30'
-              : 'bg-vert-foret text-white hover:bg-vert-moyen'
-          }`}
-        >
-          {rsvpLoading ? '...' : isParticipant ? 'Se désinscrire' : 'Participer'}
-        </button>
+        {isPast ? (
+          <div className="flex-1 py-3 rounded-xl text-sm font-medium text-center bg-sable/15 text-charbon/40 border border-sable/20">
+            Événement passé
+          </div>
+        ) : (
+          <>
+            <button
+              onClick={handleInterest}
+              disabled={intLoading}
+              className={`flex-1 py-3 rounded-xl text-sm font-medium border transition-colors ${
+                isInterested
+                  ? 'border-vert-clair text-vert-foret bg-vert-clair/10'
+                  : 'border-sable text-charbon/70 hover:border-vert-foret hover:text-vert-foret'
+              }`}
+            >
+              {isInterested ? '★ Intéressé' : "S'intéresser"}
+            </button>
+            <button
+              onClick={handleRsvp}
+              disabled={rsvpLoading}
+              className={`flex-1 py-3 rounded-xl text-sm font-medium transition-colors ${
+                isParticipant
+                  ? 'bg-vert-foret/20 text-vert-foret border border-vert-foret/30'
+                  : 'bg-vert-foret text-white hover:bg-vert-moyen'
+              }`}
+            >
+              {rsvpLoading ? '...' : isParticipant ? 'Se désinscrire' : 'Participer'}
+            </button>
+          </>
+        )}
       </div>
     </div>
   );

@@ -29,6 +29,7 @@ import { NeighbourhoodSqlite } from './entities/sqlite/NeighbourhoodSqlite';
 import { SyncLog } from './entities/sqlite/SyncLog';
 import { NeighbourhoodsSqliteModule } from './sqlite/neighbourhoods/neighbourhoods.module';
 import { OtpModule } from './mongodb/otp/otp.module';
+import { Neo4jModule } from './neo4j/neo4j.module';
 
 
 @Module({
@@ -60,6 +61,7 @@ import { OtpModule } from './mongodb/otp/otp.module';
     UsersSqliteModule,
     NeighbourhoodsSqliteModule,
     OtpModule,
+    Neo4jModule,
   ]
 })
 export class AppModule { }
