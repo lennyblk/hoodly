@@ -4,10 +4,12 @@ import { EventsService } from './events.service';
 import { EventsController } from './events.controller';
 import { Event } from '../../entities/mongodb/Event';
 import { Neighbourhood } from '../../entities/mongodb/Neighbourhood';
+import { UsersModule } from '../users/users.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Event, Neighbourhood], 'mongodb'),
+    UsersModule,
   ],
   controllers: [EventsController],
   providers: [EventsService],

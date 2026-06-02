@@ -11,6 +11,7 @@ import { Vote, VoteResult } from '../../entities/mongodb/Vote';
 import { Neighbourhood } from '../../entities/mongodb/Neighbourhood';
 import { CreateVoteDto } from './dto/create-vote.dto';
 import { CastVoteDto } from './dto/cast-vote.dto';
+import { PointsService } from '../users/points.service';
 
 @Injectable()
 export class VotesService {
@@ -19,6 +20,7 @@ export class VotesService {
     private votesRepository: MongoRepository<Vote>,
     @InjectRepository(Neighbourhood, 'mongodb')
     private neighbourhoodsRepository: MongoRepository<Neighbourhood>,
+    private pointsService: PointsService,
   ) { }
 
   async findAll(neighbourhoodId?: string) {
@@ -99,6 +101,7 @@ export class VotesService {
     entry.userIds = [...entry.userIds, new ObjectId(dto.userId) as any];
 
     const saved = await this.votesRepository.save(vote);
+    await this.pointsService.addPoints(dto.userId, 3).catch(() => {}); //3pts votes
 
     if (saved.isAnonymous) {
       saved.results = saved.results.map((r) => ({ ...r, userIds: [] }));

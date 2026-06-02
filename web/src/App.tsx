@@ -9,6 +9,7 @@ import DashboardPage from './pages/dashboard/DashboardPage';
 import ServicesPage from './pages/services/ServicesPage';
 import ServiceDetailPage from './pages/services/ServiceDetailPage';
 import ProposeServicePage from './pages/services/ProposeServicePage';
+import ContractPage from './pages/services/ContractPage';
 import MapPage from './pages/map/MapPage';
 import EventsPage from './pages/events/EventsPage';
 import EventDetailPage from './pages/events/EventDetailPage';
@@ -66,6 +67,7 @@ function AppRoutes() {
           <Route path="/services" element={<ServicesPage />} />
           <Route path="/services/new" element={<ProposeServicePage />} />
           <Route path="/services/:id" element={<ServiceDetailPage />} />
+          <Route path="/services/:id/contract" element={<ContractPage />} />
           <Route path="/map" element={<MapPage />} />
           <Route path="/events" element={<EventsPage />} />
           <Route path="/events/:id" element={<EventDetailPage />} />
