@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
 import type { components } from '../../api/types.generated';
+import { useUser } from '../../contexts/useUser';
 
 type Announcement = components['schemas']['Announcement'];
 type ServiceTab = 'offer' | 'request';
@@ -18,6 +19,7 @@ const CATEGORIES = [
 
 export default function ServicesPage() {
   const navigate = useNavigate();
+  const { user } = useUser();
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [tab, setTab] = useState<ServiceTab>('offer');
@@ -28,7 +30,8 @@ export default function ServicesPage() {
     const fetchAnnouncements = async () => {
       try {
         setIsLoading(true);
-        const response = await api.get('/announcements');
+        const params = user?.neighbourhoodId ? { neighbourhoodId: user.neighbourhoodId } : {};
+        const response = await api.get('/announcements', { params });
 
         console.log('Réponse de l\'API /announcements:', response.data);
 
@@ -50,15 +53,17 @@ export default function ServicesPage() {
     };
 
     fetchAnnouncements();
-  }, []);
+  }, [user?.neighbourhoodId]);
 
-  const offresCount = announcements.filter((a) => a.type === 'offer').length;
-  const demandesCount = announcements.filter((a) => a.type === 'request').length;
+  const userId = String(user?._id);
+  const offresCount = announcements.filter((a) => a.authorId !== userId).length;
+  const demandesCount = announcements.filter((a) => a.authorId === userId).length;
 
   const filtered = announcements.filter((a) => {
-    if (a.type !== tab) return false;
+    const isMine = a.authorId === userId;
+    if (tab === 'offer' && isMine) return false;
+    if (tab === 'request' && !isMine) return false;
     if (search && !a.title.toLowerCase().includes(search.toLowerCase())) return false;
-    // code
     return true;
   });
 
@@ -115,7 +120,7 @@ export default function ServicesPage() {
               : 'text-sable hover:text-charbon'
               }`}
           >
-            Offres ({offresCount})
+            Du quartier ({offresCount})
           </button>
           <button
             onClick={() => setTab('request')}
@@ -124,7 +129,7 @@ export default function ServicesPage() {
               : 'text-sable hover:text-charbon'
               }`}
           >
-            Demandes ({demandesCount})
+            Mes annonces ({demandesCount})
           </button>
         </div>
 

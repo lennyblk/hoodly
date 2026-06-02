@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 import api from '../../api/axios';
 import { useUser } from '../../contexts/useUser';
 import ChatView from './ChatView';
@@ -28,9 +29,12 @@ function avatarColor(id: string) {
 
 export default function MessagesPage() {
   const { user } = useUser();
+  const location = useLocation();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [neighbours, setNeighbours] = useState<NeighbourUser[]>([]);
-  const [selectedConvId, setSelectedConvId] = useState<string | null>(null);
+  const [selectedConvId, setSelectedConvId] = useState<string | null>(
+    (location.state as { conversationId?: string })?.conversationId ?? null,
+  );
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);

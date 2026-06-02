@@ -5,31 +5,54 @@ import type { components } from '../../api/types.generated';
 import { useUser } from '../../contexts/useUser';
 
 type Announcement = components['schemas']['Announcement'];
+type Conversation = components['schemas']['Conversation'];
+type User = components['schemas']['User'];
 
 export default function ServiceDetailPage() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const { user } = useUser();
   const [announcement, setAnnouncement] = useState<Announcement | null>(null);
+  const [author, setAuthor] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [contacting, setContacting] = useState(false);
 
   useEffect(() => {
     if (!id) return;
-
-    const fetchAnnouncement = async () => {
-      try {
-        setIsLoading(true);
-        const response = await api.get<Announcement>(`/announcements/${id}`);
-        setAnnouncement(response.data);
-      } catch (error) {
-        console.error("Erreur lors de la récupération du service", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchAnnouncement();
+    setIsLoading(true);
+    api.get<Announcement>(`/announcements/${id}`)
+      .then(({ data }) => {
+        setAnnouncement(data);
+        return api.get<User>(`/users/${data.authorId}`);
+      })
+      .then(({ data }) => setAuthor(data))
+      .catch((err) => console.error(err))
+      .finally(() => setIsLoading(false));
   }, [id]);
+
+  async function handleContact() {
+    if (!user?._id || !announcement?.authorId) return;
+    setContacting(true);
+    try {
+      const { data } = await api.post<Conversation>('/conversations', {
+        participants: [String(user._id), announcement.authorId],
+      });
+      navigate('/messages', { state: { conversationId: data.id } });
+    } catch {
+      setContacting(false);
+    }
+  }
+
+  async function handleAccept() {
+    if (!announcement || !user) return;
+    navigate(`/services/${id}/contract`, {
+      state: {
+        announcementTitle: announcement.title,
+        authorName: author ? `${author.firstName} ${author.lastName}` : 'Prestataire',
+        acceptorName: `${user.firstName} ${user.lastName}`,
+      },
+    });
+  }
 
   if (isLoading) {
     return (
@@ -50,6 +73,11 @@ export default function ServiceDetailPage() {
     );
   }
 
+  const isOwner = String(user?._id) === announcement.authorId;
+  const authorInitials = author
+    ? `${author.firstName[0]}${author.lastName[0]}`.toUpperCase()
+    : '?';
+
   return (
     <div className="flex flex-col min-h-full">
 
@@ -68,8 +96,13 @@ export default function ServiceDetailPage() {
 
         <div className="flex items-center gap-2 mb-3">
           <span className="flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 font-sans text-xs font-medium text-white">
-            📋 Service
+            📋 {announcement.type === 'offer' ? 'Offre' : 'Demande'}
           </span>
+          {isOwner && (
+            <span className="flex items-center gap-1.5 rounded-full bg-ambre px-3 py-1 font-sans text-xs font-medium text-white">
+              Mon annonce
+            </span>
+          )}
         </div>
 
         <h1 className="font-heading text-3xl font-bold text-white mb-1">{announcement.title}</h1>
@@ -81,8 +114,8 @@ export default function ServiceDetailPage() {
           <span className="flex items-center gap-1.5 rounded-full bg-ambre px-3 py-1.5 font-sans text-sm font-bold text-white">
             ★ {announcement.points} points
           </span>
-          <span className="flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 font-sans text-sm font-semibold text-white">
-            Statut : {announcement.status}
+          <span className="flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 font-sans text-sm font-semibold text-white capitalize">
+            {announcement.status}
           </span>
         </div>
       </div>
@@ -90,21 +123,25 @@ export default function ServiceDetailPage() {
       {/* ── Contenu ── */}
       <div className="flex flex-col gap-4 px-4 lg:px-8 py-6 pb-8">
 
-        {/* Carte prestataire (simplifiée en attendant la population backend) */}
+        {/* Carte auteur */}
         <div className="rounded-2xl bg-white border border-sable/40 p-5">
+          <p className="font-sans text-xs text-sable uppercase tracking-wide mb-3">Proposé par</p>
           <div className="flex items-center gap-4">
             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-vert-foret font-sans text-lg font-bold text-white shrink-0">
-              User
+              {authorInitials}
             </div>
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-sans text-base font-bold text-charbon">{user?.firstName} {user?.lastName}</span>
-              </div>
+              <p className="font-sans text-base font-bold text-charbon">
+                {author ? `${author.firstName} ${author.lastName}` : `···${announcement.authorId.slice(-4)}`}
+              </p>
+              {author && (
+                <p className="font-sans text-xs text-sable capitalize">{author.role}</p>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Description complète (incluant catégories et dates générées au format texte) */}
+        {/* Description */}
         <div className="rounded-2xl bg-white border border-sable/40 p-5">
           <h3 className="font-sans text-sm font-bold text-charbon mb-2">Description & Détails</h3>
           <p className="font-sans text-sm text-sable leading-relaxed whitespace-pre-wrap">
@@ -126,22 +163,37 @@ export default function ServiceDetailPage() {
         </div>
       </div>
 
-      {/* ── Boutons action — sticky bottom ── */}
+      {/* ── Boutons action ── */}
       <div className="sticky bottom-0 bg-white border-t border-sable/40 px-4 lg:px-8 py-4 flex gap-3">
-        <button className="flex flex-1 items-center justify-center gap-2 rounded-xl border-2 border-vert-foret py-3 font-sans text-sm font-semibold text-vert-foret hover:bg-vert-foret hover:text-white transition-colors">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-            <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2v10z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
-          </svg>
-          Contacter
-        </button>
-        {announcement.status === 'open' && (
-          <button className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-vert-foret py-3 font-sans text-sm font-semibold text-white hover:bg-vert-moyen transition-colors">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
-              <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-            </svg>
-            Accepter l'annonce
-          </button>
+        {isOwner ? (
+          <div className="flex-1 flex items-center justify-center rounded-xl border border-sable/40 py-3 font-sans text-sm text-sable">
+            En attente d'acceptation
+          </div>
+        ) : (
+          <>
+            <button
+              onClick={handleContact}
+              disabled={contacting}
+              className="flex flex-1 items-center justify-center gap-2 rounded-xl border-2 border-vert-foret py-3 font-sans text-sm font-semibold text-vert-foret hover:bg-vert-foret hover:text-white transition-colors disabled:opacity-50"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2v10z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+              </svg>
+              {contacting ? 'En cours...' : 'Contacter'}
+            </button>
+            {announcement.status === 'open' && (
+              <button
+                onClick={handleAccept}
+                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-vert-foret py-3 font-sans text-sm font-semibold text-white hover:bg-vert-moyen transition-colors"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+                  <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+                Accepter l'annonce
+              </button>
+            )}
+          </>
         )}
       </div>
     </div>
