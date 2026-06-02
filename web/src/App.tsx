@@ -14,6 +14,7 @@ import EventsPage from './pages/events/EventsPage';
 import EventDetailPage from './pages/events/EventDetailPage';
 import MessagesPage from './pages/messages/MessagesPage';
 import VotesPage from './pages/votes/VotesPage';
+import VoteDetailPage from './pages/votes/VoteDetailPage';
 import DocumentsPage from './pages/documents/DocumentsPage';
 import ProfilePage from './pages/profile/ProfilePage';
 import EditProfilePage from './pages/profile/EditProfilePage';
@@ -71,6 +72,7 @@ function AppRoutes() {
           <Route path="/events/:id" element={<EventDetailPage />} />
           <Route path="/messages" element={<MessagesPage />} />
           <Route path="/votes" element={<VotesPage />} />
+          <Route path="/votes/:id" element={<VoteDetailPage />} />
           <Route path="/documents" element={<DocumentsPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/profile/edit" element={<EditProfilePage />} />

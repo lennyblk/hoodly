@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
 import { useUser } from '../../contexts/useUser';
 
@@ -51,16 +52,18 @@ interface VoteCardProps {
   onVoted: (updated: Vote) => void;
   canDelete: boolean;
   onDelete: (id: string) => void;
+  canManage: boolean;
 }
 
-function VoteCard({ vote, currentUserId, onVoted, canDelete, onDelete }: VoteCardProps) {
+function VoteCard({ vote, currentUserId, onVoted, canDelete, onDelete, canManage }: VoteCardProps) {
+  const navigate = useNavigate();
   const [casting, setCasting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const expired = isExpired(vote.endsAt);
   const voted = hasVoted(vote.results, currentUserId);
   const userOption = getUserOption(vote.results, currentUserId);
-  const showResults = voted || expired;
+  const showResults = voted || expired || canManage;
   const total = getTotalVotes(vote.results);
 
   async function castVote(option: string) {
@@ -81,7 +84,10 @@ function VoteCard({ vote, currentUserId, onVoted, canDelete, onDelete }: VoteCar
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-sable/20 shadow-sm overflow-hidden">
+    <div
+      onClick={() => navigate(`/votes/${vote.id}`)}
+      className="bg-white rounded-2xl border border-sable/20 shadow-sm overflow-hidden cursor-pointer hover:border-vert-foret/30 hover:shadow-md transition-all"
+    >
       <div className="px-5 pt-5 pb-4">
         {/* Header */}
         <div className="flex items-start justify-between gap-3 mb-3">
@@ -119,11 +125,12 @@ function VoteCard({ vote, currentUserId, onVoted, canDelete, onDelete }: VoteCar
             const isChosen = userOption === option;
 
             if (showResults) {
-              const clickable = !expired && !isChosen && !casting;
+              const clickable = !expired && !isChosen && !casting && !canManage;
+              const canClick = !expired && !isChosen && !casting;
               return (
                 <div
                   key={option}
-                  onClick={() => clickable && castVote(option)}
+                  onClick={(e) => { e.stopPropagation(); canClick && !canManage && castVote(option); }}
                   className={`rounded-xl px-4 py-2.5 transition-colors ${
                     isChosen
                       ? 'bg-vert-clair/10 border border-vert-foret/30'
@@ -152,7 +159,7 @@ function VoteCard({ vote, currentUserId, onVoted, canDelete, onDelete }: VoteCar
             return (
               <button
                 key={option}
-                onClick={() => castVote(option)}
+                onClick={(e) => { e.stopPropagation(); castVote(option); }}
                 disabled={casting}
                 className="w-full text-left px-4 py-2.5 rounded-xl border border-sable text-sm text-charbon/80 hover:border-vert-foret hover:text-vert-foret hover:bg-vert-clair/5 transition-colors disabled:opacity-50"
               >
@@ -168,7 +175,7 @@ function VoteCard({ vote, currentUserId, onVoted, canDelete, onDelete }: VoteCar
       {canDelete && (
         <div className="px-5 pb-4">
           <button
-            onClick={() => onDelete(vote.id)}
+            onClick={(e) => { e.stopPropagation(); onDelete(vote.id); }}
             className="text-xs text-charbon/30 hover:text-red-400 transition-colors"
           >
             Supprimer ce sondage
@@ -491,6 +498,7 @@ export default function VotesPage() {
                 onVoted={handleVoted}
                 canDelete={canManage}
                 onDelete={handleDelete}
+                canManage={canManage}
               />
             ))}
           </div>
