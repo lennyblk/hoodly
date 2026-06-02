@@ -128,6 +128,65 @@ function DrawControl({ ownNeighbourhood, allNeighbourhoods, onSave }: DrawContro
   return null;
 }
 
+interface CreateDrawControlProps {
+  allNeighbourhoods: Neighbourhood[];
+  onDrawn: (geometry: GeoJsonPolygon, overlaps: Neighbourhood[]) => void;
+}
+
+function CreateDrawControl({ allNeighbourhoods, onDrawn }: CreateDrawControlProps) {
+  const map = useMap();
+
+  useEffect(() => {
+    const drawnItems = new L.FeatureGroup();
+    map.addLayer(drawnItems);
+
+    const drawControl = new (L.Control as any).Draw({
+      draw: {
+        polygon: {
+          allowIntersection: false,
+          showArea: true,
+          shapeOptions: { color: '#7C3AED', fillOpacity: 0.15, weight: 2 },
+        },
+        polyline: false,
+        rectangle: false,
+        circle: false,
+        marker: false,
+        circlemarker: false,
+      },
+      edit: { featureGroup: drawnItems },
+    });
+    map.addControl(drawControl);
+
+    function onCreate(e: any) {
+      drawnItems.clearLayers();
+      drawnItems.addLayer(e.layer);
+      const geom = e.layer.toGeoJSON().geometry as GeoJsonPolygon;
+      const overlaps = findOverlaps(geom, allNeighbourhoods, '');
+      onDrawn(geom, overlaps);
+    }
+
+    function onEdit(e: any) {
+      e.layers.eachLayer((layer: any) => {
+        const geom = layer.toGeoJSON().geometry as GeoJsonPolygon;
+        const overlaps = findOverlaps(geom, allNeighbourhoods, '');
+        onDrawn(geom, overlaps);
+      });
+    }
+
+    map.on((L as any).Draw.Event.CREATED, onCreate);
+    map.on((L as any).Draw.Event.EDITED, onEdit);
+
+    return () => {
+      map.removeControl(drawControl);
+      map.removeLayer(drawnItems);
+      map.off((L as any).Draw.Event.CREATED, onCreate);
+      map.off((L as any).Draw.Event.EDITED, onEdit);
+    };
+  }, [map]);
+
+  return null;
+}
+
 export default function MapPage() {
   const { user } = useUser();
   const [neighbourhoods, setNeighbourhoods] = useState<Neighbourhood[]>([]);
@@ -137,6 +196,14 @@ export default function MapPage() {
   const [overlapWarning, setOverlapWarning] = useState<Neighbourhood[]>([]);
   const [drawResetKey, setDrawResetKey] = useState(0);
 
+  const [creatingMode, setCreatingMode] = useState(false);
+  const [newName, setNewName] = useState('');
+  const [newGeometry, setNewGeometry] = useState<GeoJsonPolygon | null>(null);
+  const [createOverlap, setCreateOverlap] = useState<Neighbourhood[]>([]);
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [createDrawKey, setCreateDrawKey] = useState(0);
+
+  const isAdmin = user?.role === 'admin';
   const canEdit = user?.role === 'moderateur' || user?.role === 'admin';
   const ownNeighbourhood = neighbourhoods.find((n) => n.id === user?.neighbourhoodId) ?? null;
 
@@ -174,6 +241,49 @@ export default function MapPage() {
     }
   }
 
+  function handleCreateDrawn(geometry: GeoJsonPolygon, overlaps: Neighbourhood[]) {
+    if (overlaps.length > 0) {
+      setCreateOverlap(overlaps);
+      setNewGeometry(null);
+      setCreateDrawKey((k) => k + 1);
+    } else {
+      setCreateOverlap([]);
+      setNewGeometry(geometry);
+    }
+  }
+
+  function cancelCreating() {
+    setCreatingMode(false);
+    setNewName('');
+    setNewGeometry(null);
+    setCreateOverlap([]);
+    setCreateError(null);
+    setCreateDrawKey((k) => k + 1);
+  }
+
+  async function handleCreate(e: React.FormEvent) {
+    e.preventDefault();
+    if (!newName.trim() || !newGeometry || !user) return;
+    if (createOverlap.length > 0) return;
+    setSaving(true);
+    setCreateError(null);
+    try {
+      const { data } = await api.post<Neighbourhood>('/neighbourhoods', {
+        name: newName.trim(),
+        geometry: newGeometry,
+        createdBy: user._id,
+      });
+      setNeighbourhoods((prev) => [...prev, data]);
+      cancelCreating();
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (err: any) {
+      setCreateError(err?.response?.data?.message ?? 'Erreur lors de la création');
+    } finally {
+      setSaving(false);
+    }
+  }
+
   const mapCenter: [number, number] = ownNeighbourhood?.geometry
     ? centroid(ownNeighbourhood.geometry.coordinates)
     : neighbourhoods.find((n) => n.geometry)
@@ -194,17 +304,82 @@ export default function MapPage() {
         </div>
         <div className="flex items-center gap-3">
           {saving && <span className="text-xs text-charbon/40">Sauvegarde...</span>}
-          {saved && <span className="text-xs text-vert-foret font-medium">✓ Quartier mis à jour</span>}
-          {canEdit && ownNeighbourhood && (
+          {saved && <span className="text-xs text-vert-foret font-medium">✓ Quartier créé</span>}
+          {canEdit && ownNeighbourhood && !creatingMode && (
             <span className="text-xs bg-ambre/10 text-ambre px-3 py-1.5 rounded-full font-medium">
               Mode édition — {ownNeighbourhood.name}
             </span>
           )}
+          {isAdmin && !creatingMode && (
+            <button
+              onClick={() => setCreatingMode(true)}
+              className="bg-vert-foret text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-vert-moyen transition-colors flex items-center gap-2"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                <path d="M12 5v14M5 12h14"/>
+              </svg>
+              Nouveau quartier
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Edit instructions */}
-      {canEdit && ownNeighbourhood && (
+      {/* Creation panel */}
+      {creatingMode && (
+        <form
+          onSubmit={handleCreate}
+          className="px-5 lg:px-8 py-3 bg-violet-50 border-b border-violet-200 flex-shrink-0"
+        >
+          <div className="flex items-start gap-4 flex-wrap">
+            <div className="flex-1 min-w-48">
+              <p className="text-xs font-semibold text-violet-700 mb-2">Nouveau quartier</p>
+              <input
+                type="text"
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                placeholder="Nom du quartier (ex: Montmartre)"
+                className="w-full border border-violet-300 rounded-xl px-3 py-2 text-sm text-charbon focus:outline-none focus:ring-2 focus:ring-violet-400/40 focus:border-violet-400"
+                required
+                autoFocus
+              />
+              {createError && <p className="text-xs text-red-500 mt-1">{createError}</p>}
+            </div>
+            <div className="flex flex-col gap-1 pt-5">
+              <div className="flex items-center gap-2">
+                {newGeometry ? (
+                  <span className="text-xs text-vert-foret font-medium">✓ Contour dessiné</span>
+                ) : (
+                  <span className="text-xs text-violet-600">Dessine le contour sur la carte →</span>
+                )}
+                {createOverlap.length > 0 && (
+                  <span className="text-xs text-red-600 font-medium">
+                    Chevauchement avec {createOverlap.map((n) => n.name).join(', ')}
+                  </span>
+                )}
+              </div>
+              <div className="flex gap-2 mt-1">
+                <button
+                  type="submit"
+                  disabled={!newName.trim() || !newGeometry || saving || createOverlap.length > 0}
+                  className="px-4 py-1.5 bg-vert-foret text-white rounded-lg text-sm font-medium hover:bg-vert-moyen transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {saving ? 'Création...' : 'Créer'}
+                </button>
+                <button
+                  type="button"
+                  onClick={cancelCreating}
+                  className="px-4 py-1.5 border border-violet-300 text-violet-600 rounded-lg text-sm hover:bg-violet-100 transition-colors"
+                >
+                  Annuler
+                </button>
+              </div>
+            </div>
+          </div>
+        </form>
+      )}
+
+      {/* Edit instructions (moderateur only, not in creation mode) */}
+      {canEdit && ownNeighbourhood && !creatingMode && (
         <div className="px-5 py-2.5 bg-vert-foret/5 border-b border-vert-foret/10 flex-shrink-0">
           <p className="text-xs text-vert-foret/80">
             Utilise l'outil <strong>polygone</strong> dans la barre à gauche pour dessiner ou modifier les limites de <strong>{ownNeighbourhood.name}</strong>. Sauvegarde automatique après chaque modification.
@@ -212,7 +387,7 @@ export default function MapPage() {
         </div>
       )}
 
-      {/* Overlap warning */}
+      {/* Overlap warning (edit mode) */}
       {overlapWarning.length > 0 && (
         <div className="px-5 py-3 bg-red-50 border-b border-red-200 flex items-center justify-between gap-4 flex-shrink-0">
           <div>
@@ -285,13 +460,22 @@ export default function MapPage() {
                 </Polygon>
               ))}
 
-            {/* Own neighbourhood draw control */}
-            {canEdit && ownNeighbourhood && (
+            {/* Own neighbourhood draw control (moderateur/admin editing existing) */}
+            {canEdit && ownNeighbourhood && !creatingMode && (
               <DrawControl
                 key={drawResetKey}
                 ownNeighbourhood={ownNeighbourhood}
                 allNeighbourhoods={neighbourhoods}
                 onSave={handleDrawn}
+              />
+            )}
+
+            {/* Creation draw control (admin creating new) */}
+            {isAdmin && creatingMode && (
+              <CreateDrawControl
+                key={createDrawKey}
+                allNeighbourhoods={neighbourhoods}
+                onDrawn={handleCreateDrawn}
               />
             )}
           </MapContainer>
