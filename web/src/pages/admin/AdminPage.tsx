@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../../api/axios';
 import type { components } from '../../api/types.generated';
+import { queryLangApi, type QueryLangResult } from '../../api/queryLang';
 
 type User = components['schemas']['User'];
 type UserRole = 'habitant' | 'moderateur' | 'admin';
@@ -16,6 +17,110 @@ const ROLE_COLORS: Record<UserRole, string> = {
   moderateur: 'bg-ambre/10 text-ambre',
   admin: 'bg-vert-foret/10 text-vert-foret',
 };
+
+// ─── HQL Console ─────────────────────────────────────────────────────────────
+
+const EXAMPLE_QUERIES = [
+  'FIND documents WHERE status = "signed" AND type = "contract" LIMIT 10',
+  'FIND events WHERE (status = "published" OR status = "draft") AND title CONTAINS "fete"',
+  'FIND announcements WHERE isPaid = true AND points >= 4',
+  'FIND votes LIMIT 5',
+];
+
+function QueryConsole() {
+  const [query, setQuery] = useState(EXAMPLE_QUERIES[0]);
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<QueryLangResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function runQuery() {
+    if (!query.trim() || loading) return;
+    setLoading(true);
+    setError(null);
+    setResult(null);
+    try {
+      const { data } = await queryLangApi.execute(query);
+      setResult(data);
+    } catch (e: any) {
+      setError(e?.response?.data?.message ?? 'Erreur lors de l\'exécution de la requête');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+      e.preventDefault();
+      runQuery();
+    }
+  }
+
+  return (
+    <div className="bg-white rounded-2xl border border-sable/20 shadow-sm p-5 lg:p-6 max-w-3xl">
+      <h2 className="font-heading text-lg font-bold text-charbon mb-1">Console HQL</h2>
+      <p className="text-sm text-charbon/50 mb-4">
+        Syntaxe :{' '}
+        <code className="bg-creme px-1.5 py-0.5 rounded text-xs">
+          FIND &lt;collection&gt; [WHERE &lt;condition&gt;] [LIMIT &lt;n&gt;]
+        </code>
+      </p>
+
+      <div className="flex flex-wrap gap-2 mb-3">
+        {EXAMPLE_QUERIES.map((example) => (
+          <button
+            key={example}
+            type="button"
+            onClick={() => setQuery(example)}
+            className="text-xs px-2.5 py-1 rounded-full bg-sable/20 text-charbon/60 hover:bg-sable/40 transition-colors"
+          >
+            {example.split(' WHERE')[0]}
+          </button>
+        ))}
+      </div>
+
+      <textarea
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        onKeyDown={handleKeyDown}
+        rows={3}
+        spellCheck={false}
+        placeholder='FIND documents WHERE status = "signed" LIMIT 10'
+        className="w-full font-mono text-sm border border-sable rounded-xl px-4 py-3 text-charbon focus:outline-none focus:ring-2 focus:ring-vert-foret/40 focus:border-vert-foret resize-y"
+      />
+
+      <div className="flex items-center justify-between mt-3 mb-4">
+        <span className="text-xs text-charbon/30">Ctrl/Cmd + Entrée pour exécuter</span>
+        <button
+          type="button"
+          onClick={runQuery}
+          disabled={loading || !query.trim()}
+          className="bg-vert-foret text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-vert-moyen transition-colors disabled:opacity-50"
+        >
+          {loading ? 'Exécution...' : 'Exécuter'}
+        </button>
+      </div>
+
+      {error && (
+        <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-600">
+          {error}
+        </div>
+      )}
+
+      {result && (
+        <div>
+          <div className="flex items-center gap-3 text-xs text-charbon/50 mb-2">
+            <span className="font-medium text-vert-foret">{result.collection}</span>
+            <span>{result.count} résultat{result.count !== 1 ? 's' : ''}</span>
+            <span>{result.tookMs} ms</span>
+          </div>
+          <pre className="bg-charbon text-vert-clair text-xs rounded-xl p-4 overflow-auto max-h-96">
+            {JSON.stringify(result.results, null, 2)}
+          </pre>
+        </div>
+      )}
+    </div>
+  );
+}
 
 // ─── User detail panel ────────────────────────────────────────────────────────
 
@@ -58,10 +163,8 @@ function UserPanel({ user, onClose, onSaved }: UserPanelProps) {
     setError(null);
     try {
       let updated: User;
-      // Send form fields (no role — separate DTO on the backend)
       const { data } = await api.patch<User>(`/users/${user._id}`, form);
       updated = data;
-      // Send role separately only if it changed
       if (pendingRole !== user.role) {
         const { data: withRole } = await api.patch<User>(`/users/${user._id}`, { role: pendingRole });
         updated = withRole;
@@ -77,16 +180,13 @@ function UserPanel({ user, onClose, onSaved }: UserPanelProps) {
 
   return (
     <>
-      {/* Backdrop */}
       <div
         className="fixed inset-0 bg-charbon/40 backdrop-blur-sm z-40"
         onClick={onClose}
       />
 
-      {/* Modal */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col pointer-events-auto">
-        {/* Header */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-sable/30">
           <div>
             <h2 className="font-heading text-lg font-bold text-charbon">
@@ -104,7 +204,6 @@ function UserPanel({ user, onClose, onSaved }: UserPanelProps) {
           </button>
         </div>
 
-        {/* Meta info */}
         <div className="px-6 py-3 bg-creme border-b border-sable/20 flex gap-4">
           <div className="text-center">
             <p className="text-xs text-charbon/40">Points</p>
@@ -126,7 +225,6 @@ function UserPanel({ user, onClose, onSaved }: UserPanelProps) {
           </div>
         </div>
 
-        {/* Form */}
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-6 py-6 flex flex-col gap-5">
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
@@ -347,6 +445,8 @@ export default function AdminPage() {
           )}
         </div>
       )}
+
+      <QueryConsole />
 
       {selectedUser && (
         <UserPanel
