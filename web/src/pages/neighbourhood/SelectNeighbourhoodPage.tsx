@@ -9,7 +9,7 @@ type Neighbourhood = components['schemas']['Neighbourhood'];
 export default function SelectNeighbourhoodPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, fetchMe } = useUser();
+  const { fetchMe } = useUser();
 
   const [neighbourhoods, setNeighbourhoods] = useState<Neighbourhood[]>([]);
   const [loading, setLoading] = useState(true);

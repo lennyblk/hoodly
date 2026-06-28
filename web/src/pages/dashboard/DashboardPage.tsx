@@ -12,7 +12,7 @@ import type { components } from '../../api/types.generated';
 
 type User = components['schemas']['User'];
 type Announcement = components['schemas']['Announcement'];
-type Event = components['schemas']['Event'];
+interface Event { id: string | number; title: string; date: string; participants?: unknown[]; }
 
 const STATS_CONFIG = [
   {

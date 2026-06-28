@@ -2,9 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
 import { useUser } from '../../contexts/useUser';
-import type { components } from '../../api/types.generated';
-
-type Event = components['schemas']['Event'];
+interface Event { id: string | number; title: string; date: string; participants?: unknown[]; }
 
 const COLORS = [
   { color: 'bg-[#E8E4F7]', iconColor: 'text-[#7C3AED]' },

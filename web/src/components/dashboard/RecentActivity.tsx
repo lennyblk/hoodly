@@ -4,7 +4,7 @@ import { useUser } from '../../contexts/useUser';
 import type { components } from '../../api/types.generated';
 
 type Announcement = components['schemas']['Announcement'];
-type Vote = components['schemas']['Vote'];
+interface Vote { question: string; createdAt: string; }
 
 interface ActivityItem {
   text: string;

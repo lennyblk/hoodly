@@ -5,8 +5,8 @@ import type { components } from '../../api/types.generated';
 import { useUser } from '../../contexts/useUser';
 
 type Announcement = components['schemas']['Announcement'];
-type Conversation = components['schemas']['Conversation'];
 type User = components['schemas']['User'];
+interface Conversation { id: string; }
 
 export default function ServiceDetailPage() {
   const navigate = useNavigate();

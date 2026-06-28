@@ -7,11 +7,6 @@ import type { components } from '../../api/types.generated';
 type Announcement = components['schemas']['Announcement'];
 type Neighbourhood = components['schemas']['Neighbourhood'];
 
-const ROLE_LABELS: Record<string, string> = {
-  habitant: 'Habitant',
-  moderateur: 'Modérateur',
-  admin: 'Administrateur',
-};
 
 function getInitials(firstName?: string, lastName?: string) {
   return `${firstName?.charAt(0) ?? ''}${lastName?.charAt(0) ?? ''}`.toUpperCase();

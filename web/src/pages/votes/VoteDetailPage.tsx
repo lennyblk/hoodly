@@ -196,7 +196,6 @@ export default function VoteDetailPage() {
                 const isChosen = userOption === option;
 
                 if (showResults) {
-                  const clickable = !expired && !isChosen && !casting && !canManage;
                   const canClick = !expired && !isChosen && !casting;
                   return (
                     <div

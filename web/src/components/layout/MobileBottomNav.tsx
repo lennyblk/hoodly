@@ -1,6 +1,7 @@
+import React from 'react';
 import { NavLink } from 'react-router-dom';
 
-const mobileNavItems = [
+const mobileNavItems: { label: string; to: string; icon: React.ReactElement; badge?: string | number }[] = [
   {
     label: 'Accueil',
     to: '/dashboard',
