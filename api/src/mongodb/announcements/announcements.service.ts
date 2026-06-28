@@ -128,6 +128,19 @@ export class AnnouncementsService {
     return saved;
   }
 
+  async accept(id: string, userId: string) {
+    const announcement = await this.findOne(id);
+    if (announcement.authorId === userId) {
+      throw new BadRequestException('The author cannot accept their own announcement');
+    }
+    if (announcement.status !== 'open') {
+      throw new BadRequestException('Only open announcements can be accepted');
+    }
+    announcement.status = 'accepted' as any;
+    announcement.acceptedBy = userId;
+    return this.announcementsRepository.save(announcement);
+  }
+
   async remove(id: string) {
     const announcement = await this.findOne(id);
     return this.announcementsRepository.remove(announcement);
