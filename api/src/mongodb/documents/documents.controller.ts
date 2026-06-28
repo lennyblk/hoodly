@@ -5,10 +5,12 @@ import {
   Param,
   Post,
   Req,
+  Res,
   UploadedFile,
   UseGuards,
   UseInterceptors,
 } from "@nestjs/common";
+import { Response } from "express";
 import { AuthGuard } from "@nestjs/passport";
 import { FileInterceptor } from "@nestjs/platform-express";
 import {
@@ -74,6 +76,21 @@ export class DocumentsController {
   @Get(":id")
   findOne(@Param("id") id: string) {
     return this.documentsService.findOne(id);
+  }
+
+  @ApiOperation({ summary: "Télécharger le fichier PDF d'un document" })
+  @ApiResponse({ status: 200, description: "Fichier PDF renvoyé." })
+  @ApiResponse({ status: 404, description: "Document ou fichier introuvable." })
+  @Get(":id/file")
+  async downloadFile(@Param("id") id: string, @Res() res: Response) {
+    const doc = await this.documentsService.findOne(id);
+    const buffer = await this.documentsService.downloadFromGridFS(doc.gridfsId!);
+    res.set({
+      "Content-Type": "application/pdf",
+      "Content-Disposition": `inline; filename="${doc.name}"`,
+      "Content-Length": buffer.length,
+    });
+    res.end(buffer);
   }
 
   @ApiOperation({

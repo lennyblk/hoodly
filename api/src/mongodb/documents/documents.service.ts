@@ -44,7 +44,8 @@ export class DocumentsService {
   // ─── GridFS helpers
 
   private getBucket(): GridFSBucket {
-    const db = (this.dataSource.driver as any).queryRunner.databaseConnection;
+    const mongoClient = (this.dataSource.driver as any).queryRunner.databaseConnection;
+    const db = mongoClient.db();
     return new GridFSBucket(db, { bucketName: "documents" });
   }
 
