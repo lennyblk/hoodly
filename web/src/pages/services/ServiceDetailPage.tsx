@@ -16,6 +16,8 @@ export default function ServiceDetailPage() {
   const [author, setAuthor] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [contacting, setContacting] = useState(false);
+  const [accepting, setAccepting] = useState(false);
+  const [acceptError, setAcceptError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -44,14 +46,29 @@ export default function ServiceDetailPage() {
   }
 
   async function handleAccept() {
-    if (!announcement || !user) return;
-    navigate(`/services/${id}/contract`, {
-      state: {
-        announcementTitle: announcement.title,
-        authorName: author ? `${author.firstName} ${author.lastName}` : 'Prestataire',
-        acceptorName: `${user.firstName} ${user.lastName}`,
-      },
-    });
+    if (!announcement || !user || !id) return;
+    setAccepting(true);
+    setAcceptError(null);
+    try {
+      await api.post(`/announcements/${id}/accept`);
+
+      const { data: contract } = await api.post<{ id: string }>('/documents/generate-contract', {
+        announcementId: id,
+      });
+
+      navigate(`/services/${id}/contract`, {
+        state: {
+          announcementTitle: announcement.title,
+          authorName: author ? `${author.firstName} ${author.lastName}` : 'Prestataire',
+          acceptorName: `${user.firstName} ${user.lastName}`,
+          documentId: contract.id,
+          announcementId: id,
+        },
+      });
+    } catch (err: any) {
+      setAcceptError(err?.response?.data?.message ?? 'Erreur lors de l\'acceptation');
+      setAccepting(false);
+    }
   }
 
   if (isLoading) {
@@ -164,37 +181,43 @@ export default function ServiceDetailPage() {
       </div>
 
       {/* ── Boutons action ── */}
-      <div className="sticky bottom-0 bg-white border-t border-sable/40 px-4 lg:px-8 py-4 flex gap-3">
-        {isOwner ? (
-          <div className="flex-1 flex items-center justify-center rounded-xl border border-sable/40 py-3 font-sans text-sm text-sable">
-            En attente d'acceptation
-          </div>
-        ) : (
-          <>
-            <button
-              onClick={handleContact}
-              disabled={contacting}
-              className="flex flex-1 items-center justify-center gap-2 rounded-xl border-2 border-vert-foret py-3 font-sans text-sm font-semibold text-vert-foret hover:bg-vert-foret hover:text-white transition-colors disabled:opacity-50"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2v10z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
-              </svg>
-              {contacting ? 'En cours...' : 'Contacter'}
-            </button>
-            {announcement.status === 'open' && (
+      <div className="sticky bottom-0 bg-white border-t border-sable/40 px-4 lg:px-8 py-4 flex flex-col gap-2">
+        {acceptError && (
+          <p className="text-xs text-red-600 bg-red-50 px-3 py-2 rounded-xl text-center">{acceptError}</p>
+        )}
+        <div className="flex gap-3">
+          {isOwner ? (
+            <div className="flex-1 flex items-center justify-center rounded-xl border border-sable/40 py-3 font-sans text-sm text-sable">
+              En attente d'acceptation
+            </div>
+          ) : (
+            <>
               <button
-                onClick={handleAccept}
-                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-vert-foret py-3 font-sans text-sm font-semibold text-white hover:bg-vert-moyen transition-colors"
+                onClick={handleContact}
+                disabled={contacting || accepting}
+                className="flex flex-1 items-center justify-center gap-2 rounded-xl border-2 border-vert-foret py-3 font-sans text-sm font-semibold text-vert-foret hover:bg-vert-foret hover:text-white transition-colors disabled:opacity-50"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                  <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
-                  <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                  <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2v10z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
                 </svg>
-                Accepter l'annonce
+                {contacting ? 'En cours...' : 'Contacter'}
               </button>
-            )}
-          </>
-        )}
+              {announcement.status === 'open' && (
+                <button
+                  onClick={handleAccept}
+                  disabled={accepting}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-vert-foret py-3 font-sans text-sm font-semibold text-white hover:bg-vert-moyen transition-colors disabled:opacity-50"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+                    <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                  </svg>
+                  {accepting ? 'Génération du contrat...' : 'Accepter l\'annonce'}
+                </button>
+              )}
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
