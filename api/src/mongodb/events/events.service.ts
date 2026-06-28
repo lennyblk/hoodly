@@ -109,9 +109,36 @@ export class EventsService {
     const idx = event.interestUsers.indexOf(userId);
     if (idx === -1) {
       event.interestUsers.push(userId);
+      await this.neo4jService.run(
+        `MERGE (u:User {id: $userId})
+         MERGE (e:Event {id: $eventId})
+         ON CREATE SET e.neighbourhoodId = $neighbourhoodId
+         MERGE (u)-[:INTERESTED_IN]->(e)`,
+        { userId, eventId: id, neighbourhoodId: event.neighbourhoodId },
+      ).catch(() => {});
     } else {
       event.interestUsers.splice(idx, 1);
+      await this.neo4jService.run(
+        `MATCH (u:User {id: $userId})-[r:INTERESTED_IN]->(e:Event {id: $eventId}) DELETE r`,
+        { userId, eventId: id },
+      ).catch(() => {});
     }
     return this.eventsRepository.save(event);
+  }
+
+  async getRecommendations(userId: string, neighbourhoodId: string): Promise<string[]> {
+    const result = await this.neo4jService.run(
+      `MATCH (me:User {id: $userId})-[:INTERESTED_IN|ATTENDED]->(pivot:Event)
+       MATCH (other:User)-[:INTERESTED_IN|ATTENDED]->(pivot)
+       WHERE other.id <> $userId
+       WITH DISTINCT other
+       MATCH (other)-[:INTERESTED_IN|ATTENDED]->(rec:Event {neighbourhoodId: $neighbourhoodId})
+       WHERE NOT (me)-[:INTERESTED_IN|ATTENDED]->(rec)
+       RETURN rec.id AS eventId, count(*) AS score
+       ORDER BY score DESC
+       LIMIT 5`,
+      { userId, neighbourhoodId },
+    );
+    return result.records.map((r) => r.get('eventId') as string);
   }
 }

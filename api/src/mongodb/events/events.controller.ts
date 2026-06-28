@@ -33,6 +33,21 @@ export class EventsController {
     return this.eventsService.findAll(neighbourhoodId);
   }
 
+  @ApiOperation({ summary: 'Événements recommandés via Neo4j (INTERESTED_IN + ATTENDED)' })
+  @ApiQuery({ name: 'userId', required: true, description: 'ID de l\'utilisateur' })
+  @ApiQuery({ name: 'neighbourhoodId', required: true, description: 'ID du quartier' })
+  @ApiResponse({ status: 200, type: [Event] })
+  @Get('recommendations')
+  async recommendations(
+    @Query('userId') userId: string,
+    @Query('neighbourhoodId') neighbourhoodId: string,
+  ) {
+    const ids = await this.eventsService.getRecommendations(userId, neighbourhoodId);
+    if (!ids.length) return [];
+    return Promise.all(ids.map((id) => this.eventsService.findOne(id).catch(() => null)))
+      .then((events) => events.filter(Boolean));
+  }
+
   @ApiOperation({ summary: 'Récupérer un événement par ID' })
   @ApiParam({ name: 'id', description: 'ObjectId MongoDB de l\'événement' })
   @ApiResponse({ status: 200, type: Event })
@@ -74,7 +89,7 @@ export class EventsController {
     return this.eventsService.rsvp(id, dto.userId);
   }
 
-  @ApiOperation({ summary: 'Marquer / retirer un intérêt pour un événement (toggle)' })
+  @ApiOperation({ summary: 'Marquer / retirer un intérêt pour un événement (toggle) — alimente INTERESTED_IN Neo4j' })
   @ApiParam({ name: 'id', description: 'ObjectId MongoDB de l\'événement' })
   @ApiResponse({ status: 201, type: Event })
   @Post(':id/interest')

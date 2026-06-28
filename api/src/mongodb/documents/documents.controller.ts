@@ -49,12 +49,12 @@ export class DocumentsController {
   @ApiResponse({ status: 201, description: "Document créé." })
   @Post("upload")
   @UseInterceptors(
-    FileInterceptor("file", { limits: { fileSize: 10 * 1024 * 1024 } })
+    FileInterceptor("file", { limits: { fileSize: 10 * 1024 * 1024 } }),
   )
   upload(
     @UploadedFile() file: Express.Multer.File,
     @Body() dto: UploadDocumentDto,
-    @Req() req: Request
+    @Req() req: Request,
   ) {
     const user = (req as any).user as { userId: string };
     return this.documentsService.upload(file, dto, user.userId);
@@ -111,7 +111,7 @@ export class DocumentsController {
   sign(
     @Param("id") id: string,
     @Body() dto: SignDocumentDto,
-    @Req() req: Request
+    @Req() req: Request,
   ) {
     const user = (req as any).user as { userId: string; email: string };
     return this.documentsService.sign(id, dto, user.userId, user.email);
