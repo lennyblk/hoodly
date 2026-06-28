@@ -203,9 +203,15 @@ export default function MapPage() {
   const [createError, setCreateError] = useState<string | null>(null);
   const [createDrawKey, setCreateDrawKey] = useState(0);
 
+  // Admin can pick any neighbourhood to edit
+  const [adminEditId, setAdminEditId] = useState<string>('');
+
   const isAdmin = user?.role === 'admin';
   const canEdit = user?.role === 'moderateur' || user?.role === 'admin';
   const ownNeighbourhood = neighbourhoods.find((n) => n.id === user?.neighbourhoodId) ?? null;
+  const editingNeighbourhood = isAdmin
+    ? (neighbourhoods.find((n) => n.id === adminEditId) ?? null)
+    : ownNeighbourhood;
 
   useEffect(() => {
     api.get<Neighbourhood[]>('/neighbourhoods')
@@ -215,11 +221,11 @@ export default function MapPage() {
   }, []);
 
   async function saveGeometry(geometry: GeoJsonPolygon) {
-    if (!ownNeighbourhood) return;
+    if (!editingNeighbourhood) return;
     setSaving(true);
     setSaved(false);
     try {
-      const { data } = await api.patch<Neighbourhood>(`/neighbourhoods/${ownNeighbourhood.id}`, { geometry });
+      const { data } = await api.patch<Neighbourhood>(`/neighbourhoods/${editingNeighbourhood!.id}`, { geometry });
       setNeighbourhoods((prev) => prev.map((n) => (n.id === data.id ? data : n)));
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
@@ -302,17 +308,41 @@ export default function MapPage() {
             {neighbourhoods.filter((n) => n.geometry).length} quartier{neighbourhoods.filter((n) => n.geometry).length !== 1 ? 's' : ''} avec contour
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           {saving && <span className="text-xs text-charbon/40">Sauvegarde...</span>}
-          {saved && <span className="text-xs text-vert-foret font-medium">✓ Quartier créé</span>}
-          {canEdit && ownNeighbourhood && !creatingMode && (
+          {saved && <span className="text-xs text-vert-foret font-medium">✓ Sauvegardé</span>}
+
+          {/* Admin: select which neighbourhood to edit */}
+          {isAdmin && !creatingMode && (
+            <select
+              value={adminEditId}
+              onChange={(e) => { setAdminEditId(e.target.value); setOverlapWarning([]); setDrawResetKey((k) => k + 1); }}
+              className="border border-sable/40 rounded-xl px-3 py-1.5 text-sm text-charbon focus:outline-none focus:ring-2 focus:ring-vert-foret/30"
+            >
+              <option value="">Sélectionner un quartier à éditer</option>
+              {neighbourhoods.map((n) => (
+                <option key={n.id} value={n.id}>{n.name}{!n.geometry ? ' (sans contour)' : ''}</option>
+              ))}
+            </select>
+          )}
+
+          {/* Moderateur: badge own neighbourhood */}
+          {!isAdmin && canEdit && ownNeighbourhood && !creatingMode && (
             <span className="text-xs bg-ambre/10 text-ambre px-3 py-1.5 rounded-full font-medium">
               Mode édition — {ownNeighbourhood.name}
             </span>
           )}
+
+          {/* Admin editing badge */}
+          {isAdmin && editingNeighbourhood && !creatingMode && (
+            <span className="text-xs bg-ambre/10 text-ambre px-3 py-1.5 rounded-full font-medium">
+              Édition — {editingNeighbourhood.name}
+            </span>
+          )}
+
           {isAdmin && !creatingMode && (
             <button
-              onClick={() => setCreatingMode(true)}
+              onClick={() => { setCreatingMode(true); setAdminEditId(''); }}
               className="bg-vert-foret text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-vert-moyen transition-colors flex items-center gap-2"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
@@ -378,11 +408,11 @@ export default function MapPage() {
         </form>
       )}
 
-      {/* Edit instructions (moderateur only, not in creation mode) */}
-      {canEdit && ownNeighbourhood && !creatingMode && (
+      {/* Edit instructions */}
+      {editingNeighbourhood && !creatingMode && (
         <div className="px-5 py-2.5 bg-vert-foret/5 border-b border-vert-foret/10 flex-shrink-0">
           <p className="text-xs text-vert-foret/80">
-            Utilise l'outil <strong>polygone</strong> dans la barre à gauche pour dessiner ou modifier les limites de <strong>{ownNeighbourhood.name}</strong>. Sauvegarde automatique après chaque modification.
+            Utilise l'outil <strong>polygone</strong> dans la barre à gauche pour dessiner ou modifier les limites de <strong>{editingNeighbourhood.name}</strong>. Sauvegarde automatique après chaque modification.
           </p>
         </div>
       )}
@@ -418,6 +448,7 @@ export default function MapPage() {
                 {n.name}
                 {!n.geometry && <span className="text-charbon/30 ml-1">(sans contour)</span>}
                 {n.id === user?.neighbourhoodId && <span className="text-vert-foret ml-1 font-medium">• toi</span>}
+                {isAdmin && n.id === adminEditId && <span className="text-ambre ml-1 font-medium">• édition</span>}
               </span>
             </div>
           ))}
@@ -460,11 +491,11 @@ export default function MapPage() {
                 </Polygon>
               ))}
 
-            {/* Own neighbourhood draw control (moderateur/admin editing existing) */}
-            {canEdit && ownNeighbourhood && !creatingMode && (
+            {/* Draw control for editing (moderateur = own, admin = selected) */}
+            {canEdit && editingNeighbourhood && !creatingMode && (
               <DrawControl
-                key={drawResetKey}
-                ownNeighbourhood={ownNeighbourhood}
+                key={`${editingNeighbourhood.id}-${drawResetKey}`}
+                ownNeighbourhood={editingNeighbourhood}
                 allNeighbourhoods={neighbourhoods}
                 onSave={handleDrawn}
               />

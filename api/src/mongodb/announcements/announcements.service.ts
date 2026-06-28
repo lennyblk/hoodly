@@ -6,11 +6,12 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { MongoRepository } from 'typeorm';
 import { ObjectId } from 'mongodb';
-import { Announcement } from '../../entities/mongodb/Announcement';
+import { Announcement, AnnouncementStatus } from '../../entities/mongodb/Announcement';
 import { Neighbourhood } from '../../entities/mongodb/Neighbourhood';
 import { CreateAnnouncementDto } from './dto/create-announcement.dto';
 import { UpdateAnnouncementDto } from './dto/update-announcement.dto';
 import { UsersService } from '../users/users.service';
+import { Neo4jService } from '../../neo4j/neo4j.service';
 
 @Injectable()
 export class AnnouncementsService {
@@ -20,6 +21,7 @@ export class AnnouncementsService {
     @InjectRepository(Neighbourhood, 'mongodb')
     private neighbourhoodsRepository: MongoRepository<Neighbourhood>,
     private usersService: UsersService,
+    private neo4jService: Neo4jService,
   ) {}
 
   async findAll(neighbourhoodId?: string) {
@@ -94,7 +96,7 @@ export class AnnouncementsService {
 
   async update(id: string, updateAnnouncementDto: UpdateAnnouncementDto) {
     const announcement = await this.findOne(id);
-    
+
     await this.validateReferences(
       updateAnnouncementDto.authorId,
       updateAnnouncementDto.neighbourhoodId,
@@ -102,7 +104,40 @@ export class AnnouncementsService {
       announcement
     );
 
+    const isNewAcceptance =
+      !announcement.acceptedBy &&
+      updateAnnouncementDto.acceptedBy &&
+      (updateAnnouncementDto.status === AnnouncementStatus.ACCEPTED ||
+        announcement.status === AnnouncementStatus.OPEN);
+
     Object.assign(announcement, updateAnnouncementDto);
+    const saved = await this.announcementsRepository.save(announcement);
+
+    if (isNewAcceptance) {
+      await this.neo4jService.run(
+        `MERGE (helper:User {id: $helperId})
+         MERGE (receiver:User {id: $receiverId})
+         MERGE (helper)-[:HELPED]->(receiver)`,
+        {
+          helperId: updateAnnouncementDto.acceptedBy,
+          receiverId: saved.authorId,
+        },
+      ).catch(() => {});
+    }
+
+    return saved;
+  }
+
+  async accept(id: string, userId: string) {
+    const announcement = await this.findOne(id);
+    if (announcement.authorId === userId) {
+      throw new BadRequestException('The author cannot accept their own announcement');
+    }
+    if (announcement.status !== 'open') {
+      throw new BadRequestException('Only open announcements can be accepted');
+    }
+    announcement.status = 'accepted' as any;
+    announcement.acceptedBy = userId;
     return this.announcementsRepository.save(announcement);
   }
 

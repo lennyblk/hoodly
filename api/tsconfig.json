@@ -14,7 +14,7 @@
     "strictPropertyInitialization": false,
     "resolveJsonModule": true,
     "jsx": "react-jsx",
-    "types": ["jest", "node"],
+    "types": ["jest", "node", "multer"],
     "typeRoots": ["./src/types", "./node_modules/@types"]
   },
   "include": ["src/**/*"],

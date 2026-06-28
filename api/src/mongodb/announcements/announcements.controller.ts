@@ -8,7 +8,9 @@ import {
   Delete,
   UseGuards,
   Query,
+  Req,
 } from '@nestjs/common';
+import { Request } from 'express';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiBearerAuth, ApiTags, ApiOperation, ApiParam, ApiQuery, ApiResponse } from '@nestjs/swagger';
 import { AnnouncementsService } from './announcements.service';
@@ -49,6 +51,16 @@ export class AnnouncementsController {
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.announcementsService.findOne(id);
+  }
+
+  @ApiOperation({ summary: 'Accepter une annonce — tout utilisateur authentifié (sauf l\'auteur)' })
+  @ApiParam({ name: 'id', description: 'ObjectId MongoDB de l\'annonce' })
+  @ApiResponse({ status: 200, type: Announcement })
+  @ApiResponse({ status: 400, description: 'Déjà acceptée ou auteur ne peut pas accepter.' })
+  @Post(':id/accept')
+  accept(@Param('id') id: string, @Req() req: Request) {
+    const user = (req as any).user as { userId: string };
+    return this.announcementsService.accept(id, user.userId);
   }
 
   @ApiOperation({ summary: 'Mettre à jour une annonce — modérateur ou admin' })

@@ -31,6 +31,7 @@ import { NeighbourhoodsSqliteModule } from './sqlite/neighbourhoods/neighbourhoo
 import { OtpModule } from './mongodb/otp/otp.module';
 import { Neo4jModule } from './neo4j/neo4j.module';
 import { QueryLangModule } from './query-lang/query-lang.module';
+import { DocumentsModule } from './mongodb/documents/documents.module';
 
 
 @Module({
@@ -64,6 +65,7 @@ import { QueryLangModule } from './query-lang/query-lang.module';
     OtpModule,
     Neo4jModule,
     QueryLangModule,
+    DocumentsModule,
   ]
 })
 export class AppModule { }

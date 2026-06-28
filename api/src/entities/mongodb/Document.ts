@@ -79,6 +79,14 @@ export class Document {
   @Column({ type: 'array', nullable: true })
   signatureZones: SignatureZone[];
 
+  @ApiPropertyOptional({ example: '507f1f77bcf86cd799439011' })
+  @Column({ nullable: true })
+  gridfsId?: string;
+
+  @ApiPropertyOptional({ example: '507f1f77bcf86cd799439011' })
+  @Column({ nullable: true })
+  announcementId?: string;
+
   @ApiProperty()
   @CreateDateColumn()
   createdAt: Date;

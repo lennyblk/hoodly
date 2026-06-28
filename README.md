@@ -139,11 +139,11 @@ hoodly/
 | `Event` | Community event |
 | `Service` | Rendered service |
 
-| Relationship | Description |
-|---|---|
-| `HELPED` | A resident helped another |
-| `ATTENDED` | A resident attended an event |
-| `INTERESTED_IN` | A resident swiped an event |
+| Relationship | Triggered by | Status |
+|---|---|---|
+| `HELPED` | Announcement accepted (`PATCH /announcements/:id` with `acceptedBy`) |
+| `ATTENDED` | RSVP to event (`POST /events/:id/rsvp`) |
+| `INTERESTED_IN` | Swipe interest on event (`POST /events/:id/interest`) |
 
 ---
 
@@ -168,11 +168,13 @@ hoodly/
 | PATCH | `/neighborhoods/:id` | Update boundaries | Admin |
 
 ### Announcements
-| Method | Route | Description | Access |
-|---|---|---|---|
-| GET | `/announcements` | List all announcements | Authenticated |
+| Method | Route | Description | Access | Status |
+|---|---|---|---|---|
+| GET | `/announcements` | List all announcements | Authenticated | 
 | POST | `/announcements` | Create an announcement | Authenticated |
-| POST | `/announcements/:id/accept` | Accept a service request | Authenticated |
+| GET | `/announcements/:id` | Get one announcement | Authenticated |
+| PATCH | `/announcements/:id` | Update / accept announcement — alimente `HELPED` | Moderator+ |
+| DELETE | `/announcements/:id` | Delete announcement | Admin |
 
 ### Documents
 | Method | Route | Description | Access |
@@ -183,13 +185,13 @@ hoodly/
 | POST | `/documents/query` | Query using custom language | Authenticated |
 
 ### Events
-| Method | Route | Description | Access |
-|---|---|---|---|
+| Method | Route | Description | Access | Status |
+|---|---|---|---|---|
 | GET | `/events` | List all events | Authenticated |
 | POST | `/events` | Create an event | Authenticated |
-| POST | `/events/:id/join` | Join an event | Authenticated |
-| POST | `/events/:id/swipe` | Swipe interest | Authenticated |
-| GET | `/events/recommendations` | Neo4j-powered suggestions | Authenticated |
+| POST | `/events/:id/rsvp` | Join / leave an event (toggle) — alimente `ATTENDED` | Authenticated |
+| POST | `/events/:id/interest` | Swipe interest (toggle) — alimente `INTERESTED_IN` | Authenticated |
+| GET | `/events/recommendations` | Neo4j-powered suggestions (INTERESTED_IN + ATTENDED) | Authenticated |
 
 ### Messaging
 | Method | Route | Description | Access |
@@ -201,7 +203,7 @@ hoodly/
 | Method | Route | Description | Access |
 |---|---|---|---|
 | GET | `/votes` | List active votes | Authenticated |
-| POST | `/votes` | Create a vote | Moderator |
+| POST | `/votes` | Create a vote | Moderator         { userId, eventId: id, neighbourhoodId: event.neighbourhoodId },|
 | POST | `/votes/:id/cast` | Cast a vote | Authenticated |
 | GET | `/votes/:id/results` | View results | Authenticated |
 

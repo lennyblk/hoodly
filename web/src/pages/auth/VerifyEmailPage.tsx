@@ -2,12 +2,14 @@ import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { otpApi } from '../../api/otp';
+import { useUser } from '../../contexts/useUser';
 
 const EXPIRY_SECONDS = 5 * 60;
 
 export default function VerifyEmailPage() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { fetchMe } = useUser();
   const email: string = (location.state as any)?.email ?? '';
   const firstName: string = (location.state as any)?.firstName ?? '';
   const tokens: { access_token: string; refresh_token: string } | undefined = (location.state as any)?.tokens;
@@ -71,6 +73,7 @@ export default function VerifyEmailPage() {
       if (tokens) {
         localStorage.setItem('access_token', tokens.access_token);
         localStorage.setItem('refresh_token', tokens.refresh_token);
+        await fetchMe();
         navigate('/dashboard', { replace: true });
       } else {
         navigate('/login', { replace: true });
