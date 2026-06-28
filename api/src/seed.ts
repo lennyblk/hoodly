@@ -27,18 +27,14 @@ async function seed() {
   await client.connect();
   const db = client.db("hoodly");
 
-  // Clear
-  await Promise.all([
-    db.collection("users").deleteMany({}),
-    db.collection("refreshtokens").deleteMany({}),
-    db.collection("neighbourhoods").deleteMany({}),
-    db.collection("events").deleteMany({}),
-    db.collection("announcements").deleteMany({}),
-    db.collection("votes").deleteMany({}),
-    db.collection("conversations").deleteMany({}),
-    db.collection("messages").deleteMany({}),
-  ]);
-  console.log("✓ Collections MongoDB vidées");
+  const existingUsers = await db.collection("users").countDocuments();
+  if (existingUsers > 0) {
+    console.log(`DB already seeded (${existingUsers} users found), skipping.`);
+    await client.close();
+    return;
+  }
+
+  console.log("✓ Collections MongoDB vides, début du seed...");
 
   // ── Neighbourhoods ───────────────────────────────────────────────────────
   const nids = {
