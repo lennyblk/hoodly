@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { UserSqlite } from '../../../src/entities/sqlite/UserSqlite';
+import { UserSqlite } from '../../entities/sqlite/UserSqlite';
 import { CreateUserSqliteDto } from './dto/create-user.dto';
 import { UpdateUserSqliteDto } from './dto/update-user.dto';
 

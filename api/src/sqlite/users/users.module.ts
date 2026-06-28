@@ -1,8 +1,8 @@
 import { Module, OnApplicationBootstrap } from '@nestjs/common';
 import { TypeOrmModule, InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { UserSqlite } from '../../../src/entities/sqlite/UserSqlite';
-import { User } from '../../../src/entities/mongodb/User';
+import { UserSqlite } from '../../entities/sqlite/UserSqlite';
+import { User } from '../../entities/mongodb/User';
 import { UsersSqliteService } from './users.service';
 import { UsersSqliteController } from './users.controller';
 import { SyncService } from './sync.service';
