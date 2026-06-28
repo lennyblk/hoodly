@@ -24,7 +24,6 @@ export default function SelectNeighbourhoodPage() {
   }, []);
 
   async function handleSelect(neighbourhoodId: string) {
-    if (!user?._id) return;
     setSaving(neighbourhoodId);
     try {
       await api.patch('/users/me', { neighbourhoodId: String(neighbourhoodId) });
