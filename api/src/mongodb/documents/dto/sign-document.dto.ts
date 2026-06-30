@@ -1,5 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class SignDocumentDto {
   @ApiProperty({
@@ -9,4 +9,11 @@ export class SignDocumentDto {
   @IsString()
   @IsNotEmpty()
   otpToken: string;
+
+  @ApiPropertyOptional({
+    description: 'Image de signature en base64 PNG (sans préfixe data:image/png;base64,)',
+  })
+  @IsOptional()
+  @IsString()
+  signatureImage?: string;
 }

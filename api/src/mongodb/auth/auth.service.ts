@@ -98,6 +98,10 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    if (!user.isActive) {
+      throw new UnauthorizedException('Ce compte a été désactivé');
+    }
+
     const tokens = await this.getTokens(user._id.toString(), user.email, user.role, user.neighbourhoodId);
     await this.storeRefreshToken(user._id.toString(), tokens.refresh_token);
     return tokens;

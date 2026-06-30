@@ -116,7 +116,12 @@ export default function ContractPage() {
     setStep('submitting');
     setSignError(null);
     try {
-      const updated = await api.post<HoodlyDocument>(`/documents/${documentId}/sign`, { otpToken });
+      const dataUrl = sigCanvas.current?.toDataURL('image/png') ?? '';
+      const signatureImage = dataUrl.split(',')[1]; // base64 sans préfixe
+      const updated = await api.post<HoodlyDocument>(`/documents/${documentId}/sign`, {
+        otpToken,
+        signatureImage,
+      });
       setDoc(updated.data);
       setStep('done');
     } catch (err: any) {
@@ -338,12 +343,14 @@ export default function ContractPage() {
       {/* ─── Action buttons ────────────────────────────────────────────────────── */}
       {step === 'idle' && (
         <div className="flex gap-3 mt-auto">
-          <button
-            onClick={goBack}
-            className="flex-1 rounded-xl border-2 border-sable py-3 font-sans text-sm font-semibold text-sable hover:border-red-300 hover:text-red-500 transition-colors"
-          >
-            Refuser
-          </button>
+          {!alreadySigned && (
+            <button
+              onClick={goBack}
+              className="flex-1 rounded-xl border-2 border-sable py-3 font-sans text-sm font-semibold text-sable hover:border-red-300 hover:text-red-500 transition-colors"
+            >
+              Refuser
+            </button>
+          )}
           {canSign ? (
             <button
               onClick={startSign}
