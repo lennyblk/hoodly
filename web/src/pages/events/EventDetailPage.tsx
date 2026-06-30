@@ -55,6 +55,7 @@ export default function EventDetailPage() {
   const [error, setError] = useState(false);
   const [rsvpLoading, setRsvpLoading] = useState(false);
   const [intLoading, setIntLoading] = useState(false);
+  const [nameMap, setNameMap] = useState<Map<string, string>>(new Map());
 
   async function fetchEvent() {
     try {
@@ -70,6 +71,17 @@ export default function EventDetailPage() {
   useEffect(() => {
     fetchEvent();
   }, [id]);
+
+  useEffect(() => {
+    if (!event?.neighbourhoodId) return;
+    api.get<{ _id: string; firstName: string; lastName: string }[]>(
+      `/users/neighbourhood?neighbourhoodId=${event.neighbourhoodId}`
+    ).then(({ data }) => {
+      const map = new Map<string, string>();
+      data.forEach((u) => map.set(u._id.toString(), `${u.firstName} ${u.lastName}`));
+      setNameMap(map);
+    }).catch(() => {});
+  }, [event?.neighbourhoodId]);
 
   async function handleRsvp() {
     if (!user || !event) return;
@@ -182,15 +194,14 @@ export default function EventDetailPage() {
                 {(event.participants ?? []).slice(0, 10).map((pid, i) => (
                   <div
                     key={pid}
-                    title={pid}
-                    className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold shadow-sm"
+                    className="h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm px-3"
                     style={{ backgroundColor: AVATAR_COLORS[i % AVATAR_COLORS.length] }}
                   >
-                    {pid.slice(-2, -1).toUpperCase()}
+                    {nameMap.get(pid) ?? '—'}
                   </div>
                 ))}
                 {(event.participants?.length ?? 0) > 10 && (
-                  <div className="w-9 h-9 rounded-full bg-sable/30 flex items-center justify-center text-charbon/60 text-xs font-bold">
+                  <div className="h-8 rounded-full bg-sable/30 flex items-center justify-center text-charbon/60 text-xs font-bold px-3">
                     +{event.participants.length - 10}
                   </div>
                 )}

@@ -273,7 +273,7 @@ export default function ProposeServicePage() {
                       <p className="font-sans text-sm font-semibold text-charbon truncate">{form.title || 'Titre de votre annonce'}</p>
                       <div className="flex items-center gap-1 mt-1">
                         <span className="font-sans text-xs text-sable">
-                          {user?.firstName || 'Utilisateur'} {user?.lastName?.charAt(0) || ''}.
+                          {user?.firstName || 'Utilisateur'} {user?.lastName || ''}
                         </span>
                       </div>
                     </div>

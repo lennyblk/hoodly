@@ -131,7 +131,7 @@ export class EventsService {
       `MATCH (me:User {id: $userId})-[:INTERESTED_IN|ATTENDED]->(pivot:Event)
        MATCH (other:User)-[:INTERESTED_IN|ATTENDED]->(pivot)
        WHERE other.id <> $userId
-       WITH DISTINCT other
+       WITH DISTINCT me, other
        MATCH (other)-[:INTERESTED_IN|ATTENDED]->(rec:Event {neighbourhoodId: $neighbourhoodId})
        WHERE NOT (me)-[:INTERESTED_IN|ATTENDED]->(rec)
        RETURN rec.id AS eventId, count(*) AS score

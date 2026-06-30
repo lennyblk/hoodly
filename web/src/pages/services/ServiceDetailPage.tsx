@@ -91,9 +91,7 @@ export default function ServiceDetailPage() {
   }
 
   const isOwner = String(user?._id) === announcement.authorId;
-  const authorInitials = author
-    ? `${author.firstName[0]}${author.lastName[0]}`.toUpperCase()
-    : '?';
+  const authorFullName = author ? `${author.firstName} ${author.lastName}` : '?';
 
   return (
     <div className="flex flex-col min-h-full">
@@ -144,12 +142,12 @@ export default function ServiceDetailPage() {
         <div className="rounded-2xl bg-white border border-sable/40 p-5">
           <p className="font-sans text-xs text-sable uppercase tracking-wide mb-3">Proposé par</p>
           <div className="flex items-center gap-4">
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-vert-foret font-sans text-lg font-bold text-white shrink-0">
-              {authorInitials}
+            <div className="flex h-10 items-center justify-center rounded-full bg-vert-foret font-sans text-xs font-bold text-white shrink-0 px-3">
+              {authorFullName}
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-sans text-base font-bold text-charbon">
-                {author ? `${author.firstName} ${author.lastName}` : `···${announcement.authorId.slice(-4)}`}
+                {author ? `${author.firstName} ${author.lastName}` : '—'}
               </p>
               {author && (
                 <p className="font-sans text-xs text-sable capitalize">{author.role}</p>

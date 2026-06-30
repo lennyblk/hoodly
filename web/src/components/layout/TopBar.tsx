@@ -6,9 +6,7 @@ export default function TopBar() {
   const now = new Date();
   const dateStr = now.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
 
-  const initials = user
-    ? `${user.firstName[0]}${user.lastName[0]}`.toUpperCase()
-    : '?';
+  const fullName = user ? `${user.firstName} ${user.lastName}` : '—';
 
   return (
     <header className="flex items-start justify-between px-8 pt-7 pb-2">
@@ -26,8 +24,8 @@ export default function TopBar() {
           </svg>
         </button>
 
-        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-ambre">
-          <span className="font-sans text-xs font-bold text-white">{initials}</span>
+        <div className="flex h-9 items-center justify-center rounded-full bg-ambre px-3">
+          <span className="font-sans text-xs font-bold text-white">{fullName}</span>
         </div>
       </div>
     </header>

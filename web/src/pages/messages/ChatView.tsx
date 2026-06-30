@@ -74,12 +74,6 @@ export default function ChatView({ conversationId, currentUserId, otherUserName,
     }
   }
 
-  const initials = otherUserName
-    .split(' ')
-    .map((w) => w[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2);
 
   return (
     <div className="flex flex-col h-full bg-creme">
@@ -94,7 +88,7 @@ export default function ChatView({ conversationId, currentUserId, otherUserName,
           </svg>
         </button>
         <div className="w-9 h-9 rounded-full bg-vert-foret flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
-          {initials}
+          {otherUserName.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2)}
         </div>
         <span className="font-heading font-semibold text-charbon">{otherUserName}</span>
       </div>

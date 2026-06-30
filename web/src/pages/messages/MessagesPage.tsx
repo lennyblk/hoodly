@@ -92,7 +92,7 @@ export default function MessagesPage() {
   function getConvLabel(conv: Conversation) {
     const otherId = getOtherParticipantId(conv);
     const other = nameMap[otherId];
-    return other ? `${other.firstName} ${other.lastName}` : `···${otherId.slice(-4)}`;
+    return other ? `${other.firstName} ${other.lastName}` : '—';
   }
 
   function getConvInitials(conv: Conversation) {

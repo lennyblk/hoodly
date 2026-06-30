@@ -21,6 +21,7 @@ export default function ServicesPage() {
   const navigate = useNavigate();
   const { user } = useUser();
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [authorNames, setAuthorNames] = useState<Map<string, string>>(new Map());
   const [isLoading, setIsLoading] = useState(true);
   const [tab, setTab] = useState<ServiceTab>('offer');
   const [category, setCategory] = useState('Tous');
@@ -53,6 +54,17 @@ export default function ServicesPage() {
     };
 
     fetchAnnouncements();
+  }, [user?.neighbourhoodId]);
+
+  useEffect(() => {
+    if (!user?.neighbourhoodId) return;
+    api.get<{ _id: string; firstName: string; lastName: string }[]>(
+      `/users/neighbourhood?neighbourhoodId=${user.neighbourhoodId}`
+    ).then(({ data }) => {
+      const map = new Map<string, string>();
+      data.forEach((u) => map.set(u._id.toString(), `${u.firstName} ${u.lastName}`));
+      setAuthorNames(map);
+    }).catch(() => {});
   }, [user?.neighbourhoodId]);
 
   const userId = String(user?._id);
@@ -179,11 +191,9 @@ export default function ServicesPage() {
                 <div className="flex flex-col gap-2 px-4 py-3">
                   <p className="font-sans text-sm font-semibold text-charbon leading-tight">{announcement.title}</p>
                   <div className="flex items-center gap-2">
-                    <span className="flex h-5 w-5 items-center justify-center rounded-full font-sans text-[9px] font-bold text-white shrink-0 bg-vert-foret">
-                      U
+                      <span className="font-sans text-xs text-sable truncate">
+                      {authorNames.get(announcement.authorId) ?? '—'}
                     </span>
-                    {/* Fallback car authorId n'est pas encore peuplé avec le firstName/lastName par le backend */}
-                    <span className="font-sans text-xs text-sable truncate">Auteur ID: {announcement.authorId.substring(0, 5)}...</span>
                   </div>
                 </div>
               </button>

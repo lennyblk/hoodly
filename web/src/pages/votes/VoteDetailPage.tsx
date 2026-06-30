@@ -279,11 +279,6 @@ export default function VoteDetailPage() {
                           const isMe = uid.toString() === user!._id;
                           return (
                             <div key={uid.toString()} className="flex items-center gap-2">
-                              <div className="w-6 h-6 rounded-full bg-vert-clair/20 flex items-center justify-center flex-shrink-0">
-                                <span className="text-xs font-semibold text-vert-foret">
-                                  {name.charAt(0).toUpperCase()}
-                                </span>
-                              </div>
                               <span className={`text-sm ${isMe ? 'text-vert-foret font-medium' : 'text-charbon/70'}`}>
                                 {name}{isMe && ' (vous)'}
                               </span>

@@ -8,9 +8,6 @@ type Announcement = components['schemas']['Announcement'];
 type Neighbourhood = components['schemas']['Neighbourhood'];
 
 
-function getInitials(firstName?: string, lastName?: string) {
-  return `${firstName?.charAt(0) ?? ''}${lastName?.charAt(0) ?? ''}`.toUpperCase();
-}
 
 function formatMemberSince(dateStr?: string) {
   if (!dateStr) return '';
@@ -41,7 +38,7 @@ export default function ProfilePage() {
 
   if (!user) return null;
 
-  const initials = getInitials(user.firstName, user.lastName);
+  const initials = `${user.firstName[0]}${user.lastName[0]}`.toUpperCase();
   const memberSince = formatMemberSince(user.createdAt);
 
   return (

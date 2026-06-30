@@ -104,10 +104,6 @@ export default function Sidebar() {
   const { user, clearUser } = useUser();
   const navigate = useNavigate();
 
-  const initials = user
-    ? `${user.firstName[0]}${user.lastName[0]}`.toUpperCase()
-    : '?';
-
   async function handleLogout() {
     await api.post('/auth/logout').catch(() => {});
     localStorage.removeItem('access_token');
@@ -128,8 +124,7 @@ export default function Sidebar() {
           </svg>
         </div>
         <div>
-          <p className="font-sans text-sm font-bold text-white leading-tight">Connected</p>
-          <p className="font-sans text-xs text-vert-clair/70">Neighbours</p>
+          <p className="font-sans text-sm font-bold text-white leading-tight">Hoodly</p>
         </div>
       </div>
 
@@ -160,9 +155,6 @@ export default function Sidebar() {
 
       {/* User */}
       <div className="px-3 py-4 border-t border-white/10 flex items-center gap-3">
-        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-ambre shrink-0">
-          <span className="font-sans text-xs font-bold text-white">{initials}</span>
-        </div>
         <div className="flex-1 min-w-0">
           <p className="font-sans text-sm font-semibold text-white truncate">
             {user ? `${user.firstName} ${user.lastName}` : '—'}

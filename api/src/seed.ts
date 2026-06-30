@@ -1019,7 +1019,56 @@ async function seed() {
     );
   }
 
-  console.log(`✓ ${attended.length} relations ATTENDED créées dans Neo4j`);
+  console.log(`${attended.length} relations ATTENDED créées dans Neo4j`);
+
+  // Chaînes de reco attendues sans ces blocages :
+  //   bob        → jardinage  (via profil alice qui partage soiree)
+  //   diana      → marche     (via profil charlie qui partage concert + reunion)
+  //   frank      → yoga       (via profil eve qui partage expo)
+  //   grace      → collecte   (via profil hugo qui partage fete_voisins)
+  //   modo_montmartre → vide_grenier + jardinage (via alice + bob)
+  const interested: {
+    userId: string;
+    eventId: string;
+    neighbourhoodId: string;
+  }[] = [
+    // frank (Marais) s'intéresse à la soirée Montmartre — crée un pivot cross-quartier
+    {
+      userId: uids.frank.toString(),
+      eventId: eids.soiree.toString(),
+      neighbourhoodId: nids.montmartre.toString(),
+    },
+    // modo_belleville s'intéresse au marché → renforce le score marche pour diana (passe de 1 à 2)
+    {
+      userId: uids.modo_belleville.toString(),
+      eventId: eids.marche.toString(),
+      neighbourhoodId: nids.belleville.toString(),
+    },
+    // modo_montmartre s'intéresse au jardinage → renforce la reco jardinage pour bob (passe de 1 à 2)
+    {
+      userId: uids.modo_montmartre.toString(),
+      eventId: eids.jardinage.toString(),
+      neighbourhoodId: nids.montmartre.toString(),
+    },
+    // hugo s'intéresse à la fête des voisins (il y assiste déjà → ATTENDED, INTERESTED_IN coexistent sans problème)
+    {
+      userId: uids.hugo.toString(),
+      eventId: eids.fete_voisins.toString(),
+      neighbourhoodId: nids.bastille.toString(),
+    },
+  ];
+
+  for (const { userId, eventId, neighbourhoodId } of interested) {
+    await session.run(
+      `MERGE (u:User {id: $userId})
+       MERGE (e:Event {id: $eventId})
+       ON CREATE SET e.neighbourhoodId = $neighbourhoodId
+       MERGE (u)-[:INTERESTED_IN]->(e)`,
+      { userId, eventId, neighbourhoodId },
+    );
+  }
+
+  console.log(`${interested.length} relations INTERESTED_IN créées dans Neo4j`);
 
   await session.close();
   await driver.close();
