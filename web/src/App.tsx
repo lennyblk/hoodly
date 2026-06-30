@@ -76,6 +76,7 @@ function AppRoutes() {
           <Route path="/votes" element={<VotesPage />} />
           <Route path="/votes/:id" element={<VoteDetailPage />} />
           <Route path="/documents" element={<DocumentsPage />} />
+          <Route path="/documents/:id" element={<ContractPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/profile/edit" element={<EditProfilePage />} />
           <Route element={<AdminRoutes />}>

@@ -17,7 +17,7 @@ interface ContractState {
 interface HoodlyDocument {
   id: string;
   title: string;
-  status: 'draft' | 'pending' | 'signed' | 'archived';
+  status: 'draft' | 'pending' | 'signed' | 'archived' | 'refused';
   signers: string[];
   signatures: { userId: string; hash: string; date: string }[];
   announcementId?: string;
@@ -127,6 +127,22 @@ export default function ContractPage() {
     } catch (err: any) {
       setSignError(err?.response?.data?.message ?? 'Erreur lors de la signature');
       setStep('canvas');
+    }
+  }
+
+  const [refusing, setRefusing] = useState(false);
+
+  async function handleRefuse() {
+    if (!documentId) { goBack(); return; }
+    setRefusing(true);
+    try {
+      const updated = await api.post<HoodlyDocument>(`/documents/${documentId}/refuse`);
+      setDoc(updated.data);
+    } catch {
+      // non-fatal — navigate back anyway
+    } finally {
+      setRefusing(false);
+      goBack();
     }
   }
 
@@ -343,12 +359,13 @@ export default function ContractPage() {
       {/* ─── Action buttons ────────────────────────────────────────────────────── */}
       {step === 'idle' && (
         <div className="flex gap-3 mt-auto">
-          {!alreadySigned && (
+          {!alreadySigned && doc?.status !== 'refused' && (
             <button
-              onClick={goBack}
-              className="flex-1 rounded-xl border-2 border-sable py-3 font-sans text-sm font-semibold text-sable hover:border-red-300 hover:text-red-500 transition-colors"
+              onClick={handleRefuse}
+              disabled={refusing}
+              className="flex-1 rounded-xl border-2 border-sable py-3 font-sans text-sm font-semibold text-sable hover:border-red-300 hover:text-red-500 transition-colors disabled:opacity-40"
             >
-              Refuser
+              {refusing ? 'Refus en cours...' : 'Refuser'}
             </button>
           )}
           {canSign ? (

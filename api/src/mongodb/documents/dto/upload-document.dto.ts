@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import { DocumentType } from '../../../entities/mongodb/Document';
 
 export class UploadDocumentDto {
@@ -17,4 +17,9 @@ export class UploadDocumentDto {
   @IsString()
   @IsOptional()
   announcementId?: string;
+
+  @ApiPropertyOptional({ example: 'voisin@example.com' })
+  @IsEmail()
+  @IsOptional()
+  signerEmail?: string;
 }

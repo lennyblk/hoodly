@@ -8,7 +8,7 @@ interface HoodlyDocument {
   title: string;
   name: string;
   type: 'contract' | 'other';
-  status: 'draft' | 'pending' | 'signed' | 'archived';
+  status: 'draft' | 'pending' | 'signed' | 'archived' | 'refused';
   ownerId: string;
   signers: string[];
   signatures: { userId: string; hash: string; date: string }[];
@@ -21,6 +21,7 @@ const STATUS_LABELS: Record<HoodlyDocument['status'], string> = {
   pending: 'En attente de signature',
   signed: 'Signé',
   archived: 'Archivé',
+  refused: 'Refusé',
 };
 
 const STATUS_COLORS: Record<HoodlyDocument['status'], string> = {
@@ -28,6 +29,7 @@ const STATUS_COLORS: Record<HoodlyDocument['status'], string> = {
   pending: 'bg-ambre/10 text-ambre',
   signed: 'bg-vert-clair/10 text-vert-moyen',
   archived: 'bg-charbon/10 text-charbon/50',
+  refused: 'bg-red-100 text-red-600',
 };
 
 const TYPE_LABELS: Record<HoodlyDocument['type'], string> = {
@@ -48,6 +50,7 @@ interface UploadModalProps {
 
 function UploadModal({ onClose, onUploaded }: UploadModalProps) {
   const [title, setTitle] = useState('');
+  const [signerEmail, setSignerEmail] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -63,6 +66,7 @@ function UploadModal({ onClose, onUploaded }: UploadModalProps) {
       form.append('file', file);
       form.append('title', title.trim());
       form.append('type', 'other');
+      if (signerEmail.trim()) form.append('signerEmail', signerEmail.trim());
       const { data } = await api.post<HoodlyDocument>('/documents/upload', form, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
@@ -102,6 +106,19 @@ function UploadModal({ onClose, onUploaded }: UploadModalProps) {
                 className="border border-sable/40 rounded-xl px-3 py-2 text-sm text-charbon focus:outline-none focus:ring-2 focus:ring-vert-foret/30"
                 required
                 autoFocus
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-charbon/60">
+                Email de l'autre signataire <span className="font-normal text-charbon/30">(optionnel)</span>
+              </label>
+              <input
+                type="email"
+                value={signerEmail}
+                onChange={(e) => setSignerEmail(e.target.value)}
+                placeholder="voisin@example.com"
+                className="border border-sable/40 rounded-xl px-3 py-2 text-sm text-charbon focus:outline-none focus:ring-2 focus:ring-vert-foret/30"
               />
             </div>
 
@@ -168,11 +185,11 @@ function DocCard({ doc, currentUserId }: DocCardProps) {
   const hasSignedMe = doc.signatures?.some((s) => s.userId === currentUserId || s.userId?.toString() === currentUserId);
   const canSign = doc.status === 'pending' && !hasSignedMe;
 
-  const isClickable = doc.type === 'contract' && !!doc.announcementId;
+  const isClickable = doc.status === 'pending' || doc.status === 'signed';
 
   function handleClick() {
     if (isClickable) {
-      navigate(`/services/${doc.announcementId}/contract`, {
+      navigate(`/documents/${doc.id}`, {
         state: { documentId: doc.id, from: '/documents' },
       });
     }

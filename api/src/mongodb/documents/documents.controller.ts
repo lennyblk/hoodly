@@ -124,6 +124,14 @@ export class DocumentsController {
     status: 403,
     description: "Non autorisé à signer ce document.",
   })
+  @ApiOperation({ summary: "Refuser un document — le PDF est marqué CONTRAT ANNULÉ" })
+  @ApiResponse({ status: 201, description: "Document refusé, PDF estampillé." })
+  @Post(":id/refuse")
+  refuse(@Param("id") id: string, @Req() req: Request) {
+    const user = (req as any).user as { userId: string };
+    return this.documentsService.refuse(id, user.userId);
+  }
+
   @Post(":id/sign")
   sign(
     @Param("id") id: string,

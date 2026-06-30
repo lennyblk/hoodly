@@ -15,7 +15,7 @@ import * as https from "https";
 import * as http from "http";
 import * as fs from "fs";
 import PDFDocument from "pdfkit";
-import { PDFDocument as PdfLibDoc } from "pdf-lib";
+import { PDFDocument as PdfLibDoc, rgb, degrees, StandardFonts } from "pdf-lib";
 import { JwtService } from "@nestjs/jwt";
 import {
   Document,
@@ -100,7 +100,7 @@ export class DocumentsService implements OnModuleInit {
     });
   }
 
-  // ─── GridFS helpers ────────────────────────────────────────────────────────
+  // ─── GridFS helpers 
 
   private getBucket(): GridFSBucket {
     const mongoClient = (this.dataSource.driver as any).queryRunner
@@ -149,7 +149,7 @@ export class DocumentsService implements OnModuleInit {
     await bucket.delete(objectId);
   }
 
-  // ─── CRUD ──────────────────────────────────────────────────────────────────
+  // ─── CRUD 
 
   async findAll(userId?: string) {
     if (userId) {
@@ -181,22 +181,47 @@ export class DocumentsService implements OnModuleInit {
     dto: UploadDocumentDto,
     userId: string,
   ) {
-    const gridfsId = await this.uploadToGridFS(file.buffer, file.originalname);
+    let signers: string[] = [userId];
+    if (dto.announcementId) {
+      try {
+        const announcementOid = new ObjectId(dto.announcementId);
+        const ann = await this.announcementsRepository.findOneBy({
+          _id: announcementOid,
+        } as any);
+        if (ann?.authorId && ann?.acceptedBy) {
+          signers = [ann.authorId, ann.acceptedBy];
+        }
+      } catch {
+        // invalid announcementId — keep owner as sole signer
+      }
+    } else if (dto.signerEmail) {
+      const otherUser = await this.usersService.findByEmail(dto.signerEmail);
+      if (otherUser && otherUser._id.toString() !== userId) {
+        signers = [userId, otherUser._id.toString()];
+      }
+    }
+
+    const { buffer: pdfWithSigPage, zones: signatureZones } =
+      await this.appendSignaturePage(file.buffer, signers.length);
+
+    const gridfsId = await this.uploadToGridFS(pdfWithSigPage, file.originalname);
+
     const doc = this.documentsRepository.create({
       title: dto.title,
       type: dto.type ?? DocumentType.OTHER,
       name: file.originalname,
       ownerId: userId,
-      signers: [],
+      signers,
       signatures: [],
-      status: DocumentStatus.DRAFT,
+      status: DocumentStatus.PENDING,
       gridfsId,
       announcementId: dto.announcementId,
+      signatureZones,
     } as any);
     return this.documentsRepository.save(doc);
   }
 
-  // ─── Sign ──────────────────────────────────────────────────────────────────
+  // ─── Sign 
 
   async sign(
     id: string,
@@ -255,31 +280,43 @@ export class DocumentsService implements OnModuleInit {
     doc.signatures = [...(doc.signatures ?? []), entry];
 
     // Embed signature image in PDF if provided
-    if (dto.signatureImage && doc.signatureZones?.length) {
-      const signerIndex = doc.signers.findIndex(
-        (s) => s === userId || s.toString() === userId,
-      );
-      const zone = signerIndex >= 0 ? doc.signatureZones[signerIndex] : null;
-      if (zone) {
-        try {
-          const updatedBuffer = await this.embedSignatureImage(
-            pdfBuffer,
-            dto.signatureImage,
-            zone,
-            signDate,
-          );
-          await this.deleteFromGridFS(doc.gridfsId);
-          doc.gridfsId = await this.uploadToGridFS(updatedBuffer, doc.name);
-        } catch (e: any) {
-          console.warn(
-            "[DocumentsService] Signature embed failed (non-fatal):",
-            e.message,
-          );
-        }
+    if (dto.signatureImage) {
+      let zone: SignatureZone | null = null;
+
+      if (doc.signatureZones?.length) {
+        const signerIndex = doc.signers.findIndex(
+          (s) => s === userId || s.toString() === userId,
+        );
+        zone = signerIndex >= 0 ? doc.signatureZones[signerIndex] : null;
+      }
+
+      // No predefined zone — auto-place at bottom of last page
+      if (!zone) {
+        const signerIndex = doc.signers.findIndex(
+          (s) => s === userId || s.toString() === userId,
+        );
+        // Offset horizontally so multiple signers don't overlap
+        const xOffset = signerIndex <= 0 ? 30 : 280;
+        zone = { page: -1, x: xOffset, y: 30, w: 200, h: 60 };
+      }
+
+      try {
+        const updatedBuffer = await this.embedSignatureImage(
+          pdfBuffer,
+          dto.signatureImage,
+          zone,
+          signDate,
+        );
+        await this.deleteFromGridFS(doc.gridfsId);
+        doc.gridfsId = await this.uploadToGridFS(updatedBuffer, doc.name);
+      } catch (e: any) {
+        console.warn(
+          "[DocumentsService] Signature embed failed (non-fatal):",
+          e.message,
+        );
       }
     }
 
-    // Mark as signed if all signers have signed
     const signerIds = [...(doc.signers ?? [])];
     if (isOwner && !signerIds.includes(userId)) signerIds.push(userId);
     const signedIds = doc.signatures.map((s) => s.userId.toString());
@@ -288,6 +325,58 @@ export class DocumentsService implements OnModuleInit {
     if (allSigned) doc.status = DocumentStatus.SIGNED;
 
     return this.documentsRepository.save(doc);
+  }
+
+  // ─── Refuse 
+
+  async refuse(id: string, userId: string) {
+    const doc = await this.findOne(id);
+
+    const isOwner = doc.ownerId === userId;
+    const isSigner = doc.signers?.includes(userId);
+    if (!isOwner && !isSigner) {
+      throw new ForbiddenException("Vous n'êtes pas autorisé à refuser ce document");
+    }
+    if (doc.status === DocumentStatus.REFUSED) {
+      throw new BadRequestException("Ce document est déjà refusé");
+    }
+
+    if (doc.gridfsId) {
+      try {
+        const pdfBuffer = await this.downloadFromGridFS(doc.gridfsId);
+        const stamped = await this.stampRefused(pdfBuffer);
+        await this.deleteFromGridFS(doc.gridfsId);
+        doc.gridfsId = await this.uploadToGridFS(stamped, doc.name);
+      } catch (e: any) {
+        console.warn("[DocumentsService] Stamp refused failed (non-fatal):", e.message);
+      }
+    }
+
+    doc.status = DocumentStatus.REFUSED;
+    return this.documentsRepository.save(doc);
+  }
+
+  private async stampRefused(pdfBuffer: Buffer): Promise<Buffer> {
+    const pdfDoc = await PdfLibDoc.load(pdfBuffer, { ignoreEncryption: true });
+    const pages = pdfDoc.getPages();
+
+    for (const page of pages) {
+      const { width, height } = page.getSize();
+      const text = "CONTRAT ANNULÉ";
+      const fontSize = Math.min(width, height) * 0.1;
+      const angle = 45;
+
+      page.drawText(text, {
+        x: width * 0.05,
+        y: height * 0.42,
+        size: fontSize,
+        color: rgb(0.85, 0.1, 0.1),
+        opacity: 0.55,
+        rotate: degrees(angle),
+      });
+    }
+
+    return Buffer.from(await pdfDoc.save());
   }
 
   private async embedSignatureImage(
@@ -317,7 +406,7 @@ export class DocumentsService implements OnModuleInit {
     return Buffer.from(await pdfDoc.save());
   }
 
-  // ─── Generate contract ─────────────────────────────────────────────────────
+  // ─── Generate contract 
 
   async generateContract(dto: GenerateContractDto, userId: string) {
     let announcementObjectId: ObjectId;
@@ -381,7 +470,76 @@ export class DocumentsService implements OnModuleInit {
     return savedDoc;
   }
 
-  // ─── PDF generation ────────────────────────────────────────────────────────
+  // ─── Signature page append (for uploaded PDFs)
+
+  private async appendSignaturePage(
+    pdfBuffer: Buffer,
+    signerCount: number,
+  ): Promise<{ buffer: Buffer; zones: SignatureZone[] }> {
+    try {
+      const pdfDoc = await PdfLibDoc.load(pdfBuffer, { ignoreEncryption: true });
+      const helveticaBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+      const helvetica = await pdfDoc.embedFont(StandardFonts.Helvetica);
+
+      const page = pdfDoc.addPage([595.28, 841.89]);
+      const { width, height } = page.getSize();
+
+      page.drawText("SIGNATURES", {
+        x: 50,
+        y: height - 50,
+        size: 16,
+        font: helveticaBold,
+        color: rgb(0, 0, 0),
+      });
+      page.drawLine({
+        start: { x: 50, y: height - 65 },
+        end: { x: width - 50, y: height - 65 },
+        thickness: 1,
+        color: rgb(0, 0, 0),
+      });
+
+      const xPositions = signerCount === 1 ? [50] : [50, 300];
+      const zones: SignatureZone[] = [];
+
+      for (let i = 0; i < Math.min(signerCount, xPositions.length); i++) {
+        const x = xPositions[i];
+
+        page.drawText(`Signataire ${i + 1}`, {
+          x,
+          y: height - 85,
+          size: 10,
+          font: helveticaBold,
+          color: rgb(0, 0, 0),
+        });
+
+        page.drawRectangle({
+          x,
+          y: SIG_Y_PDF_LIB,
+          width: SIG_BOX_WIDTH,
+          height: SIG_BOX_HEIGHT,
+          borderColor: rgb(0.7, 0.7, 0.7),
+          borderWidth: 1,
+        });
+
+        page.drawText("Zone de signature", {
+          x: x + 40,
+          y: SIG_Y_PDF_LIB + SIG_BOX_HEIGHT / 2 - 4,
+          size: 8,
+          font: helvetica,
+          color: rgb(0.7, 0.7, 0.7),
+        });
+
+        zones.push({ page: -1, x, y: SIG_Y_PDF_LIB, w: SIG_BOX_WIDTH, h: SIG_BOX_HEIGHT });
+      }
+
+      const buffer = Buffer.from(await pdfDoc.save());
+      return { buffer, zones };
+    } catch {
+      return { buffer: pdfBuffer, zones: [] };
+    }
+  }
+
+  // ─── PDF generation 
 
   private buildContractPdf(
     announcement: Announcement,
@@ -407,7 +565,10 @@ export class DocumentsService implements OnModuleInit {
         day: "numeric",
       });
 
-      // ── Page 1 : contenu ──────────────────────────────────────────────────
+      // ── Page 1 : contenu 
+
+      // Strip characters outside Latin-1 (emojis, etc.) that Helvetica can't encode
+      const safe = (s: string) => (s ?? '').replace(/[^\x00-\xFF]/gu, '');
 
       pdfDoc.fontSize(22).font(B).text("HOODLY", { align: "center" });
       pdfDoc
@@ -434,12 +595,12 @@ export class DocumentsService implements OnModuleInit {
 
       pdfDoc.fontSize(13).font(B).text("OBJET DU SERVICE");
       pdfDoc.moveDown(0.5).fontSize(11).font(R);
-      pdfDoc.text(`Titre : ${announcement.title}`);
+      pdfDoc.text(`Titre : ${safe(announcement.title)}`);
       pdfDoc.text(
         `Type : ${announcement.type === "offer" ? "Offre de service" : "Demande de service"}`,
       );
       pdfDoc.moveDown(0.5).text("Description :");
-      pdfDoc.text(announcement.description, { indent: 20 });
+      pdfDoc.text(safe(announcement.description), { indent: 20 });
       pdfDoc.moveDown(1);
 
       pdfDoc.fontSize(13).font(B).text("COMPENSATION");
@@ -455,6 +616,26 @@ export class DocumentsService implements OnModuleInit {
       }
       pdfDoc.moveDown(1);
 
+      // ── Modalités de prestation (serviceDetails) 
+      if (announcement.serviceDetails) {
+        const sd = announcement.serviceDetails;
+        pdfDoc.fontSize(13).font(B).text("MODALITÉS DE PRESTATION");
+        pdfDoc.moveDown(0.5).fontSize(11).font(R);
+        const fmtIso = (s: string) => {
+          const p = s.split("-");
+          if (p.length === 3) return `${parseInt(p[2])}/${parseInt(p[1])}/${p[0]}`;
+          return s; // day name ("Lun") or unknown — display as-is
+        };
+        if (sd.chosenDate) pdfDoc.text(`Date choisie : ${fmtIso(sd.chosenDate)}`);
+        if (sd.chosenDates?.length) pdfDoc.text(`Jours / dates : ${sd.chosenDates.join(", ")}`);
+        if (sd.startDate) pdfDoc.text(`Début : ${fmtIso(sd.startDate)}`);
+        if ((sd as any).endDate) pdfDoc.text(`Fin : ${fmtIso((sd as any).endDate)}`);
+        if (sd.durationWeeks) pdfDoc.text(`Durée : ${sd.durationWeeks} semaine${sd.durationWeeks > 1 ? "s" : ""}`);
+        if (sd.timeSlot) pdfDoc.text(`Créneau horaire : ${sd.timeSlot}`);
+        if (sd.notes) { pdfDoc.text("Notes :"); pdfDoc.text(safe(sd.notes), { indent: 20 }); }
+        pdfDoc.moveDown(1);
+      }
+
       pdfDoc.fontSize(13).font(B).text("CONDITIONS GÉNÉRALES");
       pdfDoc.moveDown(0.5).fontSize(10).font(R);
       pdfDoc.text(
@@ -468,7 +649,7 @@ export class DocumentsService implements OnModuleInit {
         "4. La signature numérique des deux parties est requise pour valider ce contrat.",
       );
 
-      // ── Page 2 : signatures (coordonnees absolues connues) ────────────────
+      // ── Page 2 : signatures (coordonnees absolues connues)
 
       pdfDoc.addPage();
 

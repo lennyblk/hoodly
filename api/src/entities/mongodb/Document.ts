@@ -11,6 +11,7 @@ export enum DocumentStatus {
   PENDING = 'pending',
   SIGNED = 'signed',
   ARCHIVED = 'archived',
+  REFUSED = 'refused',
 }
 
 export class SignatureEntry {
