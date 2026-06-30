@@ -12,6 +12,49 @@ export enum AnnouncementStatus {
   DONE = 'done',
 }
 
+export class AvailabilitySlot {
+  @ApiProperty({ enum: ['dates_exactes', 'recurrent', 'continu'] })
+  type: 'dates_exactes' | 'recurrent' | 'continu';
+
+  @ApiPropertyOptional({ type: [String], example: ['2026-07-15', '2026-07-22'] })
+  dates?: string[];
+
+  @ApiPropertyOptional({ type: [String], example: ['Lun', 'Mer', 'Ven'] })
+  days?: string[];
+
+  @ApiPropertyOptional({ example: '09:00' })
+  startTime?: string;
+
+  @ApiPropertyOptional({ example: '17:00' })
+  endTime?: string;
+
+  @ApiPropertyOptional({ example: '2026-07-01' })
+  startDate?: string;
+
+  @ApiPropertyOptional({ example: 4 })
+  durationWeeks?: number;
+}
+
+export class ServiceDetails {
+  @ApiPropertyOptional({ example: '2026-07-15' })
+  chosenDate?: string;
+
+  @ApiPropertyOptional({ type: [String] })
+  chosenDates?: string[];
+
+  @ApiPropertyOptional({ example: '2026-07-01' })
+  startDate?: string;
+
+  @ApiPropertyOptional({ example: 3 })
+  durationWeeks?: number;
+
+  @ApiPropertyOptional({ example: '09:00-12:00' })
+  timeSlot?: string;
+
+  @ApiPropertyOptional({ example: 'Accès par la porte de derrière' })
+  notes?: string;
+}
+
 @Entity('announcements')
 export class Announcement {
   @ApiProperty({ example: '64a1f2c3e4b5f6a7b8c9d0e1', type: String })
@@ -57,6 +100,14 @@ export class Announcement {
   @ApiPropertyOptional({ example: '64a1f2c3e4b5f6a7b8c9d0e5' })
   @Column({ type: 'string', nullable: true })
   contractId: string;
+
+  @ApiPropertyOptional({ type: [AvailabilitySlot] })
+  @Column({ type: 'array', nullable: true })
+  availabilities: AvailabilitySlot[];
+
+  @ApiPropertyOptional({ type: ServiceDetails })
+  @Column({ type: 'json', nullable: true })
+  serviceDetails: ServiceDetails;
 
   @ApiProperty()
   @CreateDateColumn()

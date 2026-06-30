@@ -6,7 +6,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { MongoRepository } from 'typeorm';
 import { ObjectId } from 'mongodb';
-import { Announcement, AnnouncementStatus } from '../../entities/mongodb/Announcement';
+import { Announcement, AnnouncementStatus, ServiceDetails } from '../../entities/mongodb/Announcement';
 import { Neighbourhood } from '../../entities/mongodb/Neighbourhood';
 import { CreateAnnouncementDto } from './dto/create-announcement.dto';
 import { UpdateAnnouncementDto } from './dto/update-announcement.dto';
@@ -128,7 +128,7 @@ export class AnnouncementsService {
     return saved;
   }
 
-  async accept(id: string, userId: string) {
+  async accept(id: string, userId: string, serviceDetails?: ServiceDetails) {
     const announcement = await this.findOne(id);
     if (announcement.authorId === userId) {
       throw new BadRequestException('The author cannot accept their own announcement');
@@ -138,6 +138,7 @@ export class AnnouncementsService {
     }
     announcement.status = 'accepted' as any;
     announcement.acceptedBy = userId;
+    if (serviceDetails) announcement.serviceDetails = serviceDetails;
     return this.announcementsRepository.save(announcement);
   }
 

@@ -16,7 +16,9 @@ import { ApiBearerAuth, ApiTags, ApiOperation, ApiParam, ApiQuery, ApiResponse }
 import { AnnouncementsService } from './announcements.service';
 import { CreateAnnouncementDto } from './dto/create-announcement.dto';
 import { UpdateAnnouncementDto } from './dto/update-announcement.dto';
+import { AcceptAnnouncementDto } from './dto/accept-announcement.dto';
 import { Announcement } from '../../entities/mongodb/Announcement';
+
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '../../entities/mongodb/User';
@@ -58,9 +60,9 @@ export class AnnouncementsController {
   @ApiResponse({ status: 200, type: Announcement })
   @ApiResponse({ status: 400, description: 'Déjà acceptée ou auteur ne peut pas accepter.' })
   @Post(':id/accept')
-  accept(@Param('id') id: string, @Req() req: Request) {
+  accept(@Param('id') id: string, @Req() req: Request, @Body() dto: AcceptAnnouncementDto) {
     const user = (req as any).user as { userId: string };
-    return this.announcementsService.accept(id, user.userId);
+    return this.announcementsService.accept(id, user.userId, dto?.serviceDetails);
   }
 
   @ApiOperation({ summary: 'Mettre à jour une annonce — modérateur ou admin' })

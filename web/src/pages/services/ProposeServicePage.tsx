@@ -1,4 +1,13 @@
 import { useState } from 'react';
+
+const MONTHS_SHORT = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
+function fmtDate(iso: string): string {
+  const parts = iso.split('-');
+  if (parts.length !== 3) return iso;
+  const d = parseInt(parts[2], 10);
+  const m = parseInt(parts[1], 10) - 1;
+  return `${d} ${MONTHS_SHORT[m] ?? ''}`;
+}
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../../contexts/useUser';
 import api from '../../api/axios';
@@ -8,6 +17,7 @@ type CreateAnnouncementDto = components['schemas']['CreateAnnouncementDto'];
 type User = components['schemas']['User'];
 type ServiceType = 'offer' | 'request';
 type Location = 'moi' | 'beneficiaire' | 'flexible';
+type AvailType = 'recurrent' | 'dates_exactes' | 'continu';
 
 const CATEGORIES = [
   { label: 'Jardinage', emoji: '🌱' },
@@ -29,10 +39,15 @@ interface FormState {
   description: string;
   duration: string;
   points: number;
+  location: Location;
+  // availability
+  availType: AvailType;
   days: string[];
   startTime: string;
   endTime: string;
-  location: Location;
+  exactDates: string[];
+  availStartDate: string;
+  durationWeeks: number;
 }
 
 function StepBar({ current }: { current: number }) {
@@ -62,10 +77,14 @@ export default function ProposeServicePage() {
     description: '',
     duration: '',
     points: 0,
+    location: 'flexible',
+    availType: 'recurrent',
     days: [],
     startTime: '',
     endTime: '',
-    location: 'flexible',
+    exactDates: [],
+    availStartDate: '',
+    durationWeeks: 1,
   });
 
   const handleSubmit = async () => {
@@ -77,7 +96,19 @@ export default function ProposeServicePage() {
       return;
     }
 
-    const enrichedDescription = `${form.description}\n\n📍 Catégorie: ${form.category}\n⏱ Durée: ${form.duration}\n📅 Dispo: ${form.days.join(', ')} de ${form.startTime} à ${form.endTime}\n🏠 Lieu: ${form.location}`;
+    const availabilityLabel =
+      form.availType === 'dates_exactes' ? `dates : ${form.exactDates.join(', ')}` :
+      form.availType === 'continu' ? `à partir du ${form.availStartDate}, ${form.durationWeeks} sem.` :
+      `${form.days.join(', ')} de ${form.startTime} à ${form.endTime}`;
+
+    const enrichedDescription = `${form.description}\n\n📍 Catégorie: ${form.category}\n⏱ Durée: ${form.duration}\n📅 Dispo: ${availabilityLabel}\n🏠 Lieu: ${form.location}`;
+
+    const availabilitySlot =
+      form.availType === 'dates_exactes'
+        ? { type: 'dates_exactes' as const, dates: form.exactDates, startTime: form.startTime, endTime: form.endTime }
+        : form.availType === 'continu'
+        ? { type: 'continu' as const, startDate: form.availStartDate, durationWeeks: form.durationWeeks }
+        : { type: 'recurrent' as const, days: form.days, startTime: form.startTime, endTime: form.endTime };
 
     const payload: CreateAnnouncementDto = {
       title: form.title,
@@ -88,7 +119,8 @@ export default function ProposeServicePage() {
       authorId: String(user._id),
       neighbourhoodId: String(user.neighbourhoodId),
       status: 'open',
-    };
+      availabilities: [availabilitySlot],
+    } as any;
 
     try {
       await api.post('/announcements', payload);
@@ -294,45 +326,116 @@ export default function ProposeServicePage() {
           {/* ── Étape 3 ── */}
           {step === 3 && (
             <div className="flex flex-col gap-5">
+
+              {/* Type de disponibilité */}
               <div>
-                <label className="font-sans text-sm font-semibold text-charbon mb-3 block">Jours disponibles</label>
-                <div className="flex flex-wrap gap-2">
-                  {DAYS.map((day) => (
+                <label className="font-sans text-sm font-semibold text-charbon mb-3 block">Type de disponibilité</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {([
+                    { value: 'recurrent' as AvailType, label: 'Récurrent', sub: 'Jours fixes chaque semaine' },
+                    { value: 'dates_exactes' as AvailType, label: 'Dates précises', sub: 'Un ou plusieurs jours exacts' },
+                    { value: 'continu' as AvailType, label: 'Continu', sub: 'Période sur plusieurs semaines' },
+                  ] as const).map((opt) => (
                     <button
-                      key={day}
-                      onClick={() => toggleDay(day)}
-                      className={`rounded-xl px-4 py-2 font-sans text-sm font-medium transition-colors ${form.days.includes(day)
-                        ? 'bg-vert-foret text-white'
-                        : 'border border-sable bg-white text-charbon hover:border-vert-moyen'
-                        }`}
+                      key={opt.value}
+                      onClick={() => setForm((f) => ({ ...f, availType: opt.value }))}
+                      className={`flex flex-col gap-1 rounded-2xl border-2 px-3 py-4 text-left transition-colors ${form.availType === opt.value ? 'border-vert-foret bg-[#E8F5EE]' : 'border-sable/50 bg-white hover:border-sable'}`}
                     >
-                      {day}
+                      <span className="font-sans text-sm font-bold text-charbon">{opt.label}</span>
+                      <span className="font-sans text-xs text-sable">{opt.sub}</span>
                     </button>
                   ))}
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="flex flex-col gap-1.5">
-                  <label className="font-sans text-sm font-semibold text-charbon">Heure de début</label>
-                  <input
-                    type="time"
-                    value={form.startTime}
-                    onChange={(e) => setForm((f) => ({ ...f, startTime: e.target.value }))}
-                    className={inputClass}
-                  />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label className="font-sans text-sm font-semibold text-charbon">Heure de fin</label>
-                  <input
-                    type="time"
-                    value={form.endTime}
-                    onChange={(e) => setForm((f) => ({ ...f, endTime: e.target.value }))}
-                    className={inputClass}
-                  />
-                </div>
-              </div>
+              {/* Récurrent */}
+              {form.availType === 'recurrent' && (
+                <>
+                  <div>
+                    <label className="font-sans text-sm font-semibold text-charbon mb-3 block">Jours disponibles</label>
+                    <div className="flex flex-wrap gap-2">
+                      {DAYS.map((day) => (
+                        <button key={day} onClick={() => toggleDay(day)}
+                          className={`rounded-xl px-4 py-2 font-sans text-sm font-medium transition-colors ${form.days.includes(day) ? 'bg-vert-foret text-white' : 'border border-sable bg-white text-charbon hover:border-vert-moyen'}`}>
+                          {day}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="font-sans text-sm font-semibold text-charbon">Heure de début</label>
+                      <input type="time" value={form.startTime} onChange={(e) => setForm((f) => ({ ...f, startTime: e.target.value }))} className={inputClass} />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="font-sans text-sm font-semibold text-charbon">Heure de fin</label>
+                      <input type="time" value={form.endTime} onChange={(e) => setForm((f) => ({ ...f, endTime: e.target.value }))} className={inputClass} />
+                    </div>
+                  </div>
+                </>
+              )}
 
+              {/* Dates exactes */}
+              {form.availType === 'dates_exactes' && (
+                <>
+                  <div className="flex flex-col gap-2">
+                    <label className="font-sans text-sm font-semibold text-charbon">Ajouter des dates</label>
+                    <div className="flex gap-2">
+                      <input type="date" id="exact-date-input" className={`${inputClass} flex-1`} min={new Date().toISOString().split('T')[0]} />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const input = document.getElementById('exact-date-input') as HTMLInputElement;
+                          const val = input.value;
+                          if (val && !form.exactDates.includes(val)) {
+                            setForm((f) => ({ ...f, exactDates: [...f.exactDates, val].sort() }));
+                            input.value = '';
+                          }
+                        }}
+                        className="px-4 py-2 bg-vert-foret text-white rounded-xl text-sm font-semibold hover:bg-vert-moyen"
+                      >
+                        Ajouter
+                      </button>
+                    </div>
+                    {form.exactDates.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-1">
+                        {form.exactDates.map((d) => (
+                          <span key={d} className="flex items-center gap-1.5 bg-vert-foret/10 text-vert-foret rounded-full px-3 py-1 text-xs font-medium">
+                            {fmtDate(d)}
+                            <button onClick={() => setForm((f) => ({ ...f, exactDates: f.exactDates.filter((x) => x !== d) }))} className="text-vert-foret/60 hover:text-red-500">✕</button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="font-sans text-sm font-semibold text-charbon">Heure de début</label>
+                      <input type="time" value={form.startTime} onChange={(e) => setForm((f) => ({ ...f, startTime: e.target.value }))} className={inputClass} />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="font-sans text-sm font-semibold text-charbon">Heure de fin</label>
+                      <input type="time" value={form.endTime} onChange={(e) => setForm((f) => ({ ...f, endTime: e.target.value }))} className={inputClass} />
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* Continu */}
+              {form.availType === 'continu' && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="font-sans text-sm font-semibold text-charbon">Date de début</label>
+                    <input type="date" value={form.availStartDate} onChange={(e) => setForm((f) => ({ ...f, availStartDate: e.target.value }))} min={new Date().toISOString().split('T')[0]} className={inputClass} />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="font-sans text-sm font-semibold text-charbon">Durée (semaines)</label>
+                    <input type="number" min={1} max={52} value={form.durationWeeks} onChange={(e) => setForm((f) => ({ ...f, durationWeeks: Number(e.target.value) }))} className={inputClass} />
+                  </div>
+                </div>
+              )}
+
+              {/* Lieu */}
               <div>
                 <label className="font-sans text-sm font-semibold text-charbon mb-3 block">Lieu</label>
                 <div className="flex gap-2">
@@ -341,14 +444,8 @@ export default function ProposeServicePage() {
                     { value: 'beneficiaire' as Location, label: 'Au domicile du bénéficiaire' },
                     { value: 'flexible' as Location, label: 'Flexible' },
                   ].map((opt) => (
-                    <button
-                      key={opt.value}
-                      onClick={() => setForm((f) => ({ ...f, location: opt.value }))}
-                      className={`flex-1 rounded-xl px-3 py-3 font-sans text-sm font-medium transition-colors ${form.location === opt.value
-                        ? 'bg-vert-foret text-white'
-                        : 'border border-sable bg-white text-charbon hover:border-vert-moyen'
-                        }`}
-                    >
+                    <button key={opt.value} onClick={() => setForm((f) => ({ ...f, location: opt.value }))}
+                      className={`flex-1 rounded-xl px-3 py-3 font-sans text-sm font-medium transition-colors ${form.location === opt.value ? 'bg-vert-foret text-white' : 'border border-sable bg-white text-charbon hover:border-vert-moyen'}`}>
                       {opt.label}
                     </button>
                   ))}
@@ -361,7 +458,11 @@ export default function ProposeServicePage() {
                 </div>
               )}
               <button
-                disabled={form.days.length === 0}
+                disabled={
+                  form.availType === 'recurrent' ? form.days.length === 0 :
+                  form.availType === 'dates_exactes' ? form.exactDates.length === 0 :
+                  !form.availStartDate
+                }
                 onClick={handleSubmit}
                 className="w-full rounded-xl bg-vert-foret py-3.5 font-sans text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
               >
