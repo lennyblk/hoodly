@@ -4,11 +4,12 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { MongoRepository } from 'typeorm';
-import { ObjectId } from 'mongodb';
+import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
+import { DataSource, MongoRepository } from 'typeorm';
+import { GridFSBucket, ObjectId } from 'mongodb';
+import { Readable } from 'stream';
 import { Conversation } from '../../entities/mongodb/Conversation';
-import { Message } from '../../entities/mongodb/Message';
+import { Message, MessageType } from '../../entities/mongodb/Message';
 import { UsersService } from '../users/users.service';
 import { UserRole } from '../../entities/mongodb/User';
 import { CreateConversationDto } from './dto/create-conversation.dto';
@@ -21,8 +22,59 @@ export class MessagesService {
     private conversationsRepository: MongoRepository<Conversation>,
     @InjectRepository(Message, 'mongodb')
     private messagesRepository: MongoRepository<Message>,
+    @InjectDataSource('mongodb')
+    private dataSource: DataSource,
     private usersService: UsersService,
   ) {}
+
+  // ─── GridFS helpers ───────────────────────────────────────────────────
+
+  private getBucket(): GridFSBucket {
+    const mongoClient = (this.dataSource.driver as any).queryRunner.databaseConnection;
+    const db = mongoClient.db();
+    return new GridFSBucket(db, { bucketName: 'chat_media' });
+  }
+
+  async uploadMedia(file: Express.Multer.File): Promise<string> {
+    const bucket = this.getBucket();
+    return new Promise((resolve, reject) => {
+      const uploadStream = bucket.openUploadStream(file.originalname, {
+        contentType: file.mimetype,
+      });
+      Readable.from(file.buffer)
+        .pipe(uploadStream)
+        .on('finish', () => resolve(uploadStream.id.toString()))
+        .on('error', reject);
+    });
+  }
+
+  async downloadMedia(fileId: string): Promise<{ buffer: Buffer; contentType: string; filename: string }> {
+    const bucket = this.getBucket();
+    let objectId: ObjectId;
+    try {
+      objectId = new ObjectId(fileId);
+    } catch {
+      throw new BadRequestException('Invalid file ID format');
+    }
+
+    const files = await bucket.find({ _id: objectId }).toArray();
+    if (files.length === 0) {
+      throw new NotFoundException('File not found');
+    }
+    const fileInfo = files[0];
+
+    return new Promise((resolve, reject) => {
+      const chunks: Buffer[] = [];
+      bucket.openDownloadStream(objectId)
+        .on('data', (chunk: Buffer) => chunks.push(chunk))
+        .on('end', () => resolve({
+          buffer: Buffer.concat(chunks),
+          contentType: fileInfo.contentType || 'application/octet-stream',
+          filename: fileInfo.filename || 'file',
+        }))
+        .on('error', reject);
+    });
+  }
 
   async createConversation(dto: CreateConversationDto) {
     // Fetch tous les participants
@@ -90,9 +142,15 @@ export class MessagesService {
     const message = this.messagesRepository.create(dto);
     const saved = await this.messagesRepository.save(message);
 
+    const lastMessage = dto.type === MessageType.IMAGE
+      ? 'Photo'
+      : dto.type === MessageType.AUDIO
+        ? 'Audio'
+        : dto.content ?? '';
+
     await this.conversationsRepository.updateOne(
       { _id: new ObjectId(dto.conversationId) },
-      { $set: { lastMessage: dto.content } },
+      { $set: { lastMessage } },
     );
 
     return saved;
