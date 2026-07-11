@@ -2,6 +2,7 @@ import { Controller, Get, Post, Body, Param, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiParam, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { MessagesService } from './messages.service';
+import { MessagesGateway } from './messages.gateway';
 import { CreateConversationDto } from './dto/create-conversation.dto';
 import { CreateMessageDto } from './dto/create-messages.dto';
 import { Conversation } from '../../entities/mongodb/Conversation';
@@ -12,7 +13,10 @@ import { Message } from '../../entities/mongodb/Message';
 @UseGuards(AuthGuard('jwt'))
 @Controller()
 export class MessagesController {
-  constructor(private readonly messagesService: MessagesService) {}
+  constructor(
+    private readonly messagesService: MessagesService,
+    private readonly messagesGateway: MessagesGateway,
+  ) {}
 
   @ApiOperation({ summary: 'Créer ou récupérer une conversation entre voisins du même quartier' })
   @ApiResponse({ status: 201, type: Conversation })
@@ -46,5 +50,12 @@ export class MessagesController {
   @Get('messages/:conversationId')
   findMessages(@Param('conversationId') conversationId: string) {
     return this.messagesService.findMessagesByConversation(conversationId);
+  }
+
+  @ApiOperation({ summary: 'Liste des userIds actuellement en ligne (WebSocket)' })
+  @ApiResponse({ status: 200, description: 'Array de userIds online.' })
+  @Get('users/online')
+  getOnlineUsers() {
+    return this.messagesGateway.getOnlineUserIds();
   }
 }
