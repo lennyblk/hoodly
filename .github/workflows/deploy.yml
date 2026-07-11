@@ -19,3 +19,4 @@ jobs:
             git pull origin main
             VITE_API_URL=${{ secrets.VITE_API_URL }} docker compose -f docker-compose.prod.yaml up -d --build
             docker exec hoodly-api node dist/seed.js
+            docker restart caddy

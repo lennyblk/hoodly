@@ -8,8 +8,9 @@ services:
         VITE_API_URL: ${VITE_API_URL}
     container_name: hoodly-web
     restart: unless-stopped
-    ports:
-      - "5173:5173"
+    networks:
+      - proxy
+      - default
 
   api:
     build:
@@ -19,10 +20,11 @@ services:
     container_name: hoodly-api
     restart: unless-stopped
     env_file: .env.prod
-    ports:
-      - "3000:3000"
     volumes:
       - sqlite_data:/app/data
+    networks:
+      - proxy
+      - default
     depends_on:
       - mongodb
       - neo4j
@@ -42,10 +44,6 @@ services:
     image: neo4j:5
     container_name: hoodly-neo4j
     restart: unless-stopped
-    ports:
-      - "7473:7473"
-      - "7474:7474"
-      - "7687:7687"
     volumes:
       - neo4j_data:/data
     environment:
@@ -55,3 +53,8 @@ volumes:
   mongo_data:
   neo4j_data:
   sqlite_data:
+
+networks:
+  proxy:
+    external: true
+    name: proxy
