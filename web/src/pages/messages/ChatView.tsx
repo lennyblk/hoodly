@@ -35,7 +35,7 @@ export default function ChatView({ conversationId, currentUserId, otherUserName,
   }, [conversationId]);
 
   useEffect(() => {
-    const socket = io('http://localhost:3000');
+    const socket = io(import.meta.env.VITE_API_URL ?? 'http://localhost:3000');
     socketRef.current = socket;
     socket.emit('joinConversation', conversationId);
     socket.on('newMessage', (msg: Message) => {
