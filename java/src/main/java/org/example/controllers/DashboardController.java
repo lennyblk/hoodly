@@ -1,12 +1,16 @@
 package org.example.controllers;
 
 import javafx.fxml.FXML;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
 import org.example.Main;
 import org.example.services.AuthService;
 import org.example.services.DatabaseService;
+import org.example.services.UninstallService;
 
 import java.io.IOException;
+import java.nio.file.Path;
 
 public class DashboardController {
 
@@ -62,6 +66,39 @@ public class DashboardController {
                 });
             }
         }).start();
+    }
+
+    @FXML
+    private void handleUninstall() {
+        Path jar = UninstallService.getApplicationJar();
+
+        StringBuilder content = new StringBuilder("Seront supprimés définitivement :\n");
+        if (jar != null) {
+            content.append("• ").append(jar.getFileName()).append(" (l'application)\n");
+        }
+        content.append("• hoodly_local.db (base de données locale)\n");
+        content.append("• hoodly_themes.json (préférences de thème)\n");
+        content.append("• le dossier plugins/ et son contenu\n");
+        if (jar == null) {
+            content.append("\nMode développement détecté : seules les données locales seront supprimées.");
+        }
+        content.append("\nL'application va se fermer.");
+
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+        confirm.setTitle("Désinstaller Hoodly Desktop");
+        confirm.setHeaderText("Désinstaller complètement l'application ?");
+        confirm.setContentText(content.toString());
+
+        if (confirm.showAndWait().filter(b -> b == ButtonType.OK).isEmpty()) {
+            return;
+        }
+
+        try {
+            UninstallService.uninstallAndExit();
+        } catch (IOException e) {
+            dbStatusLabel.setStyle("-fx-text-fill: #f44336;");
+            dbStatusLabel.setText("Erreur de désinstallation : " + e.getMessage());
+        }
     }
 
     @FXML
