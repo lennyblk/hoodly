@@ -16,6 +16,11 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
   @WebSocketServer()
   server: Server;
 
+  // userId → Set of socketIds (un user peut avoir plusieurs onglets)
+  private onlineUsers = new Map<string, Set<string>>();
+  // socketId → userId (reverse lookup pour disconnect)
+  private socketToUser = new Map<string, string>();
+
   constructor(private readonly messagesService: MessagesService) {}
 
   handleConnection(client: Socket) {
@@ -23,7 +28,38 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
   }
 
   handleDisconnect(client: Socket) {
+    const userId = this.socketToUser.get(client.id);
+    if (userId) {
+      this.socketToUser.delete(client.id);
+      const sockets = this.onlineUsers.get(userId);
+      if (sockets) {
+        sockets.delete(client.id);
+        if (sockets.size === 0) {
+          this.onlineUsers.delete(userId);
+          this.server.emit('userOffline', { userId });
+        }
+      }
+    }
     console.log(`[WS] Client déconnecté : ${client.id}`);
+  }
+
+  // Client s'enregistre avec son userId pour tracker la présence
+  @SubscribeMessage('register')
+  handleRegister(
+    @MessageBody() userId: string,
+    @ConnectedSocket() client: Socket,
+  ) {
+    this.socketToUser.set(client.id, userId);
+    if (!this.onlineUsers.has(userId)) {
+      this.onlineUsers.set(userId, new Set());
+      // Premier socket pour ce user → il passe online
+      this.server.emit('userOnline', { userId });
+    }
+    this.onlineUsers.get(userId)!.add(client.id);
+
+    // Envoyer la liste des users online a l'arrivant
+    const onlineIds = Array.from(this.onlineUsers.keys());
+    client.emit('onlineUsers', onlineIds);
   }
 
   // Client rejoint la room d'une conversation
@@ -58,5 +94,9 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
     } catch (err) {
       client.emit('error', { message: 'Échec envoi du message' });
     }
+  }
+
+  getOnlineUserIds(): string[] {
+    return Array.from(this.onlineUsers.keys());
   }
 }

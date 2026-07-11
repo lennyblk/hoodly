@@ -13,6 +13,22 @@ import { User, UserRole, UserLang } from '../../entities/mongodb/User';
 import { RefreshToken } from '../../entities/mongodb/RefreshToken';
 import { Tokens } from './types';
 import { ObjectId } from 'mongodb';
+import { OtpService } from '../otp/otp.service';
+
+const OTP_BYPASS_EMAILS = [
+  'admin@hoodly.com',
+  'modo.montmartre@hoodly.com',
+  'modo.belleville@hoodly.com',
+  'alice@hoodly.com',
+  'bob@hoodly.com',
+  'charlie@hoodly.com',
+  'diana@hoodly.com',
+  'eve@hoodly.com',
+  'frank@hoodly.com',
+  'grace@hoodly.com',
+  'hugo@hoodly.com',
+  'iris@hoodly.com',
+];
 
 @Injectable()
 export class AuthService {
@@ -22,7 +38,12 @@ export class AuthService {
     @InjectRepository(RefreshToken, 'mongodb')
     private refreshTokenRepository: Repository<RefreshToken>,
     private jwtService: JwtService,
+    private otpService: OtpService,
   ) { }
+
+  private requiresOtp(email: string): boolean {
+    return !OTP_BYPASS_EMAILS.includes(email.toLowerCase());
+  }
 
   hashData(data: string) {
     return bcrypt.hash(data, 10);
@@ -87,7 +108,7 @@ export class AuthService {
     return tokens;
   }
 
-  async signin(dto: SigninDto): Promise<Tokens> {
+  async signin(dto: SigninDto): Promise<Tokens | { otpRequired: true; message: string }> {
     const user = await this.findByEmail(dto.email);
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
@@ -100,6 +121,27 @@ export class AuthService {
 
     if (!user.isActive) {
       throw new UnauthorizedException('Ce compte a été désactivé');
+    }
+
+    // OTP bypass pour les emails de test/seed
+    if (!this.requiresOtp(user.email)) {
+      const tokens = await this.getTokens(user._id.toString(), user.email, user.role, user.neighbourhoodId);
+      await this.storeRefreshToken(user._id.toString(), tokens.refresh_token);
+      return tokens;
+    }
+
+    // Real email
+    await this.otpService.send(user.email, user.firstName);
+    return { otpRequired: true, message: 'Code OTP envoyé par email' };
+  }
+
+  async verifySigninOtp(email: string, code: string): Promise<Tokens> {
+    // Verify OTP code
+    await this.otpService.verify(email, code);
+
+    const user = await this.findByEmail(email);
+    if (!user) {
+      throw new UnauthorizedException('User not found');
     }
 
     const tokens = await this.getTokens(user._id.toString(), user.email, user.role, user.neighbourhoodId);

@@ -18,8 +18,13 @@ export class CreateMessageDto {
   @IsOptional()
   type?: MessageType;
 
-  @ApiProperty({ example: 'Bonjour tout le monde !' })
+  @ApiPropertyOptional({ example: 'Bonjour tout le monde !' })
   @IsString()
-  @IsNotEmpty()
-  content: string;
+  @IsOptional()
+  content?: string;
+
+  @ApiPropertyOptional({ example: '64a1f2c3e4b5f6a7b8c9d0e4' })
+  @IsString()
+  @IsOptional()
+  fileId?: string;
 }
