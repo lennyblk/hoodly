@@ -16,6 +16,7 @@
         <Button text="← Retour" onAction="#goBack" style="-fx-background-color: #2196F3; -fx-text-fill: white;"/>
         <Label text="Plugins" style="-fx-font-size: 24; -fx-font-weight: bold; -fx-padding: 0 0 0 20;"/>
         <Button text="⟳ Recharger" onAction="#handleRefresh" style="-fx-background-color: #607D8B; -fx-text-fill: white;"/>
+        <Button text="Installer un plugin…" onAction="#handleInstall" style="-fx-background-color: #4CAF50; -fx-text-fill: white;"/>
     </HBox>
 
     <Label fx:id="dirLabel" style="-fx-text-fill: #888; -fx-font-size: 12;"/>

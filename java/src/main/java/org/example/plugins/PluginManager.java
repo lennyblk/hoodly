@@ -63,6 +63,18 @@ public final class PluginManager {
         return result;
     }
 
+    public static Path installPlugin(File sourceJar) throws IOException {
+        Path dir = getPluginsDirectory();
+        Files.createDirectories(dir);
+        Path target = dir.resolve(sourceJar.getName());
+        Files.copy(sourceJar.toPath(), target, StandardCopyOption.REPLACE_EXISTING);
+        return target;
+    }
+
+    public static void uninstallPlugin(String jarName) throws IOException {
+        Files.deleteIfExists(getPluginsDirectory().resolve(jarName));
+    }
+
     private static void closeOpenJars() {
         for (OpenJar open : openJars) {
             try {
