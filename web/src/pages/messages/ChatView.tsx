@@ -15,6 +15,7 @@ interface Props {
   conversationId: string;
   currentUserId: string;
   otherUserName: string;
+  otherUserOnline: boolean;
   onBack: () => void;
 }
 
@@ -22,7 +23,7 @@ function formatHour(dateStr: string) {
   return new Date(dateStr).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
 }
 
-export default function ChatView({ conversationId, currentUserId, otherUserName, onBack }: Props) {
+export default function ChatView({ conversationId, currentUserId, otherUserName, otherUserOnline, onBack }: Props) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
@@ -87,10 +88,20 @@ export default function ChatView({ conversationId, currentUserId, otherUserName,
             <path d="M19 12H5M12 19l-7-7 7-7"/>
           </svg>
         </button>
-        <div className="w-9 h-9 rounded-full bg-vert-foret flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
-          {otherUserName.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2)}
+        <div className="relative flex-shrink-0">
+          <div className="w-9 h-9 rounded-full bg-vert-foret flex items-center justify-center text-white text-sm font-bold">
+            {otherUserName.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2)}
+          </div>
+          <span
+            className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-white ${
+              otherUserOnline ? 'bg-vert-clair' : 'bg-sable'
+            }`}
+          />
         </div>
-        <span className="font-heading font-semibold text-charbon">{otherUserName}</span>
+        <div className="flex flex-col">
+          <span className="font-heading font-semibold text-charbon">{otherUserName}</span>
+          <span className="text-xs text-charbon/40">{otherUserOnline ? 'En ligne' : 'Hors ligne'}</span>
+        </div>
       </div>
 
       {/* Messages */}

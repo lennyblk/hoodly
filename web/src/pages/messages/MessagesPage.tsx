@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
+import { io } from 'socket.io-client';
 import api from '../../api/axios';
 import { useUser } from '../../contexts/useUser';
 import ChatView from './ChatView';
@@ -38,6 +39,7 @@ export default function MessagesPage() {
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
+  const [onlineIds, setOnlineIds] = useState<Set<string>>(new Set());
 
   const fetchConversations = useCallback(async () => {
     if (!user) return;
@@ -61,6 +63,26 @@ export default function MessagesPage() {
     fetchConversations();
     fetchNeighbours();
   }, [fetchConversations, fetchNeighbours]);
+
+  useEffect(() => {
+    if (!user) return;
+    const socket = io('http://localhost:3000');
+    socket.emit('register', user._id);
+    socket.on('onlineUsers', (ids: string[]) => setOnlineIds(new Set(ids)));
+    socket.on('userOnline', ({ userId }: { userId: string }) =>
+      setOnlineIds((prev) => new Set(prev).add(userId)),
+    );
+    socket.on('userOffline', ({ userId }: { userId: string }) =>
+      setOnlineIds((prev) => {
+        const next = new Set(prev);
+        next.delete(userId);
+        return next;
+      }),
+    );
+    return () => {
+      socket.disconnect();
+    };
+  }, [user]);
 
   async function openNewConvModal() {
     await fetchNeighbours();
@@ -150,11 +172,18 @@ export default function MessagesPage() {
                     isSelected ? 'bg-creme border-r-2 border-r-vert-foret' : 'hover:bg-creme/60'
                   }`}
                 >
-                  <div
-                    className="w-11 h-11 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
-                    style={{ backgroundColor: avatarColor(otherId) }}
-                  >
-                    {initials}
+                  <div className="relative flex-shrink-0">
+                    <div
+                      className="w-11 h-11 rounded-full flex items-center justify-center text-white text-sm font-bold"
+                      style={{ backgroundColor: avatarColor(otherId) }}
+                    >
+                      {initials}
+                    </div>
+                    <span
+                      className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white ${
+                        onlineIds.has(otherId) ? 'bg-vert-clair' : 'bg-sable'
+                      }`}
+                    />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-charbon text-sm truncate">{label}</p>
@@ -179,6 +208,7 @@ export default function MessagesPage() {
             conversationId={selectedConvId}
             currentUserId={user._id}
             otherUserName={otherUserName}
+            otherUserOnline={onlineIds.has(selectedConv ? getOtherParticipantId(selectedConv) : '')}
             onBack={() => setSelectedConvId(null)}
           />
         ) : (
@@ -220,11 +250,18 @@ export default function MessagesPage() {
                     disabled={creating}
                     className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-creme transition-colors text-left disabled:opacity-50"
                   >
-                    <div
-                      className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
-                      style={{ backgroundColor: avatarColor(n._id) }}
-                    >
-                      {getInitials(n.firstName, n.lastName)}
+                    <div className="relative flex-shrink-0">
+                      <div
+                        className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold"
+                        style={{ backgroundColor: avatarColor(n._id) }}
+                      >
+                        {getInitials(n.firstName, n.lastName)}
+                      </div>
+                      <span
+                        className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-white ${
+                          onlineIds.has(n._id) ? 'bg-vert-clair' : 'bg-sable'
+                        }`}
+                      />
                     </div>
                     <span className="text-sm font-medium text-charbon">
                       {n.firstName} {n.lastName}

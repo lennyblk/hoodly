@@ -19,6 +19,10 @@ export default function LoginPage() {
 
     try {
       const { data } = await authApi.signin({ email, password });
+      if ('otpRequired' in data) {
+        navigate('/login/verify-otp', { state: { email } });
+        return;
+      }
       localStorage.setItem('access_token', data.access_token);
       localStorage.setItem('refresh_token', data.refresh_token);
       await fetchMe();

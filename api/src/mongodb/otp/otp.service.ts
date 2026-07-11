@@ -25,9 +25,12 @@ export class OtpService {
   async send(email: string, firstName: string): Promise<void> {
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+    const entry: OtpEntry = { code, expiresAt };
 
-    this.store.set(email, { code, expiresAt });
-    setTimeout(() => this.store.delete(email), 5 * 60 * 1000);
+    this.store.set(email, entry);
+    setTimeout(() => {
+      if (this.store.get(email) === entry) this.store.delete(email);
+    }, 5 * 60 * 1000);
 
     const html = await render(OtpEmail({ code, firstName }));
 

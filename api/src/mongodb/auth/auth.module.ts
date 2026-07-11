@@ -5,7 +5,7 @@ import { PassportModule } from '@nestjs/passport';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
-import { OtpService } from '../otp/otp.service';
+import { OtpModule } from '../otp/otp.module';
 import { AtStrategy, RtStrategy } from './strategies';
 import { User } from '../../entities/mongodb/User';
 import { RefreshToken } from '../../entities/mongodb/RefreshToken';
@@ -15,8 +15,9 @@ import { RefreshToken } from '../../entities/mongodb/RefreshToken';
     TypeOrmModule.forFeature([User, RefreshToken], 'mongodb'),
     JwtModule.register({}),
     PassportModule,
+    OtpModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, UsersService, OtpService, AtStrategy, RtStrategy],
+  providers: [AuthService, UsersService, AtStrategy, RtStrategy],
 })
 export class AuthModule {}
