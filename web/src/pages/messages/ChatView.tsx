@@ -41,6 +41,7 @@ export default function ChatView({ conversationId, currentUserId, otherUserName,
   const [recordSeconds, setRecordSeconds] = useState(0);
   const [showCamera, setShowCamera] = useState(false);
   const [capturedPhotoUrl, setCapturedPhotoUrl] = useState<string | null>(null);
+  const [mediaError, setMediaError] = useState('');
   const capturedPhotoBlobRef = useRef<Blob | null>(null);
   const socketRef = useRef<Socket | null>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -184,9 +185,30 @@ export default function ChatView({ conversationId, currentUserId, otherUserName,
     return candidates.find((t) => MediaRecorder.isTypeSupported(t));
   }
 
+  function getMediaDevices() {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setMediaError(
+        window.isSecureContext
+          ? "Accès caméra/micro refusé ou indisponible sur cet appareil."
+          : "Caméra/micro nécessitent une connexion sécurisée (HTTPS). Ce site tourne en HTTP, donc indisponible ici.",
+      );
+      return null;
+    }
+    return navigator.mediaDevices;
+  }
+
   async function startRecording() {
     if (isRecording || uploading) return;
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const mediaDevices = getMediaDevices();
+    if (!mediaDevices) return;
+    setMediaError('');
+    let stream: MediaStream;
+    try {
+      stream = await mediaDevices.getUserMedia({ audio: true });
+    } catch {
+      setMediaError("Impossible d'accéder au micro. Vérifie les autorisations du navigateur.");
+      return;
+    }
     const mimeType = pickRecorderMimeType();
     const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
     recordedChunksRef.current = [];
@@ -237,9 +259,16 @@ export default function ChatView({ conversationId, currentUserId, otherUserName,
 
   async function openCamera() {
     if (uploading) return;
-    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-    cameraStreamRef.current = stream;
-    setShowCamera(true);
+    const mediaDevices = getMediaDevices();
+    if (!mediaDevices) return;
+    setMediaError('');
+    try {
+      const stream = await mediaDevices.getUserMedia({ video: true });
+      cameraStreamRef.current = stream;
+      setShowCamera(true);
+    } catch {
+      setMediaError("Impossible d'accéder à la caméra. Vérifie les autorisations du navigateur.");
+    }
   }
 
   useEffect(() => {
@@ -392,6 +421,11 @@ export default function ChatView({ conversationId, currentUserId, otherUserName,
       </div>
 
       {/* Input */}
+      {mediaError && (
+        <div className="px-4 py-2 bg-red-50 border-t border-red-100 text-xs text-red-600 flex-shrink-0">
+          {mediaError}
+        </div>
+      )}
       <div className="px-4 py-3 bg-white border-t border-sable/20 flex gap-3 items-end flex-shrink-0">
         <input
           ref={fileInputRef}
