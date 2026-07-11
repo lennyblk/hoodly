@@ -6,6 +6,7 @@ import { User } from '../../entities/mongodb/User';
 import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
 import { SignupDto, SigninDto } from './dto';
+import { VerifySigninOtpDto } from './dto/verify-signin-otp.dto';
 import { Tokens } from './types';
 
 @ApiTags('Auth')
@@ -25,13 +26,22 @@ export class AuthController {
     return this.authService.signup(dto);
   }
 
-  @ApiOperation({ summary: 'Se connecter' })
+  @ApiOperation({ summary: 'Se connecter (retourne tokens ou demande OTP)' })
   @ApiBody({ type: SigninDto })
-  @ApiResponse({ status: 201, description: 'Connexion réussie, tokens retournés.' })
+  @ApiResponse({ status: 201, description: 'Tokens retournés ou OTP envoyé par email.' })
   @ApiResponse({ status: 401, description: 'Identifiants invalides.' })
   @Post('/signin')
   signin(@Body() dto: SigninDto) {
     return this.authService.signin(dto);
+  }
+
+  @ApiOperation({ summary: 'Vérifier OTP après signin (MFA)' })
+  @ApiBody({ type: VerifySigninOtpDto })
+  @ApiResponse({ status: 201, description: 'OTP valide, tokens retournés.' })
+  @ApiResponse({ status: 400, description: 'Code OTP invalide ou expiré.' })
+  @Post('/signin/verify-otp')
+  verifySigninOtp(@Body() dto: VerifySigninOtpDto) {
+    return this.authService.verifySigninOtp(dto.email, dto.code);
   }
 
   @ApiOperation({ summary: 'Récupérer le profil connecté' })

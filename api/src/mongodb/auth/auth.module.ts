@@ -5,6 +5,7 @@ import { PassportModule } from '@nestjs/passport';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
+import { OtpService } from '../otp/otp.service';
 import { AtStrategy, RtStrategy } from './strategies';
 import { User } from '../../entities/mongodb/User';
 import { RefreshToken } from '../../entities/mongodb/RefreshToken';
@@ -16,6 +17,6 @@ import { RefreshToken } from '../../entities/mongodb/RefreshToken';
     PassportModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, UsersService, AtStrategy, RtStrategy],
+  providers: [AuthService, UsersService, OtpService, AtStrategy, RtStrategy],
 })
 export class AuthModule {}
