@@ -3,6 +3,7 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.FlowPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
@@ -14,32 +15,12 @@
     <HBox alignment="CENTER_LEFT" spacing="10">
         <Button text="← Retour" onAction="#goBack" style="-fx-background-color: #2196F3; -fx-text-fill: white;"/>
         <Label text="Plugins" style="-fx-font-size: 24; -fx-font-weight: bold; -fx-padding: 0 0 0 20;"/>
+        <Button text="⟳ Recharger" onAction="#handleRefresh" style="-fx-background-color: #607D8B; -fx-text-fill: white;"/>
     </HBox>
 
-    <HBox alignment="CENTER" spacing="20" style="-fx-padding: 20 0 0 0;">
+    <Label fx:id="dirLabel" style="-fx-text-fill: #888; -fx-font-size: 12;"/>
 
-        <VBox alignment="CENTER" spacing="12" style="-fx-border-color: #ddd; -fx-border-width: 1; -fx-padding: 30;">
-            <Label text="📊 Export statistiques" style="-fx-font-size: 16; -fx-font-weight: bold;"/>
-            <Label text="Exporte les incidents (statut, catégorie,&#10;liste complète) dans un fichier CSV." wrapText="true" style="-fx-text-alignment: center;"/>
-            <Button text="Exporter CSV" onAction="#handleExportStats"
-                    style="-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-weight: bold;" minWidth="160"/>
-        </VBox>
-
-        <VBox alignment="CENTER" spacing="12" style="-fx-border-color: #ddd; -fx-border-width: 1; -fx-padding: 30;">
-            <Label text="🔍 Analyse sociale" style="-fx-font-size: 16; -fx-font-weight: bold;"/>
-            <Label text="Affiche les top signaleurs, la catégorie&#10;dominante et le taux de résolution." wrapText="true" style="-fx-text-alignment: center;"/>
-            <Button text="Analyser" onAction="#handleSocialAnalysis"
-                    style="-fx-background-color: #9C27B0; -fx-text-fill: white; -fx-font-weight: bold;" minWidth="160"/>
-        </VBox>
-
-        <VBox alignment="CENTER" spacing="12" style="-fx-border-color: #ddd; -fx-border-width: 1; -fx-padding: 30;">
-            <Label text="📅 Calendrier local" style="-fx-font-size: 16; -fx-font-weight: bold;"/>
-            <Label text="Affiche la répartition des incidents&#10;jour par jour." wrapText="true" style="-fx-text-alignment: center;"/>
-            <Button text="Voir calendrier" onAction="#handleLocalCalendar"
-                    style="-fx-background-color: #FF9800; -fx-text-fill: white; -fx-font-weight: bold;" minWidth="160"/>
-        </VBox>
-
-    </HBox>
+    <FlowPane fx:id="pluginsPane" alignment="CENTER" hgap="20" vgap="20" style="-fx-padding: 20 0 0 0;"/>
 
     <Label fx:id="statusLabel" wrapText="true" maxWidth="800" style="-fx-font-size: 13; -fx-padding: 20 0 0 0;"/>
 

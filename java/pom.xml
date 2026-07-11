@@ -17,6 +17,14 @@
     </properties>
 
     <dependencies>
+        <!-- API des plugins (interface Plugin, PluginContext) : construire
+             hoodly-plugin-api (mvn install) avant l'application -->
+        <dependency>
+            <groupId>org.example</groupId>
+            <artifactId>hoodly-plugin-api</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+
         <!-- JavaFX -->
         <dependency>
             <groupId>org.openjfx</groupId>
