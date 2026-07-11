@@ -66,7 +66,7 @@ export default function MessagesPage() {
 
   useEffect(() => {
     if (!user) return;
-    const socket = io('http://localhost:3000');
+    const socket = io(import.meta.env.VITE_API_URL ?? 'http://localhost:3000');
     socket.emit('register', user._id);
     socket.on('onlineUsers', (ids: string[]) => setOnlineIds(new Set(ids)));
     socket.on('userOnline', ({ userId }: { userId: string }) =>
