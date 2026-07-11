@@ -27,4 +27,9 @@ export class CreateMessageDto {
   @IsString()
   @IsOptional()
   fileId?: string;
+
+  @ApiPropertyOptional({ example: 'facture.pdf' })
+  @IsString()
+  @IsOptional()
+  fileName?: string;
 }

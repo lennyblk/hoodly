@@ -146,7 +146,9 @@ export class MessagesService {
       ? 'Photo'
       : dto.type === MessageType.AUDIO
         ? 'Audio'
-        : dto.content ?? '';
+        : dto.type === MessageType.FILE
+          ? (dto.fileName ?? 'Document')
+          : dto.content ?? '';
 
     await this.conversationsRepository.updateOne(
       { _id: new ObjectId(dto.conversationId) },

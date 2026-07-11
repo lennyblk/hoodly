@@ -4,6 +4,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 export enum MessageType {
   IMAGE = 'image',
   AUDIO = 'audio',
+  FILE = 'file',
   TEXT = 'text',
 }
 
@@ -32,6 +33,10 @@ export class Message {
   @ApiPropertyOptional({ example: '64a1f2c3e4b5f6a7b8c9d0e4' })
   @Column({ nullable: true })
   fileId: string;
+
+  @ApiPropertyOptional({ example: 'facture.pdf' })
+  @Column({ nullable: true })
+  fileName: string;
 
   @ApiProperty()
   @CreateDateColumn()

@@ -146,7 +146,7 @@ export default function MessagesPage() {
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 min-h-0 overflow-y-auto">
           {loading ? (
             <div className="flex items-center justify-center py-16 text-charbon/40 text-sm">
               Chargement...
