@@ -83,7 +83,7 @@
                     </descriptorRefs>
                     <archive>
                         <manifest>
-                            <mainClass>${main.class}</mainClass>
+                            <mainClass>org.example.Launcher</mainClass>
                         </manifest>
                     </archive>
                     <finalName>hoodly-desktop</finalName>

@@ -35,6 +35,7 @@ public final class UninstallService {
     public static void uninstallAndExit() throws IOException {
         launchCleanupScript(getApplicationJar(), getLocalDataPaths());
         Platform.exit();
+        System.exit(0);
     }
 
     static void launchCleanupScript(Path appJar, List<Path> dataPaths) throws IOException {
@@ -51,6 +52,8 @@ public final class UninstallService {
                 ? new ProcessBuilder("cmd", "/c", script.toString())
                 : new ProcessBuilder("/bin/sh", script.toString());
         pb.directory(script.getParent().toFile());
+        pb.redirectOutput(ProcessBuilder.Redirect.DISCARD);
+        pb.redirectError(ProcessBuilder.Redirect.DISCARD);
         pb.start();
     }
 
@@ -60,7 +63,7 @@ public final class UninstallService {
         s.append("chcp 65001 >nul\r\n");
         s.append("set /a tries=0\r\n");
         s.append(":retry\r\n");
-        s.append("timeout /t 1 /nobreak >nul\r\n");
+        s.append("ping -n 2 127.0.0.1 >nul\r\n");
         for (Path t : targets) {
             if (Files.isDirectory(t)) {
                 s.append("rmdir /s /q \"").append(t).append("\" >nul 2>&1\r\n");
@@ -69,7 +72,7 @@ public final class UninstallService {
             }
         }
         s.append("set /a tries+=1\r\n");
-        s.append("if %tries% geq 30 goto done\r\n");
+        s.append("if %tries% geq 60 goto done\r\n");
         for (Path t : targets) {
             s.append("if exist \"").append(t).append("\" goto retry\r\n");
         }

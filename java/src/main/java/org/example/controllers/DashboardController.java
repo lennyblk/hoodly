@@ -72,22 +72,28 @@ public class DashboardController {
     private void handleUninstall() {
         Path jar = UninstallService.getApplicationJar();
 
-        StringBuilder content = new StringBuilder("Seront supprimés définitivement :\n");
-        if (jar != null) {
-            content.append("• ").append(jar.getFileName()).append(" (l'application)\n");
-        }
-        content.append("• hoodly_local.db (base de données locale)\n");
-        content.append("• hoodly_themes.json (préférences de thème)\n");
-        content.append("• le dossier plugins/ et son contenu\n");
         if (jar == null) {
-            content.append("\nMode développement détecté : seules les données locales seront supprimées.");
+            Alert info = new Alert(Alert.AlertType.INFORMATION);
+            info.setTitle("Désinstallation indisponible");
+            info.setHeaderText("L'application n'est pas installée.");
+            info.setContentText("Vous exécutez l'application depuis les sources (IDE ou mvn javafx:run). "
+                    + "La désinstallation n'est disponible que depuis l'application packagée "
+                    + "(hoodly-desktop.jar). Rien n'a été supprimé.");
+            info.showAndWait();
+            return;
         }
-        content.append("\nL'application va se fermer.");
+
+        String content = "Seront supprimés définitivement :\n"
+                + "• " + jar.getFileName() + " (l'application)\n"
+                + "• hoodly_local.db (base de données locale)\n"
+                + "• hoodly_themes.json (préférences de thème)\n"
+                + "• le dossier plugins/ et son contenu\n"
+                + "\nL'application va se fermer.";
 
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
         confirm.setTitle("Désinstaller Hoodly Desktop");
         confirm.setHeaderText("Désinstaller complètement l'application ?");
-        confirm.setContentText(content.toString());
+        confirm.setContentText(content);
 
         if (confirm.showAndWait().filter(b -> b == ButtonType.OK).isEmpty()) {
             return;
