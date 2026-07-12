@@ -19,5 +19,6 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install --omit=dev
 COPY --from=builder /app/dist ./dist
+RUN echo 'export default{preview:{allowedHosts:["hoodly.lennyblk.dev"]}}' > vite.config.js
 EXPOSE 5173
 CMD ["npm", "run", "preview", "--", "--host", "--port", "5173"]

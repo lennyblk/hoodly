@@ -46,8 +46,6 @@ function AppRoutes() {
     if (token) {
       fetchMe()
         .catch(() => {
-          localStorage.removeItem('access_token');
-          localStorage.removeItem('refresh_token');
         })
         .finally(() => setReady(true));
     } else {
