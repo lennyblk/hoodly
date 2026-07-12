@@ -8,6 +8,7 @@ import org.example.Main;
 import org.example.services.AuthService;
 import org.example.services.DatabaseService;
 import org.example.services.UninstallService;
+import org.example.services.UpdateService;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -29,6 +30,18 @@ public class DashboardController {
         dbStatusLabel.setText(DatabaseService.getConnection() != null
                 ? "Base SQLite locale connectée"
                 : "Base SQLite hors ligne");
+
+        if (UninstallService.getApplicationJar() != null) {
+            new Thread(() -> {
+                try {
+                    UpdateService.UpdateInfo update = UpdateService.checkForUpdate();
+                    if (update != null) {
+                        javafx.application.Platform.runLater(() -> proposeUpdate(update));
+                    }
+                } catch (Exception ignored) {
+                }
+            }).start();
+        }
     }
 
     @FXML
@@ -63,6 +76,76 @@ public class DashboardController {
                 javafx.application.Platform.runLater(() -> {
                     dbStatusLabel.setStyle("-fx-text-fill: #f44336;");
                     dbStatusLabel.setText("Erreur sync : " + e.getMessage());
+                });
+            }
+        }).start();
+    }
+
+    @FXML
+    private void handleCheckUpdate() {
+        dbStatusLabel.setStyle("");
+        dbStatusLabel.setText("Recherche de mise à jour...");
+        new Thread(() -> {
+            try {
+                UpdateService.UpdateInfo update = UpdateService.checkForUpdate();
+                javafx.application.Platform.runLater(() -> {
+                    if (update == null) {
+                        dbStatusLabel.setStyle("-fx-text-fill: green;");
+                        dbStatusLabel.setText("Vous utilisez la dernière version ("
+                                + UpdateService.getCurrentVersion() + ")");
+                    } else {
+                        dbStatusLabel.setText("");
+                        proposeUpdate(update);
+                    }
+                });
+            } catch (Exception e) {
+                javafx.application.Platform.runLater(() -> {
+                    dbStatusLabel.setStyle("-fx-text-fill: #f44336;");
+                    dbStatusLabel.setText("Vérification impossible : " + e.getMessage());
+                });
+            }
+        }).start();
+    }
+
+    private void proposeUpdate(UpdateService.UpdateInfo update) {
+        if (UninstallService.getApplicationJar() == null) {
+            Alert info = new Alert(Alert.AlertType.INFORMATION);
+            info.setTitle("Mise à jour disponible");
+            info.setHeaderText("Version " + update.version() + " disponible");
+            info.setContentText("Vous exécutez l'application depuis les sources (IDE ou mvn javafx:run). "
+                    + "La mise à jour automatique n'est disponible que depuis l'application packagée "
+                    + "(hoodly-desktop.jar).");
+            info.showAndWait();
+            return;
+        }
+
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+        confirm.setTitle("Mise à jour disponible");
+        confirm.setHeaderText("Version " + update.version() + " disponible (actuelle : "
+                + UpdateService.getCurrentVersion() + ")");
+        confirm.setContentText("Télécharger la mise à jour ? L'application redémarrera automatiquement.");
+
+        if (confirm.showAndWait().filter(b -> b == ButtonType.OK).isEmpty()) {
+            return;
+        }
+
+        dbStatusLabel.setStyle("");
+        dbStatusLabel.setText("Téléchargement de la version " + update.version() + "...");
+        new Thread(() -> {
+            try {
+                Path newJar = UpdateService.download(update);
+                javafx.application.Platform.runLater(() -> {
+                    try {
+                        UpdateService.applyUpdateAndRestart(newJar);
+                    } catch (Exception e) {
+                        dbStatusLabel.setStyle("-fx-text-fill: #f44336;");
+                        dbStatusLabel.setText("Erreur de mise à jour : " + e.getMessage());
+                    }
+                });
+            } catch (Exception e) {
+                javafx.application.Platform.runLater(() -> {
+                    dbStatusLabel.setStyle("-fx-text-fill: #f44336;");
+                    dbStatusLabel.setText("Téléchargement échoué : " + e.getMessage());
                 });
             }
         }).start();

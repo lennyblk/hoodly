@@ -13,6 +13,7 @@
 
    <HBox alignment="CENTER_RIGHT" spacing="10">
        <Button text="Synchroniser données (Internet)" onAction="#handleSync" />
+       <Button text="Mises à jour" onAction="#handleCheckUpdate" />
        <Button text="Déconnexion" onAction="#handleLogout" styleClass="button-danger" style="-fx-text-fill: white;" />
        <Button text="Désinstaller" onAction="#handleUninstall" style="-fx-background-color: transparent; -fx-text-fill: #F44336; -fx-border-color: #F44336;" />
    </HBox>
