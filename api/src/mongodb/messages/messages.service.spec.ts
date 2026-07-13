@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { ForbiddenException } from '@nestjs/common';
 import { ObjectId } from 'mongodb';
+import { getDataSourceToken } from '@nestjs/typeorm';
 import { MessagesService } from './messages.service';
 import { Conversation } from '../../entities/mongodb/Conversation';
 import { Message } from '../../entities/mongodb/Message';
@@ -41,12 +42,15 @@ describe('MessagesService', () => {
     findOne: jest.fn(),
   };
 
+  const mockDataSource = {};
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         MessagesService,
         { provide: getRepositoryToken(Conversation, 'mongodb'), useValue: mockConversationsRepo },
         { provide: getRepositoryToken(Message, 'mongodb'), useValue: mockMessagesRepo },
+        { provide: getDataSourceToken('mongodb'), useValue: mockDataSource },
         { provide: UsersService, useValue: mockUsersService },
       ],
     }).compile();

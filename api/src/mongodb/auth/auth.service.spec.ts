@@ -6,6 +6,7 @@ import * as bcrypt from 'bcryptjs';
 import { AuthService } from './auth.service';
 import { User, UserRole } from '../../entities/mongodb/User';
 import { RefreshToken } from '../../entities/mongodb/RefreshToken';
+import { OtpService } from '../otp/otp.service';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -28,6 +29,11 @@ describe('AuthService', () => {
     signAsync: jest.fn().mockResolvedValue('signed_token'),
   };
 
+  const mockOtpService = {
+    send: jest.fn().mockResolvedValue(undefined),
+    verify: jest.fn().mockResolvedValue('otp_token'),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -35,6 +41,7 @@ describe('AuthService', () => {
         { provide: getRepositoryToken(User, 'mongodb'), useValue: mockUserRepo },
         { provide: getRepositoryToken(RefreshToken, 'mongodb'), useValue: mockRefreshTokenRepo },
         { provide: JwtService, useValue: mockJwtService },
+        { provide: OtpService, useValue: mockOtpService },
       ],
     }).compile();
 
@@ -97,22 +104,40 @@ describe('AuthService', () => {
         .rejects.toThrow(UnauthorizedException);
     });
 
-    it('returns tokens on valid credentials', async () => {
+    it('returns tokens directly for bypass (seed) emails', async () => {
       const plainPassword = 'Password1!';
       mockUserRepo.findOne.mockResolvedValue({
         _id: { toString: () => 'uid1' },
-        email: 'x@x.com',
+        email: 'alice@hoodly.com',
         password: await bcrypt.hash(plainPassword, 10),
         role: UserRole.HABITANT,
         neighbourhoodId: 'nid1',
+        isActive: true,
       });
       mockRefreshTokenRepo.delete.mockResolvedValue(undefined);
       mockRefreshTokenRepo.create.mockReturnValue({});
       mockRefreshTokenRepo.save.mockResolvedValue(undefined);
 
-      const tokens = await service.signin({ email: 'x@x.com', password: plainPassword });
+      const tokens = await service.signin({ email: 'alice@hoodly.com', password: plainPassword });
 
       expect(tokens).toEqual({ access_token: 'signed_token', refresh_token: 'signed_token' });
+    });
+
+    it('returns otpRequired for non-bypass emails', async () => {
+      const plainPassword = 'Password1!';
+      mockUserRepo.findOne.mockResolvedValue({
+        _id: { toString: () => 'uid1' },
+        email: 'real@gmail.com',
+        password: await bcrypt.hash(plainPassword, 10),
+        role: UserRole.HABITANT,
+        neighbourhoodId: 'nid1',
+        isActive: true,
+        firstName: 'John',
+      });
+
+      const result = await service.signin({ email: 'real@gmail.com', password: plainPassword });
+
+      expect(result).toEqual({ otpRequired: true, message: 'Code OTP envoyé par email' });
     });
   });
 });

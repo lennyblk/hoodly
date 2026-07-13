@@ -5,6 +5,7 @@ import { ObjectId } from 'mongodb';
 import { VotesService } from './votes.service';
 import { Vote, VoteType } from '../../entities/mongodb/Vote';
 import { Neighbourhood } from '../../entities/mongodb/Neighbourhood';
+import { PointsService } from '../users/points.service';
 
 const VALID_NID = new ObjectId().toHexString();
 const VALID_VID = new ObjectId().toHexString();
@@ -43,12 +44,15 @@ describe('VotesService', () => {
     findOneBy: jest.fn(),
   };
 
+  const mockPointsService = { addPoints: jest.fn().mockResolvedValue(undefined) };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         VotesService,
         { provide: getRepositoryToken(Vote, 'mongodb'), useValue: mockVotesRepo },
         { provide: getRepositoryToken(Neighbourhood, 'mongodb'), useValue: mockNeighbourhoodsRepo },
+        { provide: PointsService, useValue: mockPointsService },
       ],
     }).compile();
 
@@ -72,7 +76,7 @@ describe('VotesService', () => {
         .rejects.toThrow(BadRequestException);
     });
 
-    it('throws ForbiddenException when user already voted', async () => {
+    it('allows changing vote (replaces previous choice)', async () => {
       const uid = new ObjectId(USER_ID);
       const vote = makeVote({
         results: [
@@ -81,9 +85,14 @@ describe('VotesService', () => {
         ],
       });
       mockVotesRepo.findOneBy.mockResolvedValue(vote);
+      mockVotesRepo.save.mockImplementation((v) => Promise.resolve(v));
 
-      await expect(service.cast(VALID_VID, { option: 'Contre', userId: USER_ID }))
-        .rejects.toThrow(ForbiddenException);
+      const result = await service.cast(VALID_VID, { option: 'Contre', userId: USER_ID });
+
+      const pour = result.results.find((r) => r.option === 'Pour')!;
+      const contre = result.results.find((r) => r.option === 'Contre')!;
+      expect(pour.userIds).toHaveLength(0);
+      expect(contre.userIds).toHaveLength(1);
     });
 
     it('adds userId to chosen option and returns saved vote', async () => {
