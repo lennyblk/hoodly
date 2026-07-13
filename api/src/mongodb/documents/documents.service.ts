@@ -27,9 +27,11 @@ import {
 import {
   Announcement,
   AnnouncementStatus,
+  AnnouncementType,
 } from "../../entities/mongodb/Announcement";
 import { User } from "../../entities/mongodb/User";
 import { UsersService } from "../users/users.service";
+import { PointsService } from "../users/points.service";
 import { UploadDocumentDto } from "./dto/upload-document.dto";
 import { SignDocumentDto } from "./dto/sign-document.dto";
 import { GenerateContractDto } from "./dto/generate-contract.dto";
@@ -58,6 +60,7 @@ export class DocumentsService implements OnModuleInit {
     private dataSource: DataSource,
     private jwtService: JwtService,
     private usersService: UsersService,
+    private pointsService: PointsService,
   ) {}
 
   async onModuleInit() {
@@ -322,12 +325,41 @@ export class DocumentsService implements OnModuleInit {
     const signedIds = doc.signatures.map((s) => s.userId.toString());
     const allSigned =
       signerIds.length > 0 && signerIds.every((sid) => signedIds.includes(sid));
-    if (allSigned) doc.status = DocumentStatus.SIGNED;
+    if (allSigned) {
+      doc.status = DocumentStatus.SIGNED;
+      await this.transferPoints(doc);
+    }
 
     return this.documentsRepository.save(doc);
   }
 
-  // ─── Refuse 
+  // ─── Points transfer on contract signature
+
+  private async transferPoints(doc: Document): Promise<void> {
+    if (!doc.announcementId) return;
+    const announcement = await this.announcementsRepository.findOne({
+      where: { _id: new ObjectId(doc.announcementId) } as any,
+    });
+    if (!announcement || !announcement.points) return;
+
+    // offer: author=prestataire, acceptedBy=beneficiaire (paye)
+    // request: author=demandeur (paye), acceptedBy=prestataire
+    let payerId: string;
+    let providerId: string;
+    if (announcement.type === AnnouncementType.OFFER) {
+      payerId = announcement.acceptedBy;
+      providerId = announcement.authorId;
+    } else {
+      payerId = announcement.authorId;
+      providerId = announcement.acceptedBy;
+    }
+    if (!payerId || !providerId) return;
+
+    await this.pointsService.addPoints(payerId, -announcement.points);
+    await this.pointsService.addPoints(providerId, announcement.points);
+  }
+
+  // ─── Refuse
 
   async refuse(id: string, userId: string) {
     const doc = await this.findOne(id);

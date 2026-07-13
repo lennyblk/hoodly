@@ -95,7 +95,7 @@ export class AuthService {
     const newUser = await this.userRepository.save(
       this.userRepository.create({
         role: UserRole.HABITANT,
-        points: 0,
+        points: 50,
         isActive: true,
         lang: UserLang.FR,
         ...dto,
