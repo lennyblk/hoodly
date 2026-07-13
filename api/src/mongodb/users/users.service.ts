@@ -6,8 +6,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
-import { InjectRepository } from '@nestjs/typeorm';
-import { MongoRepository } from 'typeorm';
+import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
+import { DataSource, MongoRepository } from 'typeorm';
 import { ObjectId } from 'mongodb';
 import { User, UserRole, UserLang } from '../../entities/mongodb/User';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -18,6 +18,8 @@ export class UsersService {
   constructor(
     @InjectRepository(User, 'mongodb')
     private usersRepository: MongoRepository<User>,
+    @InjectDataSource('mongodb')
+    private dataSource: DataSource,
   ) { }
 
   async countByNeighbourhood(neighbourhoodId: string): Promise<number> {
@@ -92,5 +94,41 @@ export class UsersService {
     const user = await this.findOne(id);
     await this.usersRepository.remove(user);
     return { message: `User with id ${id} has been deleted` };
+  }
+
+  private getDb() {
+    return (this.dataSource.driver as any).queryRunner.databaseConnection.db();
+  }
+
+  async exportData(userId: string) {
+    const user = await this.findOne(userId);
+    const { password, ...profile } = user as any;
+    const db = this.getDb();
+
+    const [announcements, conversations, messages, documents, events, votes] = await Promise.all([
+      db.collection('announcements').find({ authorId: userId }).toArray(),
+      db.collection('conversations').find({ participants: userId }).toArray(),
+      db.collection('messages').find({ senderId: userId }).toArray(),
+      db.collection('documents').find({ $or: [{ ownerId: userId }, { signers: userId }] }).toArray(),
+      db.collection('events').find({ attendees: userId }).toArray(),
+      db.collection('votes').find({ 'options.voters': userId }).toArray(),
+    ]);
+
+    return { profile, announcements, conversations, messages, documents, events, votes };
+  }
+
+  async deleteAccount(userId: string) {
+    const db = this.getDb();
+
+    await Promise.all([
+      db.collection('announcements').deleteMany({ authorId: userId }),
+      db.collection('messages').deleteMany({ senderId: userId }),
+      db.collection('documents').deleteMany({ ownerId: userId }),
+      db.collection('refresh_tokens').deleteMany({ userId }),
+      db.collection('conversations').deleteMany({ participants: userId }),
+    ]);
+
+    await this.usersRepository.delete(new ObjectId(userId));
+    return { message: 'Compte et donnees supprimees' };
   }
 }

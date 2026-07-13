@@ -83,6 +83,22 @@ export class UsersController {
     return this.usersService.countByNeighbourhood(neighbourhoodId).then((n) => ({ count: n }));
   }
 
+  @ApiOperation({ summary: 'Exporter toutes ses données personnelles (RGPD)' })
+  @ApiResponse({ status: 200, description: 'Données exportées en JSON.' })
+  @Get('me/export')
+  exportMyData(@Req() req: Request) {
+    const user = req.user as { userId: string };
+    return this.usersService.exportData(user.userId);
+  }
+
+  @ApiOperation({ summary: 'Supprimer son compte et toutes ses données (RGPD)' })
+  @ApiResponse({ status: 200, description: 'Compte supprimé.' })
+  @Delete('me')
+  deleteMyAccount(@Req() req: Request) {
+    const user = req.user as { userId: string };
+    return this.usersService.deleteAccount(user.userId);
+  }
+
   @ApiOperation({ summary: 'Modifier son propre profil (firstName, lastName, email, password, lang, neighbourhoodId)' })
   @ApiResponse({ status: 200, type: User })
   @ApiResponse({ status: 400, description: 'Données invalides.' })
