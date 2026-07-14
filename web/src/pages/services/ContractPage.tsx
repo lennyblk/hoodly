@@ -83,6 +83,13 @@ export default function ContractPage() {
   const alreadySigned = doc?.status === 'signed';
   const canSign = !!documentId && !hasSignedMe && !alreadySigned;
 
+  function hasSigned(signerId?: string) {
+    if (!signerId) return false;
+    return !!doc?.signatures?.some((s) => s.userId === signerId || s.userId?.toString() === signerId);
+  }
+  const authorSigned = hasSigned(doc?.signers?.[0]);
+  const acceptorSigned = hasSigned(doc?.signers?.[1]);
+
   // ─── OTP flow ───────────────────────────────────────────────────────────────
 
   async function startSign() {
@@ -215,7 +222,11 @@ export default function ContractPage() {
                   <p className="font-sans text-xs text-sable">Prestataire</p>
                   <p className="font-sans text-sm font-semibold text-charbon">{state.authorName}</p>
                 </div>
-                <span className="rounded-full bg-ambre/20 px-3 py-1 font-sans text-xs font-bold text-ambre">En attente</span>
+                {authorSigned ? (
+                  <span className="rounded-full bg-vert-clair/20 px-3 py-1 font-sans text-xs font-bold text-vert-foret">Signé</span>
+                ) : (
+                  <span className="rounded-full bg-ambre/20 px-3 py-1 font-sans text-xs font-bold text-ambre">En attente</span>
+                )}
               </div>
             )}
             {state.acceptorName && (
@@ -224,7 +235,11 @@ export default function ContractPage() {
                   <p className="font-sans text-xs text-sable">Bénéficiaire</p>
                   <p className="font-sans text-sm font-semibold text-charbon">{state.acceptorName}</p>
                 </div>
-                <span className="rounded-full bg-ambre/20 px-3 py-1 font-sans text-xs font-bold text-ambre">En attente</span>
+                {acceptorSigned ? (
+                  <span className="rounded-full bg-vert-clair/20 px-3 py-1 font-sans text-xs font-bold text-vert-foret">Signé</span>
+                ) : (
+                  <span className="rounded-full bg-ambre/20 px-3 py-1 font-sans text-xs font-bold text-ambre">En attente</span>
+                )}
               </div>
             )}
           </div>

@@ -665,14 +665,14 @@ export default function ServiceDetailPage() {
               {announcement.status === 'open' && (
                 <button
                   onClick={() => setShowAcceptModal(true)}
-                  disabled={accepting}
+                  disabled={accepting || insufficientBalance}
                   className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-vert-foret py-3 font-sans text-sm font-semibold text-white hover:bg-vert-moyen transition-colors disabled:opacity-50"
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                     <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
                     <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                   </svg>
-                  {accepting ? 'Génération du contrat...' : "Accepter l'annonce"}
+                  {accepting ? 'Génération du contrat...' : insufficientBalance ? 'Solde insuffisant' : "Accepter l'annonce"}
                 </button>
               )}
             </>
