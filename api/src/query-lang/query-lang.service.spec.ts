@@ -50,15 +50,15 @@ describe('QueryLangService', () => {
   it('executes FIND with WHERE clause', async () => {
     mockFind.mockResolvedValue([]);
 
-    const result = await service.execute('FIND announcements WHERE status = "open"');
-    expect(result.collection).toBe('announcements');
+    const result = await service.execute('FIND documents WHERE status = "open"');
+    expect(result.collection).toBe('documents');
     expect(result.filter).toEqual({ status: 'open' });
   });
 
   it('executes FIND with LIMIT', async () => {
     mockFind.mockResolvedValue([]);
 
-    const result = await service.execute('FIND events LIMIT 5');
-    expect(result.collection).toBe('events');
+    const result = await service.execute('FIND documents LIMIT 5');
+    expect(result.collection).toBe('documents');
   });
 });
