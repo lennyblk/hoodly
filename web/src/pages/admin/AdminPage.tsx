@@ -22,9 +22,9 @@ const ROLE_COLORS: Record<UserRole, string> = {
 
 const EXAMPLE_QUERIES = [
   'FIND documents WHERE status = "signed" AND type = "contract" LIMIT 10',
-  'FIND events WHERE (status = "published" OR status = "draft") AND title CONTAINS "fete"',
-  'FIND announcements WHERE isPaid = true AND points >= 4',
-  'FIND votes LIMIT 5',
+  'FIND documents WHERE (status = "pending" OR status = "draft") AND title CONTAINS "contrat"',
+  'FIND documents WHERE ownerId = "64a1f2c3e4b5f6a7b8c9d0e2"',
+  'FIND documents LIMIT 5',
 ];
 
 function QueryConsole() {
@@ -61,7 +61,7 @@ function QueryConsole() {
       <p className="text-sm text-charbon/50 mb-4">
         Syntaxe :{' '}
         <code className="bg-creme px-1.5 py-0.5 rounded text-xs">
-          FIND &lt;collection&gt; [WHERE &lt;condition&gt;] [LIMIT &lt;n&gt;]
+          FIND documents [WHERE &lt;condition&gt;] [LIMIT &lt;n&gt;]
         </code>
       </p>
 

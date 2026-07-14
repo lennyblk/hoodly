@@ -18,11 +18,12 @@ export class QueryLangController {
   @ApiOperation({
     summary: 'Exécute une requête HQL (Hoodly Query Language) — admin uniquement',
     description:
-      'Syntaxe : FIND <collection> [WHERE <condition>] [LIMIT <n>]. ' +
-      'Collections autorisées : documents, announcements, events, messages, votes.',
+      'Syntaxe : FIND documents [WHERE <condition>] [LIMIT <n>]. ' +
+      'Le langage ne cible que la collection documents ; champs interrogeables : ' +
+      'id, title, type, name, ownerId, signers, status, gridfsId, announcementId, createdAt.',
   })
   @ApiResponse({ status: 201, description: 'Résultat de la requête (filtre Mongo traduit + documents).' })
-  @ApiResponse({ status: 400, description: 'Erreur de syntaxe HQL ou collection inconnue.' })
+  @ApiResponse({ status: 400, description: 'Erreur de syntaxe HQL.' })
   @ApiResponse({ status: 403, description: 'Accès refusé.' })
   @Post('execute')
   execute(@Body() dto: ExecuteQueryDto) {
