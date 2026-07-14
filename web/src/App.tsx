@@ -42,7 +42,7 @@ function AdminRoutes() {
 function NeighbourhoodRoutes() {
   const { user } = useUser();
   if (!user) return null;
-  if (!user.neighbourhoodId) return <Navigate to="/waiting-neighbourhood" replace />;
+  if (!user.neighbourhoodId && user.role === 'habitant') return <Navigate to="/waiting-neighbourhood" replace />;
   return <Outlet />;
 }
 
