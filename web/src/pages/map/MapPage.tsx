@@ -409,7 +409,7 @@ export default function MapPage() {
       )}
 
       {/* Edit instructions */}
-      {editingNeighbourhood && !creatingMode && (
+      {canEdit && editingNeighbourhood && !creatingMode && (
         <div className="px-5 py-2.5 bg-vert-foret/5 border-b border-vert-foret/10 flex-shrink-0">
           <p className="text-xs text-vert-foret/80">
             Utilise l'outil <strong>polygone</strong> dans la barre à gauche pour dessiner ou modifier les limites de <strong>{editingNeighbourhood.name}</strong>. Sauvegarde automatique après chaque modification.

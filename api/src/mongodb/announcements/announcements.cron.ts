@@ -48,8 +48,8 @@ export class AnnouncementsCron {
       }
 
       try {
-        await this.pointsService.addPoints(payerId, -ann.points);
-        await this.pointsService.addPoints(providerId, ann.points);
+        await this.pointsService.addPoints(payerId, -ann.points, `Paiement contrat — ${ann.title}`);
+        await this.pointsService.addPoints(providerId, ann.points, `Contrat réglé — ${ann.title}`);
         ann.status = AnnouncementStatus.DONE;
         await this.announcementsRepository.save(ann);
         console.log(`[Cron] Service points: ${ann.points}pts ${payerId} -> ${providerId}`);
@@ -76,7 +76,7 @@ export class AnnouncementsCron {
       }
 
       for (const userId of voterIds) {
-        await this.pointsService.addPoints(userId, 3).catch(() => {});
+        await this.pointsService.addPoints(userId, 3, 'Participation à un vote').catch(() => {});
       }
 
       vote.pointsRewarded = true;
@@ -95,7 +95,7 @@ export class AnnouncementsCron {
       if (new Date(event.date) > now) continue;
 
       for (const userId of event.participants ?? []) {
-        await this.pointsService.addPoints(userId, 5).catch(() => {});
+        await this.pointsService.addPoints(userId, 5, 'Participation à un événement').catch(() => {});
       }
 
       event.pointsRewarded = true;

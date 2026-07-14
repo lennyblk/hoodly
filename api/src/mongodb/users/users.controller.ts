@@ -14,10 +14,12 @@ import { AuthGuard } from '@nestjs/passport';
 import { Request } from 'express';
 import { ApiBearerAuth, ApiTags, ApiOperation, ApiParam, ApiQuery, ApiResponse } from '@nestjs/swagger';
 import { UsersService } from './users.service';
+import { PointsService } from './points.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UpdateMeDto } from './dto/update-me.dto';
 import { User } from '../../entities/mongodb/User';
+import { PointsTransaction } from '../../entities/mongodb/PointsTransaction';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '../../entities/mongodb/User';
@@ -27,7 +29,10 @@ import { UserRole } from '../../entities/mongodb/User';
 @UseGuards(AuthGuard('jwt'))
 @Controller('users')
 export class UsersController {
-  constructor(private usersService: UsersService) { }
+  constructor(
+    private usersService: UsersService,
+    private pointsService: PointsService,
+  ) { }
 
   @ApiOperation({ summary: 'Récupérer tous les utilisateurs — admin uniquement' })
   @ApiResponse({ status: 200, type: [User] })
@@ -89,6 +94,14 @@ export class UsersController {
   exportMyData(@Req() req: Request) {
     const user = req.user as { userId: string };
     return this.usersService.exportData(user.userId);
+  }
+
+  @ApiOperation({ summary: 'Historique des mouvements de points de l\'utilisateur connecté' })
+  @ApiResponse({ status: 200, type: [PointsTransaction] })
+  @Get('me/points/history')
+  getMyPointsHistory(@Req() req: Request) {
+    const user = req.user as { userId: string };
+    return this.pointsService.getHistory(user.userId);
   }
 
   @ApiOperation({ summary: 'Supprimer son compte et toutes ses données (RGPD)' })

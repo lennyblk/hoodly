@@ -8,6 +8,7 @@ import { User, UserRole } from '../../entities/mongodb/User';
 import { RefreshToken } from '../../entities/mongodb/RefreshToken';
 import { Neighbourhood } from '../../entities/mongodb/Neighbourhood';
 import { OtpService } from '../otp/otp.service';
+import { PointsService } from '../users/points.service';
 import * as geo from '../../common/utils/geo';
 
 describe('AuthService', () => {
@@ -36,6 +37,12 @@ describe('AuthService', () => {
     verify: jest.fn().mockResolvedValue('otp_token'),
   };
 
+  const mockPointsService = {
+    addPoints: jest.fn().mockResolvedValue(undefined),
+    logInitialBonus: jest.fn().mockResolvedValue(undefined),
+    getHistory: jest.fn().mockResolvedValue([]),
+  };
+
   const mockNeighbourhoodRepo = {
     find: jest.fn().mockResolvedValue([]),
     findOneBy: jest.fn(),
@@ -52,12 +59,14 @@ describe('AuthService', () => {
         { provide: getRepositoryToken(Neighbourhood, 'mongodb'), useValue: mockNeighbourhoodRepo },
         { provide: JwtService, useValue: mockJwtService },
         { provide: OtpService, useValue: mockOtpService },
+        { provide: PointsService, useValue: mockPointsService },
       ],
     }).compile();
 
     service = module.get<AuthService>(AuthService);
     jest.clearAllMocks();
     mockJwtService.signAsync.mockResolvedValue('signed_token');
+    mockPointsService.logInitialBonus.mockResolvedValue(undefined);
   });
 
   describe('signup', () => {

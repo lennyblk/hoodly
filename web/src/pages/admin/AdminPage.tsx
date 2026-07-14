@@ -4,6 +4,7 @@ import type { components } from '../../api/types.generated';
 import { queryLangApi, type QueryLangResult } from '../../api/queryLang';
 
 type User = components['schemas']['User'];
+type Neighbourhood = components['schemas']['Neighbourhood'];
 type UserRole = 'habitant' | 'moderateur' | 'admin';
 
 const ROLE_LABELS: Record<UserRole, string> = {
@@ -331,10 +332,31 @@ export default function AdminPage() {
   const [search, setSearch] = useState('');
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
+  const [neighbourhoods, setNeighbourhoods] = useState<Neighbourhood[]>([]);
+  const [neighbourhoodCounts, setNeighbourhoodCounts] = useState<Record<string, number>>({});
+  const [neighbourhoodLoading, setNeighbourhoodLoading] = useState(true);
+  const [neighbourhoodSearch, setNeighbourhoodSearch] = useState('');
+
   useEffect(() => {
     api.get<User[]>('/users')
       .then(({ data }) => setUsers(data))
       .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    api.get<Neighbourhood[]>('/neighbourhoods')
+      .then(async ({ data }) => {
+        setNeighbourhoods(data);
+        const counts = await Promise.all(
+          data.map((n) =>
+            api.get<{ count: number }>('/users/count', { params: { neighbourhoodId: String(n.id) } })
+              .then(({ data }) => [String(n.id), data.count] as const)
+              .catch(() => [String(n.id), 0] as const),
+          ),
+        );
+        setNeighbourhoodCounts(Object.fromEntries(counts));
+      })
+      .finally(() => setNeighbourhoodLoading(false));
   }, []);
 
   async function quickUpdate(id: string, patch: { role?: UserRole; isActive?: boolean }) {
@@ -362,9 +384,15 @@ export default function AdminPage() {
     );
   });
 
+  const filteredNeighbourhoods = neighbourhoods.filter((n) =>
+    n.name.toLowerCase().includes(neighbourhoodSearch.toLowerCase()),
+  );
+
   return (
     <div className="flex flex-col h-full px-4 lg:px-8 py-8 gap-6">
       <h1 className="font-heading text-2xl font-bold text-charbon">Administration</h1>
+
+      <h2 className="font-heading text-xl font-bold text-charbon">Utilisateurs</h2>
 
       <div className="flex items-center gap-3">
         <input
@@ -442,6 +470,51 @@ export default function AdminPage() {
           </table>
           {filtered.length === 0 && (
             <p className="text-center text-sm text-charbon/40 py-8">Aucun utilisateur trouvé</p>
+          )}
+        </div>
+      )}
+
+      <h2 className="font-heading text-xl font-bold text-charbon">Quartiers</h2>
+
+      <div className="flex items-center gap-3">
+        <input
+          type="text"
+          value={neighbourhoodSearch}
+          onChange={(e) => setNeighbourhoodSearch(e.target.value)}
+          placeholder="Rechercher un quartier..."
+          className="border border-sable/40 rounded-xl px-3 py-2 text-sm text-charbon focus:outline-none focus:ring-2 focus:ring-vert-foret/30 w-64"
+        />
+        <span className="text-xs text-charbon/40">
+          {filteredNeighbourhoods.length} quartier{filteredNeighbourhoods.length !== 1 ? 's' : ''}
+        </span>
+      </div>
+
+      {neighbourhoodLoading ? (
+        <div className="text-sm text-charbon/40">Chargement...</div>
+      ) : (
+        <div className="overflow-x-auto rounded-2xl border border-sable/30">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-creme border-b border-sable/30">
+                <th className="text-left px-4 py-3 font-semibold text-charbon/70 text-xs">Nom</th>
+                <th className="text-left px-4 py-3 font-semibold text-charbon/70 text-xs">Habitants actifs</th>
+                <th className="text-left px-4 py-3 font-semibold text-charbon/70 text-xs">Créé le</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredNeighbourhoods.map((n) => (
+                <tr key={String(n.id)} className="border-b border-sable/20 last:border-0 hover:bg-creme/40 transition-colors">
+                  <td className="px-4 py-3 font-medium text-charbon">{n.name}</td>
+                  <td className="px-4 py-3 text-charbon/60">{neighbourhoodCounts[String(n.id)] ?? 0}</td>
+                  <td className="px-4 py-3 text-charbon/60">
+                    {n.createdAt ? new Date(n.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {filteredNeighbourhoods.length === 0 && (
+            <p className="text-center text-sm text-charbon/40 py-8">Aucun quartier trouvé</p>
           )}
         </div>
       )}

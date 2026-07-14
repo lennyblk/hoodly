@@ -17,6 +17,7 @@ import { ObjectId } from 'mongodb';
 import * as nodemailer from 'nodemailer';
 import { render } from '@react-email/render';
 import { OtpService } from '../otp/otp.service';
+import { PointsService } from '../users/points.service';
 import { geocodeAddress, pointInPolygon } from '../../common/utils/geo';
 import { NeighbourhoodRequestEmail } from '../../emails/NeighbourhoodRequestEmail';
 
@@ -46,6 +47,7 @@ export class AuthService {
     private neighbourhoodRepository: MongoRepository<Neighbourhood>,
     private jwtService: JwtService,
     private otpService: OtpService,
+    private pointsService: PointsService,
   ) { }
 
   private readonly transporter = nodemailer.createTransport({
@@ -148,6 +150,7 @@ export class AuthService {
         neighbourhoodId: neighbourhoodId as any,
       }),
     );
+    await this.pointsService.logInitialBonus(newUser._id.toString(), 50, 'Bonus de bienvenue');
 
     // Notifier les admins si pas de quartier trouvé
     if (!neighbourhoodId) {
