@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 const MONTHS_SHORT = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
 function fmtDate(iso: string): string {
@@ -8,16 +8,37 @@ function fmtDate(iso: string): string {
   const m = parseInt(parts[1], 10) - 1;
   return `${d} ${MONTHS_SHORT[m] ?? ''}`;
 }
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useUser } from '../../contexts/useUser';
 import api from '../../api/axios';
 import type { components } from '../../api/types.generated';
 
 type CreateAnnouncementDto = components['schemas']['CreateAnnouncementDto'];
+type Announcement = components['schemas']['Announcement'];
 type User = components['schemas']['User'];
 type ServiceType = 'offer' | 'request';
 type Location = 'moi' | 'beneficiaire' | 'flexible';
 type AvailType = 'recurrent' | 'dates_exactes' | 'continu';
+
+interface AnnouncementWithAvail extends Announcement {
+  availabilities?: {
+    type: AvailType;
+    dates?: string[];
+    days?: string[];
+    startTime?: string;
+    endTime?: string;
+    startDate?: string;
+    durationWeeks?: number;
+  }[];
+}
+
+function parseEnrichedDescription(raw: string) {
+  const match = raw.match(/^([\s\S]*)\n\n📍 Catégorie: (.*)\n⏱ Durée: (.*)\n📅 Dispo: .*\n🏠 Lieu: (.*)$/);
+  if (!match) return { description: raw, category: '', duration: '', location: 'flexible' as Location };
+  const [, description, category, duration, location] = match;
+  const validLocation: Location = ['moi', 'beneficiaire', 'flexible'].includes(location) ? (location as Location) : 'flexible';
+  return { description, category, duration, location: validLocation };
+}
 
 const CATEGORIES = [
   { label: 'Jardinage', emoji: '🌱' },
@@ -66,9 +87,13 @@ function StepBar({ current }: { current: number }) {
 
 export default function ProposeServicePage() {
   const navigate = useNavigate();
+  const { id } = useParams<{ id?: string }>();
+  const isEditMode = !!id;
   const { user } = useUser() as { user: User | null };
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [loadingExisting, setLoadingExisting] = useState(isEditMode);
 
   const [form, setForm] = useState<FormState>({
     type: 'offer',
@@ -86,6 +111,35 @@ export default function ProposeServicePage() {
     availStartDate: '',
     durationWeeks: 1,
   });
+
+  useEffect(() => {
+    if (!id) return;
+    setLoadingExisting(true);
+    api.get<AnnouncementWithAvail>(`/announcements/${id}`)
+      .then(({ data }) => {
+        const { description, category, duration, location } = parseEnrichedDescription(data.description);
+        const slot = data.availabilities?.[0];
+        setForm((f) => ({
+          ...f,
+          type: data.type,
+          category,
+          title: data.title,
+          description,
+          duration,
+          points: data.points,
+          location,
+          availType: slot?.type ?? f.availType,
+          days: slot?.type === 'recurrent' ? (slot.days ?? []) : f.days,
+          startTime: (slot?.type === 'recurrent' || slot?.type === 'dates_exactes') ? (slot.startTime ?? '') : f.startTime,
+          endTime: (slot?.type === 'recurrent' || slot?.type === 'dates_exactes') ? (slot.endTime ?? '') : f.endTime,
+          exactDates: slot?.type === 'dates_exactes' ? (slot.dates ?? []) : f.exactDates,
+          availStartDate: slot?.type === 'continu' ? (slot.startDate ?? '') : f.availStartDate,
+          durationWeeks: slot?.type === 'continu' ? (slot.durationWeeks ?? 1) : f.durationWeeks,
+        }));
+      })
+      .catch(() => setSubmitError("Impossible de charger l'annonce à modifier."))
+      .finally(() => setLoadingExisting(false));
+  }, [id]);
 
   const handleSubmit = async () => {
     if (!user?._id) return;
@@ -110,24 +164,38 @@ export default function ProposeServicePage() {
         ? { type: 'continu' as const, startDate: form.availStartDate, durationWeeks: form.durationWeeks }
         : { type: 'recurrent' as const, days: form.days, startTime: form.startTime, endTime: form.endTime };
 
-    const payload: CreateAnnouncementDto = {
-      title: form.title,
-      description: enrichedDescription,
-      type: form.type,
-      isPaid: form.points > 0,
-      points: form.points,
-      authorId: String(user._id),
-      neighbourhoodId: String(user.neighbourhoodId),
-      status: 'open',
-      availabilities: [availabilitySlot],
-    } as any;
-
+    setSubmitting(true);
     try {
-      await api.post('/announcements', payload);
-      navigate('/services');
+      if (isEditMode) {
+        await api.patch(`/announcements/${id}/mine`, {
+          title: form.title,
+          description: enrichedDescription,
+          type: form.type,
+          isPaid: form.points > 0,
+          points: form.points,
+          availabilities: [availabilitySlot],
+        });
+        navigate(`/services/${id}`);
+      } else {
+        const payload: CreateAnnouncementDto = {
+          title: form.title,
+          description: enrichedDescription,
+          type: form.type,
+          isPaid: form.points > 0,
+          points: form.points,
+          authorId: String(user._id),
+          neighbourhoodId: String(user.neighbourhoodId),
+          status: 'open',
+          availabilities: [availabilitySlot],
+        } as any;
+        await api.post('/announcements', payload);
+        navigate('/services');
+      }
     } catch (err: any) {
       const msg = err?.response?.data?.message;
-      setSubmitError(Array.isArray(msg) ? msg[0] : (msg ?? "Erreur lors de la création de l'annonce."));
+      setSubmitError(Array.isArray(msg) ? msg[0] : (msg ?? `Erreur lors de la ${isEditMode ? 'modification' : 'création'} de l'annonce.`));
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -162,7 +230,7 @@ export default function ProposeServicePage() {
             </svg>
           </button>
           <div>
-            <h1 className="font-heading text-xl font-bold text-charbon">Proposer un service</h1>
+            <h1 className="font-heading text-xl font-bold text-charbon">{isEditMode ? 'Modifier le service' : 'Proposer un service'}</h1>
             <p className="font-sans text-xs text-sable">{stepLabels[step - 1]}</p>
           </div>
         </div>
@@ -171,6 +239,10 @@ export default function ProposeServicePage() {
       {/* ── Contenu centré ── */}
       <div className="flex-1 flex justify-center px-4 lg:px-8 py-4">
         <div className="w-full max-w-[720px]">
+          {loadingExisting ? (
+            <p className="font-sans text-sm text-sable text-center py-16">Chargement de l'annonce...</p>
+          ) : (
+            <>
           <StepBar current={step} />
 
           {/* ── Étape 1 ── */}
@@ -268,7 +340,7 @@ export default function ProposeServicePage() {
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className="font-sans text-sm font-semibold text-charbon">Points / heure</label>
+                  <label className="font-sans text-sm font-semibold text-charbon">Points (montant fixe)</label>
                   <div className="relative">
                     <input
                       type="number"
@@ -298,7 +370,7 @@ export default function ProposeServicePage() {
                     <div className="bg-[#E8F5EE] px-4 pt-4 pb-3 flex flex-col gap-2">
                       <span className="text-2xl">{selectedCat?.emoji ?? '📋'}</span>
                       <span className="flex items-center gap-1 rounded-full bg-white/80 px-2.5 py-1 w-fit font-sans text-xs font-semibold text-ambre">
-                        ★ {form.points} pts/h
+                        ★ {form.points} pts
                       </span>
                     </div>
                     <div className="bg-white px-4 py-3">
@@ -459,16 +531,22 @@ export default function ProposeServicePage() {
               )}
               <button
                 disabled={
-                  form.availType === 'recurrent' ? form.days.length === 0 :
-                  form.availType === 'dates_exactes' ? form.exactDates.length === 0 :
-                  !form.availStartDate
+                  submitting || (
+                    form.availType === 'recurrent' ? form.days.length === 0 :
+                    form.availType === 'dates_exactes' ? form.exactDates.length === 0 :
+                    !form.availStartDate
+                  )
                 }
                 onClick={handleSubmit}
                 className="w-full rounded-xl bg-vert-foret py-3.5 font-sans text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Publier l'annonce →
+                {submitting
+                  ? (isEditMode ? 'Enregistrement...' : 'Publication...')
+                  : (isEditMode ? 'Enregistrer les modifications →' : "Publier l'annonce →")}
               </button>
             </div>
+          )}
+            </>
           )}
         </div>
       </div>

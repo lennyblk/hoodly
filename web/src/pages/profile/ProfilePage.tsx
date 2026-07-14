@@ -111,7 +111,7 @@ export default function ProfilePage() {
                       <span className="text-xl">{a.type === 'offer' ? '🤝' : '🙋'}</span>
                       <div>
                         <p className="font-sans text-sm font-semibold text-charbon">{a.title}</p>
-                        <p className="font-sans text-xs text-sable">{a.points} pts/h</p>
+                        <p className="font-sans text-xs text-sable">{a.points} pts</p>
                       </div>
                     </div>
                     <span className={`rounded-full px-2.5 py-1 font-sans text-xs font-semibold ${a.status === 'open' ? 'bg-[#E8F5EE] text-vert-moyen' :
