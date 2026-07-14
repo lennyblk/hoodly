@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import TopBar from '../../components/layout/TopBar';
 import { useUser } from '../../contexts/useUser';
 import NeighbourhoodBanner from '../../components/dashboard/NeighbourhoodBanner';
@@ -68,6 +69,7 @@ const STATS_CONFIG = [
 const quickActions = [
   {
     label: 'Proposer un service',
+    to: '/services/new',
     iconBg: 'bg-[#FDE8D8]',
     icon: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="text-ambre">
@@ -77,6 +79,8 @@ const quickActions = [
   },
   {
     label: 'Créer un événement',
+    to: '/events',
+    openCreate: true,
     iconBg: 'bg-[#E8E4F7]',
     icon: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="text-[#7C3AED]">
@@ -87,6 +91,7 @@ const quickActions = [
   },
   {
     label: 'Carte du quartier',
+    to: '/map',
     iconBg: 'bg-[#D8F3DC]',
     icon: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="text-vert-moyen">
@@ -96,7 +101,9 @@ const quickActions = [
     ),
   },
   {
-    label: 'Nouveau vote', 
+    label: 'Votes',
+    to: '/votes',
+    openCreate: true,
     iconBg: 'bg-[#DBEAFE]',
     icon: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="text-[#2563EB]">
@@ -108,6 +115,7 @@ const quickActions = [
 
 export default function DashboardPage() {
   const { user } = useUser() as { user: User | null };
+  const navigate = useNavigate();
   const [dashboardMetrics, setDashboardMetrics] = useState({
     activeNeighbours: 0,
     availableServices: 0,
@@ -163,8 +171,12 @@ export default function DashboardPage() {
         <div>
           <h2 className="font-sans text-base font-bold text-charbon mb-3">Actions rapides</h2>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
-            {quickActions.map((a) => (
-              <QuickActionCard key={a.label} {...a} />
+            {quickActions.map(({ to, openCreate, ...a }) => (
+              <QuickActionCard
+                key={a.label}
+                {...a}
+                onClick={() => navigate(to, openCreate ? { state: { openCreate: true } } : undefined)}
+              />
             ))}
           </div>
         </div>

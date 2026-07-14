@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../../api/axios';
 import { useUser } from '../../contexts/useUser';
 
@@ -371,12 +371,19 @@ function CreateModal({ neighbourhoodId, onCreated, onClose }: CreateModalProps) 
 
 export default function VotesPage() {
   const { user } = useUser();
+  const location = useLocation();
   const [votes, setVotes] = useState<Vote[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [filter, setFilter] = useState<'all' | 'active' | 'ended'>('all');
 
   const canManage = user?.role === 'moderateur' || user?.role === 'admin';
+
+  useEffect(() => {
+    if (canManage && (location.state as { openCreate?: boolean } | null)?.openCreate) {
+      setShowModal(true);
+    }
+  }, [location.state, canManage]);
 
   const fetchVotes = useCallback(async () => {
     if (!user?.neighbourhoodId) {

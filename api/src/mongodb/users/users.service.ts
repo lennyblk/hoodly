@@ -27,7 +27,7 @@ export class UsersService {
   ) { }
 
   async countByNeighbourhood(neighbourhoodId: string): Promise<number> {
-    return this.usersRepository.count({ where: { neighbourhoodId } as any });
+    return this.usersRepository.count({ where: { neighbourhoodId, isActive: true } as any });
   }
 
   async findByNeighbourhood(neighbourhoodId: string) {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../../api/axios';
 import { useUser } from '../../contexts/useUser';
 
@@ -344,11 +344,18 @@ function CreateEventModal({
 
 export default function EventsPage() {
   const { user, fetchMe } = useUser();
+  const location = useLocation();
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [statusFilter, setStatusFilter] = useState<'all' | 'inscrit' | 'interesse'>('all');
+
+  useEffect(() => {
+    if ((location.state as { openCreate?: boolean } | null)?.openCreate) {
+      setShowModal(true);
+    }
+  }, [location.state]);
 
   const fetchEvents = useCallback(async () => {
     if (!user?.neighbourhoodId) {
