@@ -40,8 +40,8 @@ export class UpdateMeDto {
   @IsEnum(UserLang)
   lang?: UserLang;
 
-  @ApiPropertyOptional({ example: '64a1f2c3e4b5f6a7b8c9d0e1' })
+  @ApiPropertyOptional({ example: '15 rue de la Paix, 75018 Paris', description: 'Changer son adresse re-géocode automatiquement le quartier' })
   @IsOptional()
   @IsString()
-  neighbourhoodId?: string;
+  address?: string;
 }

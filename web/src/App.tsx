@@ -21,6 +21,7 @@ import ProfilePage from './pages/profile/ProfilePage';
 import EditProfilePage from './pages/profile/EditProfilePage';
 import AdminPage from './pages/admin/AdminPage';
 import SelectNeighbourhoodPage from './pages/neighbourhood/SelectNeighbourhoodPage';
+import WaitingNeighbourhoodPage from './pages/neighbourhood/WaitingNeighbourhoodPage';
 import VerifyEmailPage from './pages/auth/VerifyEmailPage';
 import LoginVerifyOtpPage from './pages/auth/LoginVerifyOtpPage';
 import IncidentsPage from './pages/incidents/IncidentsPage';
@@ -35,6 +36,13 @@ function AdminRoutes() {
   const { user } = useUser();
   if (!user) return null;
   if (user.role !== 'admin') return <Navigate to="/dashboard" replace />;
+  return <Outlet />;
+}
+
+function NeighbourhoodRoutes() {
+  const { user } = useUser();
+  if (!user) return null;
+  if (!user.neighbourhoodId) return <Navigate to="/waiting-neighbourhood" replace />;
   return <Outlet />;
 }
 
@@ -65,23 +73,26 @@ function AppRoutes() {
       <Route element={<ProtectedRoutes />}>
         <Route element={<AppLayout />}>
           <Route index element={<Navigate to="/dashboard" replace />} />
-          <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/services" element={<ServicesPage />} />
-          <Route path="/services/new" element={<ProposeServicePage />} />
-          <Route path="/services/:id/edit" element={<ProposeServicePage />} />
-          <Route path="/services/:id" element={<ServiceDetailPage />} />
-          <Route path="/services/:id/contract" element={<ContractPage />} />
-          <Route path="/map" element={<MapPage />} />
-          <Route path="/events" element={<EventsPage />} />
-          <Route path="/events/:id" element={<EventDetailPage />} />
-          <Route path="/messages" element={<MessagesPage />} />
-          <Route path="/votes" element={<VotesPage />} />
-          <Route path="/votes/:id" element={<VoteDetailPage />} />
-          <Route path="/incidents" element={<IncidentsPage />} />
-          <Route path="/documents" element={<DocumentsPage />} />
-          <Route path="/documents/:id" element={<ContractPage />} />
+          <Route path="/waiting-neighbourhood" element={<WaitingNeighbourhoodPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/profile/edit" element={<EditProfilePage />} />
+          <Route element={<NeighbourhoodRoutes />}>
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/services" element={<ServicesPage />} />
+            <Route path="/services/new" element={<ProposeServicePage />} />
+            <Route path="/services/:id/edit" element={<ProposeServicePage />} />
+            <Route path="/services/:id" element={<ServiceDetailPage />} />
+            <Route path="/services/:id/contract" element={<ContractPage />} />
+            <Route path="/map" element={<MapPage />} />
+            <Route path="/events" element={<EventsPage />} />
+            <Route path="/events/:id" element={<EventDetailPage />} />
+            <Route path="/messages" element={<MessagesPage />} />
+            <Route path="/votes" element={<VotesPage />} />
+            <Route path="/votes/:id" element={<VoteDetailPage />} />
+            <Route path="/incidents" element={<IncidentsPage />} />
+            <Route path="/documents" element={<DocumentsPage />} />
+            <Route path="/documents/:id" element={<ContractPage />} />
+          </Route>
           <Route element={<AdminRoutes />}>
             <Route path="/admin" element={<AdminPage />} />
           </Route>

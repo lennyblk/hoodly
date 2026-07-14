@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
 import { authApi } from '../../api/auth';
 import { otpApi } from '../../api/otp';
+import { useAddressAutocomplete } from '../../hooks/useAddressAutocomplete';
 
 const PASSWORD_CHECKS = [
   { label: '8 caractères minimum', test: (p: string) => p.length >= 8 },
@@ -32,13 +33,20 @@ function PasswordStrength({ password }: { password: string }) {
 }
 
 export default function SignupPage() {
-  const [form, setForm] = useState({ firstName: '', lastName: '', email: '', password: '', lang: 'fr' });
+  const [form, setForm] = useState({ firstName: '', lastName: '', email: '', password: '', address: '', lang: 'fr' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const navigate = useNavigate();
+  const addressSuggestions = useAddressAutocomplete(form.address);
 
   function update(field: string, value: string) {
     setForm((f) => ({ ...f, [field]: value }));
+  }
+
+  function selectAddress(value: string) {
+    update('address', value);
+    setShowSuggestions(false);
   }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -124,6 +132,37 @@ export default function SignupPage() {
                 <label htmlFor="lastName" className="font-sans text-sm font-semibold text-charbon">Nom</label>
                 <input id="lastName" type="text" value={form.lastName} onChange={(e) => update('lastName', e.target.value)} placeholder="Leblanc" minLength={2} maxLength={50} required className={inputClass} />
               </div>
+            </div>
+            <div className="flex flex-col gap-1.5 relative">
+              <label htmlFor="address" className="font-sans text-sm font-semibold text-charbon">Adresse</label>
+              <input
+                id="address"
+                type="text"
+                value={form.address}
+                onChange={(e) => { update('address', e.target.value); setShowSuggestions(true); }}
+                onFocus={() => setShowSuggestions(true)}
+                onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+                placeholder="Ex: 15 rue de la Paix, 75018 Paris"
+                required
+                autoComplete="off"
+                className={inputClass}
+              />
+              {showSuggestions && addressSuggestions.length > 0 && (
+                <ul className="absolute top-full left-0 right-0 mt-1 bg-white border border-sable rounded-xl shadow-lg z-10 overflow-hidden max-h-56 overflow-y-auto">
+                  {addressSuggestions.map((s, i) => (
+                    <li key={i}>
+                      <button
+                        type="button"
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => selectAddress(s.display_name)}
+                        className="w-full text-left px-4 py-2.5 font-sans text-sm text-charbon hover:bg-creme transition-colors"
+                      >
+                        {s.display_name}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
             <div className="flex flex-col gap-1.5">
               <label htmlFor="email" className="font-sans text-sm font-semibold text-charbon">Adresse e-mail</label>

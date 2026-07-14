@@ -656,7 +656,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Récupérer tous les incidents (filtrés par quartier pour modérateur) */
+        /** Récupérer les incidents (les siens pour un habitant, filtrés par quartier pour modérateur, tous pour admin) */
         get: operations["IncidentsController_findAll"];
         put?: never;
         /** Signaler un incident */
@@ -678,11 +678,11 @@ export interface paths {
         get: operations["IncidentsController_findOne"];
         put?: never;
         post?: never;
-        /** Supprimer un incident — admin uniquement */
+        /** Supprimer un incident — auteur (le sien) ou admin */
         delete: operations["IncidentsController_remove"];
         options?: never;
         head?: never;
-        /** Mettre à jour un incident — modérateur (son quartier) ou admin */
+        /** Mettre à jour un incident — auteur (le sien), modérateur (son quartier) ou admin */
         patch: operations["IncidentsController_update"];
         trace?: never;
     };
@@ -788,7 +788,7 @@ export interface paths {
         put?: never;
         /**
          * Exécute une requête HQL (Hoodly Query Language) — admin uniquement
-         * @description Syntaxe : FIND <collection> [WHERE <condition>] [LIMIT <n>]. Collections autorisées : documents, announcements, events, messages, votes.
+         * @description Syntaxe : FIND documents [WHERE <condition>] [LIMIT <n>]. Le langage ne cible que la collection documents ; champs interrogeables : id, title, type, name, ownerId, signers, status, gridfsId, announcementId, createdAt.
          */
         post: operations["QueryLangController_execute"];
         delete?: never;
@@ -938,6 +938,8 @@ export interface components {
             role: "habitant" | "moderateur" | "admin";
             /** @example 64a1f2c3e4b5f6a7b8c9d0e2 */
             neighbourhoodId?: string;
+            /** @example 15 rue de la Paix, 75018 Paris */
+            address?: string;
             /** @example 0 */
             points: number;
             /** @example true */
@@ -990,8 +992,11 @@ export interface components {
             lastName?: string;
             /** @enum {string} */
             lang?: "fr" | "en";
-            /** @example 64a1f2c3e4b5f6a7b8c9d0e1 */
-            neighbourhoodId?: string;
+            /**
+             * @description Changer son adresse re-géocode automatiquement le quartier
+             * @example 15 rue de la Paix, 75018 Paris
+             */
+            address?: string;
         };
         UpdateUserDto: {
             /** @example john.doe@email.com */
@@ -1020,6 +1025,8 @@ export interface components {
             firstName: string;
             /** @example Doe */
             lastName: string;
+            /** @example 15 rue de la Paix, 75018 Paris */
+            address: string;
             /**
              * @default fr
              * @enum {string}
@@ -3546,7 +3553,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Erreur de syntaxe HQL ou collection inconnue. */
+            /** @description Erreur de syntaxe HQL. */
             400: {
                 headers: {
                     [name: string]: unknown;

@@ -21,7 +21,6 @@ class SyncProvider implements OnApplicationBootstrap {
         const existing = await this.sqliteRepo.findOneBy({ mongoId: mongoUser._id.toString() });
         const data = {
           email: mongoUser.email,
-          password: mongoUser.password,
           firstName: mongoUser.firstName,
           lastName: mongoUser.lastName,
           role: mongoUser.role || 'habitant',

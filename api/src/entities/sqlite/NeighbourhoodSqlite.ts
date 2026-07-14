@@ -23,8 +23,8 @@ export class NeighbourhoodSqlite {
   @Column({ type: 'json', nullable: true })
   geometry: GeoJsonPolygon;
 
-  @Column()
-  createdBy: string;
+  @Column({ type: 'text', nullable: true })
+  createdBy: string | null;
 
   @CreateDateColumn()
   createdAt: Date;

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useUser } from '../../contexts/useUser';
 import api from '../../api/axios';
 import type { components } from '../../api/types.generated';
+import { useAddressAutocomplete } from '../../hooks/useAddressAutocomplete';
 
 type Neighbourhood = components['schemas']['Neighbourhood'];
 
@@ -10,9 +11,9 @@ interface FormState {
   firstName: string;
   lastName: string;
   email: string;
+  address: string;
   password: string;
   confirmPassword: string;
-  neighbourhoodId: string;
 }
 
 export default function EditProfilePage() {
@@ -23,14 +24,16 @@ export default function EditProfilePage() {
     firstName: '',
     lastName: '',
     email: '',
+    address: '',
     password: '',
     confirmPassword: '',
-    neighbourhoodId: '',
   });
-  const [neighbourhoods, setNeighbourhoods] = useState<Neighbourhood[]>([]);
+  const [neighbourhood, setNeighbourhood] = useState<Neighbourhood | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [showAddressSuggestions, setShowAddressSuggestions] = useState(false);
+  const addressSuggestions = useAddressAutocomplete(form.address);
 
   useEffect(() => {
     if (!user) return;
@@ -38,22 +41,31 @@ export default function EditProfilePage() {
       firstName: user.firstName ?? '',
       lastName: user.lastName ?? '',
       email: user.email ?? '',
+      address: user.address ?? '',
       password: '',
       confirmPassword: '',
-      neighbourhoodId: user.neighbourhoodId ?? '',
     });
   }, [user]);
 
   useEffect(() => {
-    api.get<Neighbourhood[]>('/neighbourhoods')
-      .then(({ data }) => setNeighbourhoods(data))
+    if (!user?.neighbourhoodId) {
+      setNeighbourhood(null);
+      return;
+    }
+    api.get<Neighbourhood>(`/neighbourhoods/${user.neighbourhoodId}`)
+      .then(({ data }) => setNeighbourhood(data))
       .catch(() => { });
-  }, []);
+  }, [user?.neighbourhoodId]);
 
   function set(field: keyof FormState, value: string) {
     setForm((f) => ({ ...f, [field]: value }));
     setError(null);
     setSuccess(false);
+  }
+
+  function selectAddress(value: string) {
+    set('address', value);
+    setShowAddressSuggestions(false);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -72,12 +84,12 @@ export default function EditProfilePage() {
       firstName: form.firstName,
       lastName: form.lastName,
       email: form.email,
-      neighbourhoodId: form.neighbourhoodId,
+      address: form.address,
     };
     if (form.password) payload.password = form.password;
 
     try {
-      await api.patch(`/users/${String(user._id)}`, payload as any);
+      await api.patch('/users/me', payload);
       await fetchMe();
       setSuccess(true);
       setForm((f) => ({ ...f, password: '', confirmPassword: '' }));
@@ -155,21 +167,44 @@ export default function EditProfilePage() {
             />
           </div>
 
-          {/* Quartier */}
-          <div className="flex flex-col gap-1.5">
-            <label className="font-sans text-sm font-semibold text-charbon">Quartier</label>
-            <select
-              value={form.neighbourhoodId}
-              onChange={(e) => set('neighbourhoodId', e.target.value)}
-              className={`${inputClass} cursor-pointer`}
-            >
-              <option value="">— Aucun quartier —</option>
-              {neighbourhoods.map((n) => (
-                <option key={String(n.id)} value={String(n.id)}>
-                  {n.name}
-                </option>
-              ))}
-            </select>
+          {/* Adresse */}
+          <div className="flex flex-col gap-1.5 relative">
+            <label className="font-sans text-sm font-semibold text-charbon">Adresse</label>
+            <input
+              type="text"
+              value={form.address}
+              onChange={(e) => { set('address', e.target.value); setShowAddressSuggestions(true); }}
+              onFocus={() => setShowAddressSuggestions(true)}
+              onBlur={() => setTimeout(() => setShowAddressSuggestions(false), 150)}
+              placeholder="Ex: 15 rue de la Paix, 75018 Paris"
+              autoComplete="off"
+              className={inputClass}
+              required
+            />
+            {showAddressSuggestions && addressSuggestions.length > 0 && (
+              <ul className="absolute top-full left-0 right-0 mt-1 bg-white border border-sable rounded-xl shadow-lg z-10 overflow-hidden max-h-56 overflow-y-auto">
+                {addressSuggestions.map((s, i) => (
+                  <li key={i}>
+                    <button
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => selectAddress(s.display_name)}
+                      className="w-full text-left px-4 py-2.5 font-sans text-sm text-charbon hover:bg-creme transition-colors"
+                    >
+                      {s.display_name}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <p className="font-sans text-xs text-sable">
+              Quartier : {neighbourhood ? (
+                <span className="font-medium text-charbon/70">{neighbourhood.name}</span>
+              ) : (
+                <span className="italic">aucun — en attente d'attribution</span>
+              )}
+              {' '}(déterminé automatiquement depuis votre adresse)
+            </p>
           </div>
 
           {/* Mot de passe */}

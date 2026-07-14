@@ -10,14 +10,18 @@ import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { DataSource, MongoRepository } from 'typeorm';
 import { ObjectId } from 'mongodb';
 import { User, UserRole, UserLang } from '../../entities/mongodb/User';
+import { Neighbourhood } from '../../entities/mongodb/Neighbourhood';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { geocodeAddress, pointInPolygon } from '../../common/utils/geo';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User, 'mongodb')
     private usersRepository: MongoRepository<User>,
+    @InjectRepository(Neighbourhood, 'mongodb')
+    private neighbourhoodsRepository: MongoRepository<Neighbourhood>,
     @InjectDataSource('mongodb')
     private dataSource: DataSource,
   ) { }
@@ -84,6 +88,20 @@ export class UsersService {
 
     if (updateUserDto.password) {
       updateUserDto.password = await bcrypt.hash(updateUserDto.password, 10);
+    }
+
+    const newAddress = (updateUserDto as { address?: string }).address;
+    if (newAddress && newAddress !== existingUser.address) {
+      let neighbourhoodId: string | null = null;
+      const coords = await geocodeAddress(newAddress);
+      if (coords) {
+        const neighbourhoods = await this.neighbourhoodsRepository.find();
+        const match = neighbourhoods.find(
+          (n) => n.geometry && pointInPolygon(coords.lng, coords.lat, n.geometry),
+        );
+        if (match) neighbourhoodId = match.id.toString();
+      }
+      existingUser.neighbourhoodId = neighbourhoodId as any;
     }
 
     Object.assign(existingUser, updateUserDto);
