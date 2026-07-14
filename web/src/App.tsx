@@ -23,6 +23,7 @@ import AdminPage from './pages/admin/AdminPage';
 import SelectNeighbourhoodPage from './pages/neighbourhood/SelectNeighbourhoodPage';
 import VerifyEmailPage from './pages/auth/VerifyEmailPage';
 import LoginVerifyOtpPage from './pages/auth/LoginVerifyOtpPage';
+import IncidentsPage from './pages/incidents/IncidentsPage';
 
 function ProtectedRoutes() {
   const token = localStorage.getItem('access_token');
@@ -76,6 +77,7 @@ function AppRoutes() {
           <Route path="/messages" element={<MessagesPage />} />
           <Route path="/votes" element={<VotesPage />} />
           <Route path="/votes/:id" element={<VoteDetailPage />} />
+          <Route path="/incidents" element={<IncidentsPage />} />
           <Route path="/documents" element={<DocumentsPage />} />
           <Route path="/documents/:id" element={<ContractPage />} />
           <Route path="/profile" element={<ProfilePage />} />

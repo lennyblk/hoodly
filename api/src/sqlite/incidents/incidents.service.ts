@@ -23,6 +23,10 @@ export class IncidentsService {
     return this.incidentsRepository.findBy({ neighborhoodId: neighbourhoodId });
   }
 
+  async findByReporter(userId: string): Promise<Incident[]> {
+    return this.incidentsRepository.findBy({ reportedBy: userId });
+  }
+
   async findOne(id: string): Promise<Incident> {
     const incident = await this.incidentsRepository.findOneBy({ id });
     if (!incident) {

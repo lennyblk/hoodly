@@ -17,8 +17,6 @@ import { IncidentsService } from './incidents.service';
 import { CreateIncidentDto } from './dto/create-incident.dto';
 import { UpdateIncidentDto } from './dto/update-incident.dto';
 import { Incident } from '../../entities/sqlite/Incident';
-import { RolesGuard } from '../../common/guards/roles.guard';
-import { Roles } from '../../common/decorators/roles.decorator';
 import { JwtPayload } from '../../mongodb/auth/types/jwt-payload.type';
 import { UserRole } from '../../entities/mongodb/User';
 
@@ -37,7 +35,7 @@ export class IncidentsController {
     return this.incidentsService.create(createIncidentDto);
   }
 
-  @ApiOperation({ summary: 'Récupérer tous les incidents (filtrés par quartier pour modérateur)' })
+  @ApiOperation({ summary: 'Récupérer les incidents (les siens pour un habitant, filtrés par quartier pour modérateur, tous pour admin)' })
   @ApiResponse({ status: 200, type: [Incident] })
   @Get()
   findAll(@Req() req: Request) {
@@ -46,7 +44,10 @@ export class IncidentsController {
       if (!user.neighbourhoodId) return [];
       return this.incidentsService.findByNeighbourhood(user.neighbourhoodId);
     }
-    return this.incidentsService.findAll();
+    if (user.role === UserRole.ADMIN) {
+      return this.incidentsService.findAll();
+    }
+    return this.incidentsService.findByReporter(user.userId);
   }
 
   @ApiOperation({ summary: 'Récupérer un incident par ID' })
@@ -64,34 +65,38 @@ export class IncidentsController {
     return incident;
   }
 
-  @ApiOperation({ summary: 'Mettre à jour un incident — modérateur (son quartier) ou admin' })
+  @ApiOperation({ summary: 'Mettre à jour un incident — auteur (le sien), modérateur (son quartier) ou admin' })
   @ApiParam({ name: 'id', description: 'UUID de l\'incident' })
   @ApiResponse({ status: 200, type: Incident })
   @ApiResponse({ status: 403, description: 'Accès refusé.' })
   @ApiResponse({ status: 404, description: 'Incident non trouvé.' })
-  @UseGuards(RolesGuard)
-  @Roles(UserRole.MODERATEUR, UserRole.ADMIN)
   @Patch(':id')
   async update(@Param('id') id: string, @Body() updateIncidentDto: UpdateIncidentDto, @Req() req: Request) {
     const user = req.user as JwtPayload;
-    if (user.role === UserRole.MODERATEUR) {
-      const incident = await this.incidentsService.findOne(id);
-      if (incident.neighborhoodId !== user.neighbourhoodId) {
-        throw new ForbiddenException('Accès limité à votre quartier');
-      }
+    const incident = await this.incidentsService.findOne(id);
+    const isOwner = incident.reportedBy === user.userId;
+    const isModeratorInScope = user.role === UserRole.MODERATEUR && incident.neighborhoodId === user.neighbourhoodId;
+    const isAdmin = user.role === UserRole.ADMIN;
+    if (!isOwner && !isModeratorInScope && !isAdmin) {
+      throw new ForbiddenException('Accès refusé');
     }
     return this.incidentsService.update(id, updateIncidentDto);
   }
 
-  @ApiOperation({ summary: 'Supprimer un incident — admin uniquement' })
+  @ApiOperation({ summary: 'Supprimer un incident — auteur (le sien) ou admin' })
   @ApiParam({ name: 'id', description: 'UUID de l\'incident' })
   @ApiResponse({ status: 200, description: 'Incident supprimé.' })
   @ApiResponse({ status: 403, description: 'Accès refusé.' })
   @ApiResponse({ status: 404, description: 'Incident non trouvé.' })
-  @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN)
   @Delete(':id')
-  remove(@Param('id') id: string) {
+  async remove(@Param('id') id: string, @Req() req: Request) {
+    const user = req.user as JwtPayload;
+    const incident = await this.incidentsService.findOne(id);
+    const isOwner = incident.reportedBy === user.userId;
+    const isAdmin = user.role === UserRole.ADMIN;
+    if (!isOwner && !isAdmin) {
+      throw new ForbiddenException('Accès refusé');
+    }
     return this.incidentsService.remove(id);
   }
 }
