@@ -20,14 +20,15 @@ export interface HqlOrNode {
 export type HqlConditionNode = HqlComparisonNode | HqlAndNode | HqlOrNode;
 
 export interface HqlQuery {
-  collection: string;
   where: HqlConditionNode | null;
   limit: number | null;
 }
 
 const parser = new Parser(hoodlyQueryGrammar);
 
-/** Parses an HQL string (e.g. `FIND documents WHERE status = "signed" LIMIT 10`). */
+/**
+ * Parses an HQL string (e.g. `FIND documents WHERE status = "signed" LIMIT 10`).
+ */
 export function parseHql(input: string): HqlQuery {
   if (!input || !input.trim()) {
     throw new BadRequestException('Empty query');

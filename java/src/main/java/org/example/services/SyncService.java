@@ -136,14 +136,14 @@ public class SyncService {
         }
     }
 
-    private static Incident findById(List<Incident> list, String id) {
+    static Incident findById(List<Incident> list, String id) {
         for (Incident inc : list) {
             if (id.equals(inc.getId())) return inc;
         }
         return null;
     }
 
-    private static boolean isNewerOrEqual(String a, String b) {
+    static boolean isNewerOrEqual(String a, String b) {
         if (a == null) return false;
         if (b == null) return true;
         try {
@@ -153,11 +153,11 @@ public class SyncService {
         }
     }
 
-    private static boolean isValidMongoId(String id) {
+    static boolean isValidMongoId(String id) {
         return id != null && id.matches("[0-9a-fA-F]{24}");
     }
 
-    private static boolean isPlaceholder(String value) {
+    static boolean isPlaceholder(String value) {
         return value == null || value.isBlank()
                 || value.equals("local")
                 || value.equals("FAKE-NEIGHBORHOOD-ID")

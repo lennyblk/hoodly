@@ -2,15 +2,15 @@
  * HQL (Hoodly Query Language) grammar, written as a Jison bnf/lex grammar object.
  *
  * Syntax:
- *   FIND <collection> [WHERE <condition>] [LIMIT <number>]
+ *   FIND documents [WHERE <condition>] [LIMIT <number>]
  *   condition := condition AND condition
  *              | condition OR condition
  *              | ( condition )
  *              | <field> <op> <value>
+ *   field     := id | title | type | name | ownerId | signers | status
+ *              | gridfsId | announcementId | createdAt
  *   op        := = | != | > | < | >= | <= | CONTAINS
  *   value     := STRING | NUMBER | TRUE | FALSE | NULL
- *
- * See docs/dossier-technique.md for the full grammar reference and examples.
  */
 export const hoodlyQueryGrammar = {
   lex: {
@@ -22,13 +22,17 @@ export const hoodlyQueryGrammar = {
       ['OR\\b', "return 'OR'"],
       ['LIMIT\\b', "return 'LIMIT'"],
       ['CONTAINS\\b', "return 'CONTAINS'"],
+      ['documents\\b', "return 'DOCUMENTS'"],
       ['true\\b', "return 'TRUE'"],
       ['false\\b', "return 'FALSE'"],
       ['null\\b', "return 'NULL'"],
+      [
+        '(id|title|type|name|ownerId|signers|status|gridfsId|announcementId|createdAt)\\b',
+        "return 'FIELD'",
+      ],
       ['"[^"]*"', "yytext = yytext.slice(1, -1); return 'STRING';"],
       ["'[^']*'", "yytext = yytext.slice(1, -1); return 'STRING';"],
       ['[0-9]+(\\.[0-9]+)?\\b', "return 'NUMBER'"],
-      ['[a-zA-Z_][a-zA-Z0-9_.]*', "return 'IDENTIFIER'"],
       ['!=', "return 'NEQ'"],
       ['>=', "return 'GTE'"],
       ['<=', "return 'LTE'"],
@@ -45,7 +49,7 @@ export const hoodlyQueryGrammar = {
   ],
   bnf: {
     query: [
-      ['FIND IDENTIFIER where_opt limit_opt', 'return { collection: $2, where: $3, limit: $4 };'],
+      ['FIND DOCUMENTS where_opt limit_opt', 'return { where: $3, limit: $4 };'],
     ],
     where_opt: [
       ['WHERE condition', '$$ = $2;'],
@@ -59,7 +63,7 @@ export const hoodlyQueryGrammar = {
       ['condition AND condition', '$$ = { and: [$1, $3] };'],
       ['condition OR condition', '$$ = { or: [$1, $3] };'],
       ['LPAREN condition RPAREN', '$$ = $2;'],
-      ['IDENTIFIER operator value', '$$ = { field: $1, op: $2, value: $3 };'],
+      ['FIELD operator value', '$$ = { field: $1, op: $2, value: $3 };'],
     ],
     operator: [
       ['EQ', "$$ = '=';"],
