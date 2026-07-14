@@ -46,8 +46,26 @@ interface ServiceDetails {
   notes?: string;
 }
 
-interface AnnouncementWithAvail extends Announcement {
+type AnnouncementStatusExt = Announcement['status'] | 'cancelled';
+
+interface AnnouncementWithAvail extends Omit<Announcement, 'status'> {
+  status: AnnouncementStatusExt;
   availabilities?: AvailabilitySlot[];
+  serviceDetails?: ServiceDetails;
+}
+
+const STATUS_LABELS: Record<AnnouncementStatusExt, string> = {
+  open: 'Ouvert',
+  accepted: 'En cours',
+  done: 'Terminé',
+  cancelled: 'Annulé',
+};
+
+function hoursUntil(dateStr?: string): number | null {
+  if (!dateStr) return null;
+  const target = new Date(`${dateStr}T00:00:00`);
+  if (isNaN(target.getTime())) return null;
+  return (target.getTime() - Date.now()) / (1000 * 60 * 60);
 }
 
 function AvailabilityDisplay({ slot }: { slot: AvailabilitySlot }) {
@@ -335,6 +353,10 @@ export default function ServiceDetailPage() {
   const [accepting, setAccepting] = useState(false);
   const [acceptError, setAcceptError] = useState<string | null>(null);
   const [showAcceptModal, setShowAcceptModal] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+  const [withdrawing, setWithdrawing] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -388,6 +410,48 @@ export default function ServiceDetailPage() {
     }
   }
 
+
+  async function handleDelete() {
+    if (!id || !confirm('Supprimer définitivement cette annonce ?')) return;
+    setDeleting(true);
+    setActionError(null);
+    try {
+      await api.delete(`/announcements/${id}/mine`);
+      navigate('/services', { replace: true });
+    } catch (err: any) {
+      setActionError(err?.response?.data?.message ?? "Erreur lors de la suppression");
+      setDeleting(false);
+    }
+  }
+
+  async function handleCancel() {
+    if (!id || !confirm('Annuler cette prestation ?')) return;
+    setCancelling(true);
+    setActionError(null);
+    try {
+      const { data } = await api.post<Announcement>(`/announcements/${id}/cancel`);
+      setAnnouncement((prev) => (prev ? { ...prev, ...data } : prev));
+    } catch (err: any) {
+      setActionError(err?.response?.data?.message ?? "Erreur lors de l'annulation");
+    } finally {
+      setCancelling(false);
+    }
+  }
+
+  async function handleWithdraw() {
+    if (!id || !confirm('Te désister de cette prestation ?')) return;
+    setWithdrawing(true);
+    setActionError(null);
+    try {
+      const { data } = await api.post<Announcement>(`/announcements/${id}/withdraw`);
+      setAnnouncement((prev) => (prev ? { ...prev, ...data } : prev));
+    } catch (err: any) {
+      setActionError(err?.response?.data?.message ?? "Erreur lors du désistement");
+    } finally {
+      setWithdrawing(false);
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="flex h-full items-center justify-center p-8">
@@ -408,7 +472,13 @@ export default function ServiceDetailPage() {
   }
 
   const isOwner = String(user?._id) === announcement.authorId;
+  const isAccepter = !!announcement.acceptedBy && String(user?._id) === announcement.acceptedBy;
   const authorFullName = author ? `${author.firstName} ${author.lastName}` : '?';
+
+  const serviceDate = announcement.serviceDetails?.chosenDate ?? announcement.serviceDetails?.startDate;
+  const hrsUntilService = hoursUntil(serviceDate);
+  const canCancelOrWithdraw = hrsUntilService === null || hrsUntilService >= 24;
+  const insufficientBalance = !isOwner && !!user && announcement.status === 'open' && user.points < announcement.points;
 
   return (
     <div className="flex flex-col min-h-full">
@@ -446,8 +516,8 @@ export default function ServiceDetailPage() {
           <span className="flex items-center gap-1.5 rounded-full bg-ambre px-3 py-1.5 font-sans text-sm font-bold text-white">
             ★ {announcement.points} points
           </span>
-          <span className="flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 font-sans text-sm font-semibold text-white capitalize">
-            {announcement.status}
+          <span className="flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 font-sans text-sm font-semibold text-white">
+            {STATUS_LABELS[announcement.status]}
           </span>
         </div>
       </div>
@@ -510,11 +580,76 @@ export default function ServiceDetailPage() {
         {acceptError && (
           <p className="text-xs text-red-600 bg-red-50 px-3 py-2 rounded-xl text-center">{acceptError}</p>
         )}
+        {actionError && (
+          <p className="text-xs text-red-600 bg-red-50 px-3 py-2 rounded-xl text-center">{actionError}</p>
+        )}
+        {insufficientBalance && (
+          <p className="text-xs text-ambre bg-[#FFF8EE] border border-ambre/20 px-3 py-2 rounded-xl text-center">
+            ⚠️ Attention, votre solde est insuffisant pour cette prestation ({user?.points} / {announcement.points} pts).
+          </p>
+        )}
         <div className="flex gap-3">
-          {isOwner ? (
+          {announcement.status === 'cancelled' ? (
             <div className="flex-1 flex items-center justify-center rounded-xl border border-sable/40 py-3 font-sans text-sm text-sable">
-              En attente d'acceptation
+              Annonce annulée
             </div>
+          ) : announcement.status === 'done' ? (
+            <div className="flex-1 flex items-center justify-center rounded-xl border border-sable/40 py-3 font-sans text-sm text-sable">
+              Prestation terminée
+            </div>
+          ) : isOwner ? (
+            announcement.status === 'open' ? (
+              <>
+                <button
+                  onClick={() => navigate(`/services/${id}/edit`)}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl border-2 border-vert-foret py-3 font-sans text-sm font-semibold text-vert-foret hover:bg-vert-foret hover:text-white transition-colors"
+                >
+                  Modifier
+                </button>
+                <button
+                  onClick={handleDelete}
+                  disabled={deleting}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl border-2 border-red-500 py-3 font-sans text-sm font-semibold text-red-500 hover:bg-red-500 hover:text-white transition-colors disabled:opacity-50"
+                >
+                  {deleting ? 'Suppression...' : 'Supprimer'}
+                </button>
+              </>
+            ) : canCancelOrWithdraw ? (
+              <button
+                onClick={handleCancel}
+                disabled={cancelling}
+                className="flex flex-1 items-center justify-center gap-2 rounded-xl border-2 border-red-500 py-3 font-sans text-sm font-semibold text-red-500 hover:bg-red-500 hover:text-white transition-colors disabled:opacity-50"
+              >
+                {cancelling ? 'Annulation...' : 'Annuler la prestation'}
+              </button>
+            ) : (
+              <div className="flex-1 flex items-center justify-center rounded-xl border border-sable/40 py-3 font-sans text-sm text-sable text-center px-2">
+                Prestation dans moins de 24h — annulation impossible
+              </div>
+            )
+          ) : isAccepter && announcement.status === 'accepted' ? (
+            canCancelOrWithdraw ? (
+              <>
+                <button
+                  onClick={handleCancel}
+                  disabled={cancelling}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl border-2 border-red-500 py-3 font-sans text-sm font-semibold text-red-500 hover:bg-red-500 hover:text-white transition-colors disabled:opacity-50"
+                >
+                  {cancelling ? 'Annulation...' : 'Annuler'}
+                </button>
+                <button
+                  onClick={handleWithdraw}
+                  disabled={withdrawing}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl border-2 border-ambre py-3 font-sans text-sm font-semibold text-ambre hover:bg-ambre hover:text-white transition-colors disabled:opacity-50"
+                >
+                  {withdrawing ? 'Désistement...' : 'Me désister'}
+                </button>
+              </>
+            ) : (
+              <div className="flex-1 flex items-center justify-center rounded-xl border border-sable/40 py-3 font-sans text-sm text-sable text-center px-2">
+                Prestation dans moins de 24h — action impossible
+              </div>
+            )
           ) : (
             <>
               <button
@@ -554,6 +689,7 @@ export default function ServiceDetailPage() {
           error={acceptError}
         />
       )}
+
     </div>
   );
 }

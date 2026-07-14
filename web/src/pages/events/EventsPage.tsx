@@ -343,7 +343,7 @@ function CreateEventModal({
 }
 
 export default function EventsPage() {
-  const { user } = useUser();
+  const { user, fetchMe } = useUser();
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -371,6 +371,7 @@ export default function EventsPage() {
     if (!user) return;
     await api.post(`/events/${eventId}/rsvp`, { userId: user._id });
     await fetchEvents();
+    fetchMe().catch(() => {});
   }
 
   async function handleInterest(eventId: string) {

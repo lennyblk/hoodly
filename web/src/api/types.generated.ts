@@ -11,11 +11,45 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Récupérer tous les utilisateurs */
+        /** Récupérer tous les utilisateurs — admin uniquement */
         get: operations["UsersController_findAll"];
         put?: never;
-        /** Créer un nouvel utilisateur */
+        /** Créer un utilisateur — admin uniquement */
         post: operations["UsersController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/users/count": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Nombre de voisins dans un quartier */
+        get: operations["UsersController_count"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/users/neighbourhood": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lister les utilisateurs d'un quartier */
+        get: operations["UsersController_findByNeighbourhood"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -33,12 +67,47 @@ export interface paths {
         get: operations["UsersController_findOne"];
         put?: never;
         post?: never;
-        /** Supprimer un utilisateur */
+        /** Supprimer un utilisateur — admin uniquement */
         delete: operations["UsersController_remove"];
         options?: never;
         head?: never;
-        /** Mettre à jour un utilisateur */
+        /** Mettre à jour un utilisateur — admin uniquement */
         patch: operations["UsersController_update"];
+        trace?: never;
+    };
+    "/users/me/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Exporter toutes ses données personnelles (RGPD) */
+        get: operations["UsersController_exportMyData"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/users/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Supprimer son compte et toutes ses données (RGPD) */
+        delete: operations["UsersController_deleteMyAccount"];
+        options?: never;
+        head?: never;
+        /** Modifier son propre profil (firstName, lastName, email, password, lang, neighbourhoodId) */
+        patch: operations["UsersController_updateMe"];
         trace?: never;
     };
     "/auth/signup": {
@@ -50,6 +119,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** Créer un compte */
         post: operations["AuthController_signup"];
         delete?: never;
         options?: never;
@@ -66,7 +136,25 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** Se connecter (retourne tokens ou demande OTP) */
         post: operations["AuthController_signin"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/signin/verify-otp": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Vérifier OTP après signin (MFA) */
+        post: operations["AuthController_verifySigninOtp"];
         delete?: never;
         options?: never;
         head?: never;
@@ -99,6 +187,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** Se déconnecter (révoque le refresh token) */
         post: operations["AuthController_logout"];
         delete?: never;
         options?: never;
@@ -115,7 +204,42 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** Rafraîchir les tokens (Bearer = refresh token) */
         post: operations["AuthController_refreshTokens"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/otp/send": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Envoyer un code OTP par email */
+        post: operations["OtpController_send"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/otp/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Vérifier un code OTP */
+        post: operations["OtpController_verify"];
         delete?: never;
         options?: never;
         head?: never;
@@ -151,12 +275,81 @@ export interface paths {
         get: operations["AnnouncementsController_findOne"];
         put?: never;
         post?: never;
-        /** Supprimer une annonce */
+        /** Supprimer une annonce — admin uniquement */
         delete: operations["AnnouncementsController_remove"];
         options?: never;
         head?: never;
-        /** Mettre à jour une annonce */
+        /** Mettre à jour une annonce — modérateur ou admin */
         patch: operations["AnnouncementsController_update"];
+        trace?: never;
+    };
+    "/announcements/{id}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Accepter une annonce — tout utilisateur authentifié (sauf l'auteur) */
+        post: operations["AnnouncementsController_accept"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/announcements/{id}/mine": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Supprimer son annonce (auteur, tant que non acceptée) */
+        delete: operations["AnnouncementsController_removeMine"];
+        options?: never;
+        head?: never;
+        /** Modifier son annonce (auteur, tant que non acceptée) */
+        patch: operations["AnnouncementsController_updateMine"];
+        trace?: never;
+    };
+    "/announcements/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Annuler une annonce (auteur ou accepteur, min 24h avant prestation) */
+        post: operations["AnnouncementsController_cancel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/announcements/{id}/withdraw": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Se désister d'une annonce acceptée (min 24h avant prestation) */
+        post: operations["AnnouncementsController_withdraw"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/neighbourhoods": {
@@ -169,7 +362,7 @@ export interface paths {
         /** Récupérer tous les quartiers */
         get: operations["NeighbourhoodsController_findAll"];
         put?: never;
-        /** Créer un quartier */
+        /** Créer un quartier — admin uniquement */
         post: operations["NeighbourhoodsController_create"];
         delete?: never;
         options?: never;
@@ -188,12 +381,541 @@ export interface paths {
         get: operations["NeighbourhoodsController_findOne"];
         put?: never;
         post?: never;
-        /** Supprimer un quartier */
+        /** Supprimer un quartier — admin uniquement */
         delete: operations["NeighbourhoodsController_remove"];
         options?: never;
         head?: never;
-        /** Mettre à jour un quartier */
+        /** Mettre à jour un quartier — admin ou modérateur (son propre quartier) */
         patch: operations["NeighbourhoodsController_update"];
+        trace?: never;
+    };
+    "/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lister les événements */
+        get: operations["EventsController_findAll"];
+        put?: never;
+        /** Créer un événement */
+        post: operations["EventsController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/recommendations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Événements recommandés via Neo4j (INTERESTED_IN + ATTENDED) */
+        get: operations["EventsController_recommendations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Récupérer un événement par ID */
+        get: operations["EventsController_findOne"];
+        put?: never;
+        post?: never;
+        /** Supprimer un événement — admin uniquement */
+        delete: operations["EventsController_remove"];
+        options?: never;
+        head?: never;
+        /** Modifier un événement — modérateur ou admin */
+        patch: operations["EventsController_update"];
+        trace?: never;
+    };
+    "/events/{id}/rsvp": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Participer / se désinscrire d'un événement (toggle) */
+        post: operations["EventsController_rsvp"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/{id}/interest": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Marquer / retirer un intérêt pour un événement (toggle) — alimente INTERESTED_IN Neo4j */
+        post: operations["EventsController_interest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/conversations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Créer ou récupérer une conversation entre voisins du même quartier */
+        post: operations["MessagesController_createConversation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/conversations/user/{userId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Conversations d'un utilisateur */
+        get: operations["MessagesController_findConversationsByUser"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Envoyer un message (REST — préférer WebSocket en prod) */
+        post: operations["MessagesController_sendMessage"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/messages/{conversationId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Historique des messages d'une conversation */
+        get: operations["MessagesController_findMessages"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/users/online": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Liste des userIds actuellement en ligne (WebSocket) */
+        get: operations["MessagesController_getOnlineUsers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/messages/upload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Upload un fichier media (image/audio) pour le chat */
+        post: operations["MessagesController_uploadMedia"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/messages/media/{fileId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Récupérer un fichier media du chat */
+        get: operations["MessagesController_getMedia"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/votes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lister les sondages */
+        get: operations["VotesController_findAll"];
+        put?: never;
+        /** Créer un sondage — modérateur ou admin */
+        post: operations["VotesController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/votes/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Récupérer un sondage avec ses résultats */
+        get: operations["VotesController_findOne"];
+        put?: never;
+        post?: never;
+        /** Supprimer un sondage — modérateur ou admin */
+        delete: operations["VotesController_remove"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/votes/{id}/cast": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Voter pour une option */
+        post: operations["VotesController_cast"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/incidents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Récupérer tous les incidents (filtrés par quartier pour modérateur) */
+        get: operations["IncidentsController_findAll"];
+        put?: never;
+        /** Signaler un incident */
+        post: operations["IncidentsController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/incidents/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Récupérer un incident par ID */
+        get: operations["IncidentsController_findOne"];
+        put?: never;
+        post?: never;
+        /** Supprimer un incident — admin uniquement */
+        delete: operations["IncidentsController_remove"];
+        options?: never;
+        head?: never;
+        /** Mettre à jour un incident — modérateur (son quartier) ou admin */
+        patch: operations["IncidentsController_update"];
+        trace?: never;
+    };
+    "/sqlite/users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lister tous les utilisateurs (SQLite) */
+        get: operations["UsersSqliteController_findAll"];
+        put?: never;
+        /** Créer un utilisateur (SQLite) */
+        post: operations["UsersSqliteController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sqlite/users/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Récupérer un utilisateur par ID (SQLite) */
+        get: operations["UsersSqliteController_findOne"];
+        put?: never;
+        post?: never;
+        /** Supprimer un utilisateur (SQLite) */
+        delete: operations["UsersSqliteController_remove"];
+        options?: never;
+        head?: never;
+        /** Modifier un utilisateur (SQLite) */
+        patch: operations["UsersSqliteController_update"];
+        trace?: never;
+    };
+    "/sqlite/neighbourhoods": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lister tous les quartiers (SQLite) */
+        get: operations["NeighbourhoodsSqliteController_findAll"];
+        put?: never;
+        /** Créer un quartier (SQLite) */
+        post: operations["NeighbourhoodsSqliteController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sqlite/neighbourhoods/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Récupérer un quartier par ID (SQLite) */
+        get: operations["NeighbourhoodsSqliteController_findOne"];
+        put?: never;
+        post?: never;
+        /** Supprimer un quartier (SQLite) */
+        delete: operations["NeighbourhoodsSqliteController_remove"];
+        options?: never;
+        head?: never;
+        /** Modifier un quartier (SQLite) */
+        patch: operations["NeighbourhoodsSqliteController_update"];
+        trace?: never;
+    };
+    "/neo4j/top-attendee": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Voisin le plus sociable du quartier (Neo4j ATTENDED) */
+        get: operations["Neo4jController_topAttendee"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/query-lang/execute": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Exécute une requête HQL (Hoodly Query Language) — admin uniquement
+         * @description Syntaxe : FIND <collection> [WHERE <condition>] [LIMIT <n>]. Collections autorisées : documents, announcements, events, messages, votes.
+         */
+        post: operations["QueryLangController_execute"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/documents/upload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Upload un PDF via GridFS */
+        post: operations["DocumentsController_upload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lister les documents accessibles */
+        get: operations["DocumentsController_findAll"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/documents/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Récupérer un document par ID */
+        get: operations["DocumentsController_findOne"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/documents/{id}/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Télécharger le fichier PDF d'un document */
+        get: operations["DocumentsController_downloadFile"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/documents/generate-contract": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Générer automatiquement un contrat PDF pour une annonce acceptée */
+        post: operations["DocumentsController_generateContract"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/documents/{id}/refuse": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Signer un document — MFA OTP obligatoire
+         * @description Flux MFA requis avant appel : POST /auth/otp/send → POST /auth/otp/verify → fournir otpToken ici.
+         */
+        post: operations["DocumentsController_refuse"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/documents/{id}/sign": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["DocumentsController_sign"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
 }
@@ -257,6 +979,20 @@ export interface components {
              */
             lang: "fr" | "en";
         };
+        UpdateMeDto: {
+            /** @example john.doe@email.com */
+            email?: string;
+            /** @example NouveauMdp1! */
+            password?: string;
+            /** @example John */
+            firstName?: string;
+            /** @example Doe */
+            lastName?: string;
+            /** @enum {string} */
+            lang?: "fr" | "en";
+            /** @example 64a1f2c3e4b5f6a7b8c9d0e1 */
+            neighbourhoodId?: string;
+        };
         UpdateUserDto: {
             /** @example john.doe@email.com */
             email?: string;
@@ -270,6 +1006,10 @@ export interface components {
             lang?: "fr" | "en";
             /** @example true */
             isActive?: boolean;
+            /** @enum {string} */
+            role?: "habitant" | "moderateur" | "admin";
+            /** @example 64a1f2c3e4b5f6a7b8c9d0e1 */
+            neighbourhoodId?: string;
         };
         SignupDto: {
             /** @example john.doe@email.com */
@@ -287,10 +1027,55 @@ export interface components {
             lang: "fr" | "en";
         };
         SigninDto: {
+            /** @example admin@hoodly.com */
+            email: string;
+            /** @example Admin1234! */
+            password: string;
+        };
+        VerifySigninOtpDto: {
             /** @example john.doe@gmail.com */
             email: string;
-            /** @example MonMotDePasse1! */
-            password: string;
+            /** @example 123456 */
+            code: string;
+        };
+        SendOtpDto: {
+            /** @example john.doe@email.com */
+            email: string;
+            /** @example John */
+            firstName?: string;
+        };
+        VerifyOtpDto: {
+            /** @example john.doe@email.com */
+            email: string;
+            /** @example 123456 */
+            code: string;
+        };
+        AvailabilitySlot: {
+            /** @enum {string} */
+            type: "dates_exactes" | "recurrent" | "continu";
+            /**
+             * @example [
+             *       "2026-07-15",
+             *       "2026-07-22"
+             *     ]
+             */
+            dates?: string[];
+            /**
+             * @example [
+             *       "Lun",
+             *       "Mer",
+             *       "Ven"
+             *     ]
+             */
+            days?: string[];
+            /** @example 09:00 */
+            startTime?: string;
+            /** @example 17:00 */
+            endTime?: string;
+            /** @example 2026-07-01 */
+            startDate?: string;
+            /** @example 4 */
+            durationWeeks?: number;
         };
         CreateAnnouncementDto: {
             /** @example 64a1f2c3e4b5f6a7b8c9d0e1 */
@@ -320,7 +1105,21 @@ export interface components {
              * @default open
              * @enum {string}
              */
-            status: "open" | "accepted" | "done";
+            status: "open" | "accepted" | "done" | "cancelled";
+            availabilities?: components["schemas"]["AvailabilitySlot"][];
+        };
+        ServiceDetails: {
+            /** @example 2026-07-15 */
+            chosenDate?: string;
+            chosenDates?: string[];
+            /** @example 2026-07-01 */
+            startDate?: string;
+            /** @example 3 */
+            durationWeeks?: number;
+            /** @example 09:00-12:00 */
+            timeSlot?: string;
+            /** @example Accès par la porte de derrière */
+            notes?: string;
         };
         Announcement: {
             /** @example 64a1f2c3e4b5f6a7b8c9d0e1 */
@@ -352,13 +1151,18 @@ export interface components {
              * @default open
              * @enum {string}
              */
-            status: "open" | "accepted" | "done";
+            status: "open" | "accepted" | "done" | "cancelled";
             /** @example 64a1f2c3e4b5f6a7b8c9d0e4 */
             acceptedBy?: string;
             /** @example 64a1f2c3e4b5f6a7b8c9d0e5 */
             contractId?: string;
+            availabilities?: components["schemas"]["AvailabilitySlot"][];
+            serviceDetails?: components["schemas"]["ServiceDetails"];
             /** Format: date-time */
             createdAt: string;
+        };
+        AcceptAnnouncementDto: {
+            serviceDetails?: components["schemas"]["ServiceDetails"];
         };
         UpdateAnnouncementDto: {
             /** @example 64a1f2c3e4b5f6a7b8c9d0e1 */
@@ -376,11 +1180,12 @@ export interface components {
             /** @example 10 */
             points?: number;
             /** @enum {string} */
-            status?: "open" | "accepted" | "done";
+            status?: "open" | "accepted" | "done" | "cancelled";
             /** @example 64a1f2c3e4b5f6a7b8c9d0e3 */
             acceptedBy?: string;
             /** @example 64a1f2c3e4b5f6a7b8c9d0e4 */
             contractId?: string;
+            availabilities?: components["schemas"]["AvailabilitySlot"][];
         };
         CreateNeighbourhoodDto: {
             /** @example Montmartre */
@@ -494,6 +1299,306 @@ export interface components {
             /** @example 64a1f2c3e4b5f6a7b8c9d0e1 */
             createdBy?: string;
         };
+        CreateEventDto: {
+            /** @example Soirée de quartier */
+            title: string;
+            /** @example Une soirée conviviale pour les habitants du quartier. */
+            description: string;
+            /**
+             * @default other
+             * @enum {string}
+             */
+            type: "contract" | "other";
+            /** @example 64a1f2c3e4b5f6a7b8c9d0e2 */
+            organizerId: string;
+            /** @example 64a1f2c3e4b5f6a7b8c9d0e3 */
+            neighbourhoodId: string;
+            /** @example 2026-06-15T18:00:00.000Z */
+            date: string;
+        };
+        Event: {
+            /** @example 64a1f2c3e4b5f6a7b8c9d0e1 */
+            id: string;
+            /** @example Soirée de quartier */
+            title: string;
+            /** @example Une soirée conviviale pour les habitants du quartier. */
+            description: string;
+            /**
+             * @default other
+             * @enum {string}
+             */
+            type: "contract" | "other";
+            /** @example 64a1f2c3e4b5f6a7b8c9d0e2 */
+            organizerId: string;
+            /** @example 64a1f2c3e4b5f6a7b8c9d0e3 */
+            neighbourhoodId: string;
+            /**
+             * Format: date-time
+             * @example 2026-06-15T18:00:00.000Z
+             */
+            date: string;
+            /**
+             * @example [
+             *       "64a1f2c3e4b5f6a7b8c9d0e4"
+             *     ]
+             */
+            participants?: string[];
+            /**
+             * @example [
+             *       "64a1f2c3e4b5f6a7b8c9d0e5"
+             *     ]
+             */
+            interestUsers?: string[];
+            /** Format: date-time */
+            createdAt: string;
+        };
+        UpdateEventDto: {
+            /** @example Soirée de quartier modifiée */
+            title?: string;
+            /** @example Description mise à jour. */
+            description?: string;
+            /** @enum {string} */
+            type?: "contract" | "other";
+            /** @example 2026-06-20T18:00:00.000Z */
+            date?: string;
+        };
+        RsvpDto: {
+            /** @example 64a1f2c3e4b5f6a7b8c9d0e1 */
+            userId: string;
+        };
+        CreateConversationDto: {
+            /**
+             * @example [
+             *       "64a1f2c3e4b5f6a7b8c9d0e1",
+             *       "64a1f2c3e4b5f6a7b8c9d0e2"
+             *     ]
+             */
+            participants: string[];
+        };
+        Conversation: {
+            /** @example 64a1f2c3e4b5f6a7b8c9d0e1 */
+            id: string;
+            /**
+             * @example [
+             *       "64a1f2c3e4b5f6a7b8c9d0e2",
+             *       "64a1f2c3e4b5f6a7b8c9d0e3"
+             *     ]
+             */
+            participants: string[];
+            /** @example Bonjour ! */
+            lastMessage?: string;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        CreateMessageDto: {
+            /** @example 64a1f2c3e4b5f6a7b8c9d0e1 */
+            conversationId: string;
+            /** @example 64a1f2c3e4b5f6a7b8c9d0e2 */
+            senderId: string;
+            /**
+             * @default text
+             * @enum {string}
+             */
+            type: "image" | "audio" | "file" | "text";
+            /** @example Bonjour tout le monde ! */
+            content?: string;
+            /** @example 64a1f2c3e4b5f6a7b8c9d0e4 */
+            fileId?: string;
+            /** @example facture.pdf */
+            fileName?: string;
+        };
+        Message: {
+            /** @example 64a1f2c3e4b5f6a7b8c9d0e1 */
+            id: string;
+            /** @example 64a1f2c3e4b5f6a7b8c9d0e2 */
+            conversationId: string;
+            /** @example 64a1f2c3e4b5f6a7b8c9d0e3 */
+            senderId: string;
+            /**
+             * @default text
+             * @enum {string}
+             */
+            type: "image" | "audio" | "file" | "text";
+            /** @example Bonjour tout le monde ! */
+            content?: string;
+            /** @example 64a1f2c3e4b5f6a7b8c9d0e4 */
+            fileId?: string;
+            /** @example facture.pdf */
+            fileName?: string;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        CreateVoteDto: {
+            /** @example Faut-il installer des bancs dans le parc ? */
+            question: string;
+            /**
+             * @default yesno
+             * @enum {string}
+             */
+            type: "yesno" | "multiple";
+            /**
+             * @example [
+             *       "Pour",
+             *       "Contre"
+             *     ]
+             */
+            options: string[];
+            /**
+             * @default false
+             * @example false
+             */
+            isAnonymous: boolean;
+            /** @example 2026-06-01T00:00:00.000Z */
+            endsAt: string;
+            /** @example 64a1f2c3e4b5f6a7b8c9d0e2 */
+            neighbourhoodId: string;
+        };
+        VoteResult: {
+            /** @example Pour */
+            option: string;
+            /**
+             * @example [
+             *       "64a1f2c3e4b5f6a7b8c9d0e1"
+             *     ]
+             */
+            userIds: string[];
+        };
+        Vote: {
+            /** @example 64a1f2c3e4b5f6a7b8c9d0e1 */
+            id: string;
+            /** @example Faut-il installer des bancs dans le parc ? */
+            question: string;
+            /**
+             * @default yesno
+             * @enum {string}
+             */
+            type: "yesno" | "multiple";
+            /**
+             * @example [
+             *       "Pour",
+             *       "Contre"
+             *     ]
+             */
+            options: string[];
+            /**
+             * @default false
+             * @example false
+             */
+            isAnonymous: boolean;
+            /**
+             * Format: date-time
+             * @example 2026-05-01T00:00:00.000Z
+             */
+            endsAt: string;
+            /** @example 64a1f2c3e4b5f6a7b8c9d0e2 */
+            neighbourhoodId: string;
+            results?: components["schemas"]["VoteResult"][];
+            /** Format: date-time */
+            createdAt: string;
+        };
+        CastVoteDto: {
+            /** @example 64a1f2c3e4b5f6a7b8c9d0e1 */
+            userId: string;
+            /** @example Pour */
+            option: string;
+        };
+        CreateIncidentDto: {
+            /**
+             * @description UUID généré localement
+             * @example 123e4567-e89b-12d3-a456-426614174000
+             */
+            id?: string;
+            /** @example Lampadaire cassé */
+            title: string;
+            /** @example Le lampadaire au bout de la rue ne fonctionne plus depuis 3 jours. */
+            description: string;
+            /** @example Voirie */
+            category: string;
+            /**
+             * @default open
+             * @enum {string}
+             */
+            status: "open" | "resolved";
+            /**
+             * @description ID de l'utilisateur qui signale (MongoDB)
+             * @example 507f1f77bcf86cd799439011
+             */
+            reportedBy: string;
+            /**
+             * @description ID du quartier (MongoDB)
+             * @example 507f1f77bcf86cd799439012
+             */
+            neighborhoodId: string;
+            /**
+             * Format: date-time
+             * @example 2026-04-04T12:00:00Z
+             */
+            reportedAt?: string;
+            /**
+             * Format: date-time
+             * @example 2026-04-04T12:05:00Z
+             */
+            syncedAt?: string;
+            /**
+             * @description 1 si créé hors ligne et non synchronisé, 0 sinon
+             * @example 0
+             */
+            isDirty?: number;
+        };
+        Incident: Record<string, never>;
+        UpdateIncidentDto: {
+            /** @example Lampadaire réparé */
+            title?: string;
+            /** @example Le lampadaire a été remplacé ce matin. */
+            description?: string;
+            /** @example Voirie */
+            category?: string;
+            /**
+             * @example resolved
+             * @enum {string}
+             */
+            status?: "open" | "resolved";
+            /** @example 507f1f77bcf86cd799439011 */
+            reportedBy?: string;
+            /** @example 507f1f77bcf86cd799439012 */
+            neighborhoodId?: string;
+            /**
+             * Format: date-time
+             * @example 2026-04-04T12:00:00Z
+             */
+            reportedAt?: string;
+            /**
+             * Format: date-time
+             * @example 2026-04-04T12:05:00Z
+             */
+            syncedAt?: string;
+            /** @example 0 */
+            isDirty?: number;
+        };
+        CreateUserSqliteDto: Record<string, never>;
+        UpdateUserSqliteDto: Record<string, never>;
+        CreateNeighbourhoodSqliteDto: Record<string, never>;
+        UpdateNeighbourhoodSqliteDto: Record<string, never>;
+        ExecuteQueryDto: {
+            /** @example FIND documents WHERE status = "signed" AND type = "contract" LIMIT 10 */
+            query: string;
+        };
+        GenerateContractDto: {
+            /**
+             * @description ID de l'annonce acceptée pour laquelle générer le contrat
+             * @example 507f1f77bcf86cd799439011
+             */
+            announcementId: string;
+        };
+        SignDocumentDto: {
+            /**
+             * @description JWT OTP token obtenu via POST /auth/otp/verify
+             * @example eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+             */
+            otpToken: string;
+            /** @description Image de signature en base64 PNG (sans préfixe data:image/png;base64,) */
+            signatureImage?: string;
+        };
     };
     responses: never;
     parameters: never;
@@ -550,6 +1655,53 @@ export interface operations {
                 };
                 content?: never;
             };
+            /** @description Email déjà utilisé. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    UsersController_count: {
+        parameters: {
+            query: {
+                neighbourhoodId: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    UsersController_findByNeighbourhood: {
+        parameters: {
+            query: {
+                neighbourhoodId: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["User"][];
+                };
+            };
         };
     };
     UsersController_findOne: {
@@ -571,6 +1723,13 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["User"];
                 };
+            };
+            /** @description ID invalide. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Utilisateur non trouvé. */
             404: {
@@ -595,6 +1754,13 @@ export interface operations {
         responses: {
             /** @description Utilisateur supprimé. */
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description ID invalide. */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -633,8 +1799,81 @@ export interface operations {
                     "application/json": components["schemas"]["User"];
                 };
             };
+            /** @description ID invalide. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             /** @description Utilisateur non trouvé. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    UsersController_exportMyData: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Données exportées en JSON. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    UsersController_deleteMyAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Compte supprimé. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    UsersController_updateMe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateMeDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["User"];
+                };
+            };
+            /** @description Données invalides. */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -655,7 +1894,15 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Compte créé, tokens retournés. */
             201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Email déjà utilisé. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -676,7 +1923,44 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Tokens retournés ou OTP envoyé par email. */
             201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Identifiants invalides. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AuthController_verifySigninOtp: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VerifySigninOtpDto"];
+            };
+        };
+        responses: {
+            /** @description OTP valide, tokens retournés. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Code OTP invalide ou expiré. */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -719,7 +2003,15 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Déconnexion réussie. */
             201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Non authentifié. */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -736,7 +2028,73 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Nouveaux tokens retournés. */
             201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Refresh token invalide ou expiré. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    OtpController_send: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SendOtpDto"];
+            };
+        };
+        responses: {
+            /** @description Code envoyé. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Données invalides. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    OtpController_verify: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VerifyOtpDto"];
+            };
+        };
+        responses: {
+            /** @description Code valide, OTP token retourné. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Code incorrect ou expiré. */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -746,7 +2104,10 @@ export interface operations {
     };
     AnnouncementsController_findAll: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Filtrer par quartier */
+                neighbourhoodId?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -784,13 +2145,6 @@ export interface operations {
                     "application/json": components["schemas"]["Announcement"];
                 };
             };
-            /** @description Données invalides. */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
         };
     };
     AnnouncementsController_findOne: {
@@ -812,6 +2166,13 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["Announcement"];
                 };
+            };
+            /** @description ID invalide. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Annonce non trouvée. */
             404: {
@@ -836,6 +2197,13 @@ export interface operations {
         responses: {
             /** @description Annonce supprimée. */
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Accès refusé. */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -874,12 +2242,143 @@ export interface operations {
                     "application/json": components["schemas"]["Announcement"];
                 };
             };
+            /** @description Accès refusé. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             /** @description Annonce non trouvée. */
             404: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    AnnouncementsController_accept: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ObjectId MongoDB de l'annonce */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AcceptAnnouncementDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Announcement"];
+                };
+            };
+            /** @description Déjà acceptée ou auteur ne peut pas accepter. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AnnouncementsController_removeMine: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ObjectId MongoDB de l'annonce */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Annonce supprimée. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AnnouncementsController_updateMine: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ObjectId MongoDB de l'annonce */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateAnnouncementDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Announcement"];
+                };
+            };
+        };
+    };
+    AnnouncementsController_cancel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ObjectId MongoDB de l'annonce */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Announcement"];
+                };
+            };
+        };
+    };
+    AnnouncementsController_withdraw: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ObjectId MongoDB de l'annonce */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Announcement"];
+                };
             };
         };
     };
@@ -930,6 +2429,13 @@ export interface operations {
                 };
                 content?: never;
             };
+            /** @description Accès refusé. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
     };
     NeighbourhoodsController_findOne: {
@@ -951,6 +2457,13 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["Neighbourhood"];
                 };
+            };
+            /** @description ID invalide. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Quartier non trouvé. */
             404: {
@@ -975,6 +2488,13 @@ export interface operations {
         responses: {
             /** @description Quartier supprimé. */
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Accès refusé. */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1013,8 +2533,1215 @@ export interface operations {
                     "application/json": components["schemas"]["Neighbourhood"];
                 };
             };
+            /** @description Accès refusé. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             /** @description Quartier non trouvé. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    EventsController_findAll: {
+        parameters: {
+            query?: {
+                /** @description Filtrer par quartier */
+                neighbourhoodId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Event"][];
+                };
+            };
+        };
+    };
+    EventsController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateEventDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Event"];
+                };
+            };
+            /** @description Données invalides. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    EventsController_recommendations: {
+        parameters: {
+            query: {
+                /** @description ID de l'utilisateur */
+                userId: string;
+                /** @description ID du quartier */
+                neighbourhoodId: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Event"][];
+                };
+            };
+        };
+    };
+    EventsController_findOne: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ObjectId MongoDB de l'événement */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Event"];
+                };
+            };
+            /** @description Événement non trouvé. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    EventsController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ObjectId MongoDB de l'événement */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Événement supprimé. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Accès refusé. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Événement non trouvé. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    EventsController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ObjectId MongoDB de l'événement */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateEventDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Event"];
+                };
+            };
+            /** @description Accès refusé. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Événement non trouvé. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    EventsController_rsvp: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ObjectId MongoDB de l'événement */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RsvpDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Event"];
+                };
+            };
+        };
+    };
+    EventsController_interest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ObjectId MongoDB de l'événement */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RsvpDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Event"];
+                };
+            };
+        };
+    };
+    MessagesController_createConversation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateConversationDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Conversation"];
+                };
+            };
+            /** @description Participants pas du même quartier. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    MessagesController_findConversationsByUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ObjectId MongoDB de l'utilisateur */
+                userId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Conversation"][];
+                };
+            };
+        };
+    };
+    MessagesController_sendMessage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateMessageDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Message"];
+                };
+            };
+            /** @description Sender pas participant de la conversation. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conversation non trouvée. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    MessagesController_findMessages: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ObjectId MongoDB de la conversation */
+                conversationId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Message"][];
+                };
+            };
+            /** @description Conversation non trouvée. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    MessagesController_getOnlineUsers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Array de userIds online. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    MessagesController_uploadMedia: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Fichier uploadé, fileId retourné. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    MessagesController_getMedia: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID GridFS du fichier */
+                fileId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Fichier binaire. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Fichier non trouvé. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    VotesController_findAll: {
+        parameters: {
+            query?: {
+                /** @description Filtrer par quartier */
+                neighbourhoodId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Vote"][];
+                };
+            };
+        };
+    };
+    VotesController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateVoteDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Vote"];
+                };
+            };
+            /** @description Données invalides. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Accès refusé. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    VotesController_findOne: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ObjectId MongoDB du sondage */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Vote"];
+                };
+            };
+            /** @description Sondage non trouvé. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    VotesController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ObjectId MongoDB du sondage */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sondage supprimé. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Accès refusé. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Sondage non trouvé. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    VotesController_cast: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ObjectId MongoDB du sondage */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CastVoteDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Vote"];
+                };
+            };
+            /** @description Option invalide. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Vote expiré ou déjà voté. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    IncidentsController_findAll: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Incident"][];
+                };
+            };
+        };
+    };
+    IncidentsController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateIncidentDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Incident"];
+                };
+            };
+            /** @description Données invalides. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    IncidentsController_findOne: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description UUID de l'incident */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Incident"];
+                };
+            };
+            /** @description Accès refusé (quartier différent). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Incident non trouvé. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    IncidentsController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description UUID de l'incident */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Incident supprimé. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Accès refusé. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Incident non trouvé. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    IncidentsController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description UUID de l'incident */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateIncidentDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Incident"];
+                };
+            };
+            /** @description Accès refusé. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Incident non trouvé. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    UsersSqliteController_findAll: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Liste des utilisateurs. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    UsersSqliteController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateUserSqliteDto"];
+            };
+        };
+        responses: {
+            /** @description Utilisateur créé. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    UsersSqliteController_findOne: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID de l'utilisateur */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Utilisateur trouvé. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    UsersSqliteController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID de l'utilisateur */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Utilisateur supprimé. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    UsersSqliteController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID de l'utilisateur */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateUserSqliteDto"];
+            };
+        };
+        responses: {
+            /** @description Utilisateur mis à jour. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    NeighbourhoodsSqliteController_findAll: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Liste des quartiers. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    NeighbourhoodsSqliteController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateNeighbourhoodSqliteDto"];
+            };
+        };
+        responses: {
+            /** @description Quartier créé. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    NeighbourhoodsSqliteController_findOne: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID du quartier */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Quartier trouvé. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    NeighbourhoodsSqliteController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID du quartier */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Quartier supprimé. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    NeighbourhoodsSqliteController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID du quartier */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateNeighbourhoodSqliteDto"];
+            };
+        };
+        responses: {
+            /** @description Quartier mis à jour. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    Neo4jController_topAttendee: {
+        parameters: {
+            query: {
+                neighbourhoodId: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    QueryLangController_execute: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExecuteQueryDto"];
+            };
+        };
+        responses: {
+            /** @description Résultat de la requête (filtre Mongo traduit + documents). */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Erreur de syntaxe HQL ou collection inconnue. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Accès refusé. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    DocumentsController_upload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                    title: string;
+                    /** @enum {string} */
+                    type?: "contract" | "other";
+                    announcementId?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Document créé. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    DocumentsController_findAll: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Liste des documents. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    DocumentsController_findOne: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Document trouvé. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Document introuvable. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    DocumentsController_downloadFile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Fichier PDF renvoyé. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Document ou fichier introuvable. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    DocumentsController_generateContract: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GenerateContractDto"];
+            };
+        };
+        responses: {
+            /** @description Contrat généré et lié à l'annonce. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Annonce non acceptée ou contrat déjà existant. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    DocumentsController_refuse: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Document signé, hash SHA-256 enregistré. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description OTP token invalide ou expiré. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Non autorisé à signer ce document. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    DocumentsController_sign: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SignDocumentDto"];
+            };
+        };
+        responses: {
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };

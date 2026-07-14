@@ -67,6 +67,7 @@ function AppRoutes() {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/services" element={<ServicesPage />} />
           <Route path="/services/new" element={<ProposeServicePage />} />
+          <Route path="/services/:id/edit" element={<ProposeServicePage />} />
           <Route path="/services/:id" element={<ServiceDetailPage />} />
           <Route path="/services/:id/contract" element={<ContractPage />} />
           <Route path="/map" element={<MapPage />} />

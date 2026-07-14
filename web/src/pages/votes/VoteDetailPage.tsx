@@ -57,7 +57,7 @@ interface Neighbour {
 export default function VoteDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user } = useUser();
+  const { user, fetchMe } = useUser();
   const [vote, setVote] = useState<Vote | null>(null);
   const [neighbours, setNeighbours] = useState<Map<string, string>>(new Map());
   const [loading, setLoading] = useState(true);
@@ -100,6 +100,7 @@ export default function VoteDetailPage() {
         option,
       });
       setVote(data);
+      fetchMe().catch(() => {});
     } catch (e: any) {
       setError(e?.response?.data?.message ?? 'Erreur lors du vote');
     } finally {

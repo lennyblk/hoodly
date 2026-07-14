@@ -48,7 +48,7 @@ function formatFullDate(dateStr: string) {
 export default function EventDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user } = useUser();
+  const { user, fetchMe } = useUser();
 
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
@@ -89,6 +89,7 @@ export default function EventDetailPage() {
     try {
       await api.post(`/events/${event.id}/rsvp`, { userId: user._id });
       await fetchEvent();
+      fetchMe().catch(() => {});
     } finally {
       setRsvpLoading(false);
     }

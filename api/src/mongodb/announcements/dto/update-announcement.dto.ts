@@ -1,4 +1,5 @@
 import {
+  IsArray,
   IsBoolean,
   IsEnum,
   IsNumber,
@@ -9,6 +10,7 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
 import {
   AnnouncementType,
   AnnouncementStatus,
+  AvailabilitySlot,
 } from '../../../entities/mongodb/Announcement';
 
 export class UpdateAnnouncementDto {
@@ -61,4 +63,9 @@ export class UpdateAnnouncementDto {
   @IsString()
   @IsOptional()
   contractId?: string;
+
+  @ApiPropertyOptional({ type: [AvailabilitySlot] })
+  @IsArray()
+  @IsOptional()
+  availabilities?: AvailabilitySlot[];
 }
