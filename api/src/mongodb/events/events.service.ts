@@ -85,7 +85,6 @@ export class EventsService {
     const idx = event.participants.indexOf(userId);
     if (idx === -1) {
       event.participants.push(userId);
-      await this.pointsService.addPoints(userId, 5).catch(() => {});
       await this.neo4jService.run(
         `MERGE (u:User {id: $userId})
          MERGE (e:Event {id: $eventId})

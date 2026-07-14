@@ -77,7 +77,6 @@ describe('EventsService', () => {
 
       const result = await service.rsvp(VALID_ID, USER_ID);
       expect(result.participants).toContain(USER_ID);
-      expect(mockPointsService.addPoints).toHaveBeenCalledWith(USER_ID, 5);
     });
 
     it('removes user from participants on second rsvp (toggle)', async () => {

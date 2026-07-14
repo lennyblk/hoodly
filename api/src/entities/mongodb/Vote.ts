@@ -48,6 +48,9 @@ export class Vote {
   @Column({ type: 'array', nullable: true })
   results: VoteResult[];
 
+  @Column({ default: false })
+  pointsRewarded: boolean;
+
   @ApiProperty()
   @CreateDateColumn()
   createdAt: Date;

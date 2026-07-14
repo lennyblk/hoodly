@@ -101,7 +101,6 @@ export class VotesService {
     entry.userIds = [...entry.userIds, new ObjectId(dto.userId) as any];
 
     const saved = await this.votesRepository.save(vote);
-    await this.pointsService.addPoints(dto.userId, 3).catch(() => {}); //3pts votes
 
     if (saved.isAnonymous) {
       saved.results = saved.results.map((r) => ({ ...r, userIds: [] }));

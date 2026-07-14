@@ -44,6 +44,9 @@ export class Event {
   @Column({ type: 'array', nullable: true })
   interestUsers: string[];
 
+  @Column({ default: false })
+  pointsRewarded: boolean;
+
   @ApiProperty()
   @CreateDateColumn()
   createdAt: Date;
