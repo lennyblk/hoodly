@@ -7,15 +7,12 @@ import { useUser } from '../../contexts/useUser';
 type Announcement = components['schemas']['Announcement'];
 type ServiceTab = 'offer' | 'request';
 
-const CATEGORIES = [
-  { label: 'Tous', emoji: '🏠' },
-  { label: 'Jardinage', emoji: '🌱' },
-  { label: 'Bricolage', emoji: '🔧' },
-  { label: 'Cours', emoji: '📚' },
-  { label: 'Baby-sitting', emoji: '👶' },
-  { label: 'Cuisine', emoji: '🍳' },
-  { label: 'Info', emoji: '💻' },
-];
+const STATUS_LABELS: Record<string, { label: string; className: string }> = {
+  open: { label: 'Ouvert', className: 'bg-white/80 text-vert-foret' },
+  accepted: { label: 'En cours', className: 'bg-ambre text-white' },
+  done: { label: 'Terminé', className: 'bg-charbon/70 text-white' },
+  cancelled: { label: 'Annulé', className: 'bg-red-500 text-white' },
+};
 
 export default function ServicesPage() {
   const navigate = useNavigate();
@@ -24,7 +21,6 @@ export default function ServicesPage() {
   const [authorNames, setAuthorNames] = useState<Map<string, string>>(new Map());
   const [isLoading, setIsLoading] = useState(true);
   const [tab, setTab] = useState<ServiceTab>('offer');
-  const [category, setCategory] = useState('Tous');
   const [search, setSearch] = useState('');
 
   useEffect(() => {
@@ -116,11 +112,6 @@ export default function ServicesPage() {
             placeholder="Rechercher un service..."
             className="flex-1 bg-transparent font-sans text-sm text-charbon outline-none placeholder:text-sable"
           />
-          <button className="text-sable hover:text-charbon">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-              <path d="M4 6h16M7 12h10M10 18h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-            </svg>
-          </button>
         </div>
 
         {/* ── Tabs Offres / Demandes ── */}
@@ -145,23 +136,6 @@ export default function ServicesPage() {
           </button>
         </div>
 
-        {/* ── Filtres catégorie ── */}
-        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
-          {CATEGORIES.map((cat) => (
-            <button
-              key={cat.label}
-              onClick={() => setCategory(cat.label)}
-              className={`flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 font-sans text-sm font-medium transition-colors ${category === cat.label
-                ? 'bg-vert-foret text-white'
-                : 'bg-white border border-sable text-charbon hover:border-vert-moyen'
-                }`}
-            >
-              <span>{cat.emoji}</span>
-              {cat.label}
-            </button>
-          ))}
-        </div>
-
         {/* ── Grille de cartes ── */}
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -181,6 +155,13 @@ export default function ServicesPage() {
               >
                 {/* Top — couleur + icône */}
                 <div className="relative flex flex-col items-start justify-end bg-[#E8F5EE] px-4 pt-5 pb-3 min-h-[110px]">
+                  {announcement.status !== 'open' && (
+                    <span className={`absolute top-3 right-3 rounded-full px-2.5 py-1 font-sans text-xs font-semibold ${
+                      STATUS_LABELS[announcement.status]?.className ?? 'bg-white/80 text-charbon'
+                    }`}>
+                      {STATUS_LABELS[announcement.status]?.label ?? announcement.status}
+                    </span>
+                  )}
                   <span className="text-3xl mb-2">📋</span>
                   <span className="flex items-center gap-1 rounded-full bg-white/80 px-2.5 py-1 font-sans text-xs font-semibold text-ambre">
                     ★ {announcement.points} pts
