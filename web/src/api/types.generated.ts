@@ -92,6 +92,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/users/me/points/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Historique des mouvements de points de l'utilisateur connecté */
+        get: operations["UsersController_getMyPointsHistory"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/users/me": {
         parameters: {
             query?: never;
@@ -981,6 +998,23 @@ export interface components {
              */
             lang: "fr" | "en";
         };
+        PointsTransaction: {
+            /** @example 64a1f2c3e4b5f6a7b8c9d0e1 */
+            _id: string;
+            /** @example 64a1f2c3e4b5f6a7b8c9d0e2 */
+            userId: string;
+            /**
+             * @description Positif = crédit, négatif = débit
+             * @example -20
+             */
+            amount: number;
+            /** @example Paiement contrat */
+            reason: string;
+            /** @example 130 */
+            balanceAfter: number;
+            /** Format: date-time */
+            createdAt: string;
+        };
         UpdateMeDto: {
             /** @example john.doe@email.com */
             email?: string;
@@ -1837,6 +1871,25 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    UsersController_getMyPointsHistory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PointsTransaction"][];
+                };
             };
         };
     };

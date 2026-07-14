@@ -354,8 +354,8 @@ export class DocumentsService implements OnModuleInit {
     }
     if (!payerId || !providerId) return;
 
-    await this.pointsService.addPoints(payerId, -announcement.points);
-    await this.pointsService.addPoints(providerId, announcement.points);
+    await this.pointsService.addPoints(payerId, -announcement.points, `Paiement contrat — ${announcement.title}`);
+    await this.pointsService.addPoints(providerId, announcement.points, `Contrat réglé — ${announcement.title}`);
   }
 
   // ─── Refuse

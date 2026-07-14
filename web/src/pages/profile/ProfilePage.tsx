@@ -8,13 +8,16 @@ const DELETE_CONFIRM_TEXT = 'SUPPRIMER';
 
 type Announcement = components['schemas']['Announcement'];
 type Neighbourhood = components['schemas']['Neighbourhood'];
-
-
+type PointsTransaction = components['schemas']['PointsTransaction'];
 
 function formatMemberSince(dateStr?: string) {
   if (!dateStr) return '';
   const date = new Date(dateStr);
   return date.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+}
+
+function formatTransactionDate(dateStr: string) {
+  return new Date(dateStr).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
 }
 
 export default function ProfilePage() {
@@ -23,6 +26,7 @@ export default function ProfilePage() {
 
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [neighbourhood, setNeighbourhood] = useState<Neighbourhood | null>(null);
+  const [pointsHistory, setPointsHistory] = useState<PointsTransaction[]>([]);
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -43,6 +47,13 @@ export default function ProfilePage() {
       .then(({ data }) => setNeighbourhood(data))
       .catch(() => { });
   }, [user?.neighbourhoodId]);
+
+  useEffect(() => {
+    if (!user?._id) return;
+    api.get<PointsTransaction[]>('/users/me/points/history')
+      .then(({ data }) => setPointsHistory(data))
+      .catch(() => { });
+  }, [user?._id]);
 
   async function handleExportData() {
     setExporting(true);
@@ -180,6 +191,23 @@ export default function ProfilePage() {
           {/* Historique des points */}
           <div className="rounded-2xl bg-white border border-sable/30 p-4">
             <h2 className="font-sans text-sm font-bold text-charbon mb-3">Historique des points</h2>
+            <div className="flex flex-col gap-2 max-h-64 overflow-y-auto">
+              {pointsHistory.length === 0 ? (
+                <p className="font-sans text-xs text-sable text-center py-4">Aucun mouvement de points</p>
+              ) : (
+                pointsHistory.map((t) => (
+                  <div key={t._id} className="flex items-center justify-between rounded-xl bg-creme px-3 py-2.5">
+                    <div>
+                      <p className="font-sans text-sm font-medium text-charbon">{t.reason}</p>
+                      <p className="font-sans text-xs text-sable">{formatTransactionDate(t.createdAt)}</p>
+                    </div>
+                    <span className={`font-sans text-sm font-bold ${t.amount >= 0 ? 'text-vert-moyen' : 'text-red-500'}`}>
+                      {t.amount >= 0 ? '+' : ''}{t.amount}
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </div>
 

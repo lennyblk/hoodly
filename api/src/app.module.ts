@@ -21,6 +21,7 @@ import { Message } from './entities/mongodb/Message';
 import { Conversation } from './entities/mongodb/Conversation';
 import { Event } from './entities/mongodb/Event';
 import { Vote } from './entities/mongodb/Vote';
+import { PointsTransaction } from './entities/mongodb/PointsTransaction';
 
 // SQLite entities
 import { UserSqlite } from './entities/sqlite/UserSqlite';
@@ -41,7 +42,7 @@ import { DocumentsModule } from './mongodb/documents/documents.module';
       name: 'mongodb',
       type: 'mongodb',
       url: process.env.MONGODB_URI || 'mongodb://localhost:27017/hoodly',
-      entities: [User, RefreshToken, Neighbourhood, Document, Announcement, Message, Conversation, Event, Vote],
+      entities: [User, RefreshToken, Neighbourhood, Document, Announcement, Message, Conversation, Event, Vote, PointsTransaction],
       synchronize: process.env.NODE_ENV !== 'production',
       logging: process.env.NODE_ENV === 'development',
     }),
