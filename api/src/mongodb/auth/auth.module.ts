@@ -9,10 +9,11 @@ import { OtpModule } from '../otp/otp.module';
 import { AtStrategy, RtStrategy } from './strategies';
 import { User } from '../../entities/mongodb/User';
 import { RefreshToken } from '../../entities/mongodb/RefreshToken';
+import { Neighbourhood } from '../../entities/mongodb/Neighbourhood';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, RefreshToken], 'mongodb'),
+    TypeOrmModule.forFeature([User, RefreshToken, Neighbourhood], 'mongodb'),
     JwtModule.register({}),
     PassportModule,
     OtpModule,

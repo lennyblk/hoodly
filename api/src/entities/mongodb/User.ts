@@ -41,6 +41,10 @@ export class User {
   @Column({ type: 'string', nullable: true })
   neighbourhoodId: string;
 
+  @ApiPropertyOptional({ example: '15 rue de la Paix, 75018 Paris' })
+  @Column({ nullable: true })
+  address: string;
+
   @ApiProperty({ example: 0 })
   @Column({ default: 0 })
   points: number;

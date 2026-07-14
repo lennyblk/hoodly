@@ -5,15 +5,20 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { MongoRepository, Repository } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
 import { SignupDto } from './dto/signup.dto';
 import { SigninDto } from './dto/signin.dto';
 import { User, UserRole, UserLang } from '../../entities/mongodb/User';
 import { RefreshToken } from '../../entities/mongodb/RefreshToken';
+import { Neighbourhood, GeoJsonPolygon } from '../../entities/mongodb/Neighbourhood';
 import { Tokens } from './types';
 import { ObjectId } from 'mongodb';
+import * as nodemailer from 'nodemailer';
+import { render } from '@react-email/render';
 import { OtpService } from '../otp/otp.service';
+import { geocodeAddress, pointInPolygon } from '../../common/utils/geo';
+import { NeighbourhoodRequestEmail } from '../../emails/NeighbourhoodRequestEmail';
 
 const OTP_BYPASS_EMAILS = [
   'admin@hoodly.com',
@@ -37,12 +42,39 @@ export class AuthService {
     private userRepository: Repository<User>,
     @InjectRepository(RefreshToken, 'mongodb')
     private refreshTokenRepository: Repository<RefreshToken>,
+    @InjectRepository(Neighbourhood, 'mongodb')
+    private neighbourhoodRepository: MongoRepository<Neighbourhood>,
     private jwtService: JwtService,
     private otpService: OtpService,
   ) { }
 
+  private readonly transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.GMAIL_USER,
+      pass: process.env.GMAIL_APP_PASSWORD,
+    },
+  });
+
   private requiresOtp(email: string): boolean {
     return !OTP_BYPASS_EMAILS.includes(email.toLowerCase());
+  }
+
+  private async notifyAdminNoNeighbourhood(user: { firstName: string; lastName: string; email: string; address: string }): Promise<void> {
+    const adminEmail = process.env.ADMIN_EMAIL || process.env.GMAIL_USER;
+    if (!adminEmail) return;
+
+    try {
+      const html = await render(NeighbourhoodRequestEmail(user));
+      await this.transporter.sendMail({
+        from: `Hoodly <${process.env.GMAIL_USER}>`,
+        to: adminEmail,
+        subject: `Nouvelle demande de quartier — ${user.address}`,
+        html,
+      });
+    } catch (error) {
+      console.error('[AUTH] Failed to send neighbourhood request email:', error);
+    }
   }
 
   hashData(data: string) {
@@ -91,6 +123,19 @@ export class AuthService {
       );
     }
 
+    // Geocode address and find matching neighbourhood
+    let neighbourhoodId: string | null = null;
+    const coords = await geocodeAddress(dto.address);
+    if (coords) {
+      const neighbourhoods = await this.neighbourhoodRepository.find();
+      const match = neighbourhoods.find(
+        (n) => n.geometry && pointInPolygon(coords.lng, coords.lat, n.geometry),
+      );
+      if (match) {
+        neighbourhoodId = match.id.toString();
+      }
+    }
+
     const hash = await this.hashData(dto.password);
     const newUser = await this.userRepository.save(
       this.userRepository.create({
@@ -100,8 +145,19 @@ export class AuthService {
         lang: UserLang.FR,
         ...dto,
         password: hash,
+        neighbourhoodId: neighbourhoodId as any,
       }),
     );
+
+    // Notifier les admins si pas de quartier trouvé
+    if (!neighbourhoodId) {
+      this.notifyAdminNoNeighbourhood({
+        firstName: dto.firstName,
+        lastName: dto.lastName,
+        email: dto.email,
+        address: dto.address,
+      });
+    }
 
     const tokens = await this.getTokens(newUser._id.toString(), newUser.email, newUser.role, newUser.neighbourhoodId);
     await this.storeRefreshToken(newUser._id.toString(), tokens.refresh_token);

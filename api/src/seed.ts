@@ -61,6 +61,7 @@ async function seed() {
           ],
         ],
       },
+      createdBy: uids.admin.toString(),
       createdAt: past(60),
     },
     {
@@ -78,6 +79,7 @@ async function seed() {
           ],
         ],
       },
+      createdBy: uids.admin.toString(),
       createdAt: past(55),
     },
     {
@@ -95,6 +97,7 @@ async function seed() {
           ],
         ],
       },
+      createdBy: uids.admin.toString(),
       createdAt: past(50),
     },
     {
@@ -112,6 +115,7 @@ async function seed() {
           ],
         ],
       },
+      createdBy: uids.admin.toString(),
       createdAt: past(45),
     },
     {
@@ -129,6 +133,7 @@ async function seed() {
           ],
         ],
       },
+      createdBy: uids.admin.toString(),
       createdAt: past(40),
     },
   ]);
@@ -159,7 +164,8 @@ async function seed() {
       lastName: "Hoodly",
       role: "admin",
       neighbourhoodId: null,
-      points: 0,
+      address: null,
+      points: 50,
       isActive: true,
       lang: "fr",
       createdAt: past(60),
@@ -172,6 +178,7 @@ async function seed() {
       lastName: "Leroux",
       role: "moderateur",
       neighbourhoodId: nids.montmartre.toString(),
+      address: "12 rue Lepic, 75018 Paris",
       points: 120,
       isActive: true,
       lang: "fr",
@@ -185,6 +192,7 @@ async function seed() {
       lastName: "Dupont",
       role: "moderateur",
       neighbourhoodId: nids.belleville.toString(),
+      address: "45 rue de Belleville, 75020 Paris",
       points: 95,
       isActive: true,
       lang: "fr",
@@ -198,6 +206,7 @@ async function seed() {
       lastName: "Martin",
       role: "habitant",
       neighbourhoodId: nids.montmartre.toString(),
+      address: "8 rue des Abbesses, 75018 Paris",
       points: 45,
       isActive: true,
       lang: "fr",
@@ -211,6 +220,7 @@ async function seed() {
       lastName: "Bernard",
       role: "habitant",
       neighbourhoodId: nids.montmartre.toString(),
+      address: "23 rue Caulaincourt, 75018 Paris",
       points: 30,
       isActive: true,
       lang: "fr",
@@ -224,6 +234,7 @@ async function seed() {
       lastName: "Petit",
       role: "habitant",
       neighbourhoodId: nids.belleville.toString(),
+      address: "17 rue Denoyez, 75020 Paris",
       points: 60,
       isActive: true,
       lang: "fr",
@@ -237,6 +248,7 @@ async function seed() {
       lastName: "Moreau",
       role: "habitant",
       neighbourhoodId: nids.belleville.toString(),
+      address: "5 rue Jouye-Rouve, 75020 Paris",
       points: 25,
       isActive: true,
       lang: "fr",
@@ -250,6 +262,7 @@ async function seed() {
       lastName: "Simon",
       role: "habitant",
       neighbourhoodId: nids.marais.toString(),
+      address: "31 rue des Francs-Bourgeois, 75004 Paris",
       points: 15,
       isActive: true,
       lang: "fr",
@@ -263,6 +276,7 @@ async function seed() {
       lastName: "Laurent",
       role: "habitant",
       neighbourhoodId: nids.marais.toString(),
+      address: "14 rue de Rivoli, 75004 Paris",
       points: 50,
       isActive: true,
       lang: "fr",
@@ -276,6 +290,7 @@ async function seed() {
       lastName: "Thomas",
       role: "habitant",
       neighbourhoodId: nids.bastille.toString(),
+      address: "9 rue de la Roquette, 75011 Paris",
       points: 20,
       isActive: true,
       lang: "fr",
@@ -289,6 +304,7 @@ async function seed() {
       lastName: "Richard",
       role: "habitant",
       neighbourhoodId: nids.bastille.toString(),
+      address: "22 rue de Charonne, 75011 Paris",
       points: 35,
       isActive: true,
       lang: "fr",
@@ -302,6 +318,7 @@ async function seed() {
       lastName: "Garcia",
       role: "habitant",
       neighbourhoodId: nids.republique.toString(),
+      address: "3 rue du Faubourg du Temple, 75010 Paris",
       points: 10,
       isActive: true,
       lang: "fr",
@@ -342,6 +359,7 @@ async function seed() {
         uids.modo_montmartre.toString(),
       ],
       interestUsers: [uids.frank.toString()],
+      pointsRewarded: false,
       createdAt: past(10),
     },
     {
@@ -354,6 +372,7 @@ async function seed() {
       date: future(14),
       participants: [uids.alice.toString()],
       interestUsers: [uids.bob.toString()],
+      pointsRewarded: false,
       createdAt: past(8),
     },
     {
@@ -366,6 +385,7 @@ async function seed() {
       date: past(5),
       participants: [uids.alice.toString(), uids.bob.toString()],
       interestUsers: [],
+      pointsRewarded: true,
       createdAt: past(20),
     },
     // Belleville
@@ -379,6 +399,7 @@ async function seed() {
       date: future(5),
       participants: [uids.charlie.toString(), uids.diana.toString()],
       interestUsers: [],
+      pointsRewarded: false,
       createdAt: past(7),
     },
     {
@@ -391,6 +412,7 @@ async function seed() {
       date: future(10),
       participants: [uids.charlie.toString()],
       interestUsers: [uids.diana.toString()],
+      pointsRewarded: false,
       createdAt: past(6),
     },
     {
@@ -407,6 +429,7 @@ async function seed() {
         uids.modo_belleville.toString(),
       ],
       interestUsers: [],
+      pointsRewarded: true,
       createdAt: past(15),
     },
     // Marais
@@ -420,6 +443,7 @@ async function seed() {
       date: future(12),
       participants: [uids.frank.toString(), uids.eve.toString()],
       interestUsers: [],
+      pointsRewarded: false,
       createdAt: past(5),
     },
     {
@@ -432,6 +456,7 @@ async function seed() {
       date: future(3),
       participants: [uids.eve.toString()],
       interestUsers: [uids.frank.toString()],
+      pointsRewarded: false,
       createdAt: past(4),
     },
     // Bastille
@@ -445,6 +470,7 @@ async function seed() {
       date: future(20),
       participants: [uids.grace.toString(), uids.hugo.toString()],
       interestUsers: [],
+      pointsRewarded: false,
       createdAt: past(3),
     },
     {
@@ -457,6 +483,7 @@ async function seed() {
       date: future(8),
       participants: [uids.hugo.toString()],
       interestUsers: [uids.grace.toString()],
+      pointsRewarded: false,
       createdAt: past(2),
     },
     // République
@@ -470,6 +497,7 @@ async function seed() {
       date: future(6),
       participants: [uids.iris.toString()],
       interestUsers: [],
+      pointsRewarded: false,
       createdAt: past(4),
     },
     {
@@ -482,6 +510,7 @@ async function seed() {
       date: past(10),
       participants: [uids.iris.toString()],
       interestUsers: [],
+      pointsRewarded: true,
       createdAt: past(20),
     },
   ]);
@@ -503,6 +532,8 @@ async function seed() {
       status: "open",
       acceptedBy: null,
       contractId: null,
+      availabilities: [{ type: "recurrent", days: ["Mer", "Sam"], startTime: "14:00", endTime: "15:00" }],
+      serviceDetails: null,
       createdAt: past(5),
     },
     {
@@ -518,6 +549,8 @@ async function seed() {
       status: "open",
       acceptedBy: null,
       contractId: null,
+      availabilities: [{ type: "dates_exactes", dates: [future(10).toISOString().slice(0, 10), future(11).toISOString().slice(0, 10), future(12).toISOString().slice(0, 10)] }],
+      serviceDetails: null,
       createdAt: past(3),
     },
     {
@@ -532,6 +565,8 @@ async function seed() {
       status: "done",
       acceptedBy: uids.alice.toString(),
       contractId: null,
+      availabilities: [{ type: "dates_exactes", dates: [past(10).toISOString().slice(0, 10)] }],
+      serviceDetails: { chosenDate: past(10).toISOString().slice(0, 10), timeSlot: "09:00-12:00", notes: "Apporter des cartons" },
       createdAt: past(15),
     },
     // Belleville
@@ -575,6 +610,8 @@ async function seed() {
       status: "accepted",
       acceptedBy: uids.modo_belleville.toString(),
       contractId: null,
+      availabilities: [{ type: "continu", startDate: past(7).toISOString().slice(0, 10), durationWeeks: 1 }],
+      serviceDetails: { chosenDate: future(2).toISOString().slice(0, 10), timeSlot: "10:00-11:00" },
       createdAt: past(8),
     },
     // Marais
@@ -682,6 +719,7 @@ async function seed() {
         { option: "Oui", userIds: [uids.alice, uids.bob] },
         { option: "Non", userIds: [] },
       ],
+      pointsRewarded: false,
       createdAt: past(2),
     },
     {
@@ -697,6 +735,7 @@ async function seed() {
         { option: "Dimanche", userIds: [uids.bob] },
         { option: "Vendredi soir", userIds: [] },
       ],
+      pointsRewarded: false,
       createdAt: past(1),
     },
     // Belleville
@@ -712,6 +751,7 @@ async function seed() {
         { option: "Oui", userIds: [uids.charlie, uids.diana] },
         { option: "Non", userIds: [] },
       ],
+      pointsRewarded: false,
       createdAt: past(3),
     },
     {
@@ -727,6 +767,7 @@ async function seed() {
         { option: "Mensuel", userIds: [] },
         { option: "Bimensuel", userIds: [uids.diana] },
       ],
+      pointsRewarded: true,
       createdAt: past(10),
     },
     // Marais
@@ -742,6 +783,7 @@ async function seed() {
         { option: "Oui", userIds: [uids.frank, uids.eve] },
         { option: "Non", userIds: [] },
       ],
+      pointsRewarded: false,
       createdAt: past(2),
     },
     {
@@ -757,6 +799,7 @@ async function seed() {
         { option: "Architecture", userIds: [uids.frank] },
         { option: "Nature urbaine", userIds: [] },
       ],
+      pointsRewarded: false,
       createdAt: past(1),
     },
     // Bastille
@@ -772,6 +815,7 @@ async function seed() {
         { option: "Oui", userIds: [uids.grace] },
         { option: "Non", userIds: [uids.hugo] },
       ],
+      pointsRewarded: false,
       createdAt: past(3),
     },
     {
@@ -787,6 +831,7 @@ async function seed() {
         { option: "Après-midi", userIds: [uids.grace, uids.hugo] },
         { option: "Soirée", userIds: [] },
       ],
+      pointsRewarded: false,
       createdAt: past(2),
     },
     // République
@@ -802,6 +847,7 @@ async function seed() {
         { option: "Oui", userIds: [uids.iris] },
         { option: "Non", userIds: [] },
       ],
+      pointsRewarded: false,
       createdAt: past(1),
     },
     {
@@ -821,6 +867,7 @@ async function seed() {
         { option: "Tous les 15 jours", userIds: [] },
         { option: "Une fois par mois", userIds: [] },
       ],
+      pointsRewarded: false,
       createdAt: past(2),
     },
   ]);

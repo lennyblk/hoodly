@@ -36,6 +36,11 @@ export class SignupDto {
   @MaxLength(50)
   lastName: string;
 
+  @ApiProperty({ example: '15 rue de la Paix, 75018 Paris' })
+  @IsString()
+  @IsNotEmpty()
+  address: string;
+
   @ApiPropertyOptional({ enum: UserLang, default: UserLang.FR })
   @IsOptional()
   @IsEnum(UserLang)

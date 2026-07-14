@@ -6,7 +6,9 @@ import * as bcrypt from 'bcryptjs';
 import { AuthService } from './auth.service';
 import { User, UserRole } from '../../entities/mongodb/User';
 import { RefreshToken } from '../../entities/mongodb/RefreshToken';
+import { Neighbourhood } from '../../entities/mongodb/Neighbourhood';
 import { OtpService } from '../otp/otp.service';
+import * as geo from '../../common/utils/geo';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -34,12 +36,20 @@ describe('AuthService', () => {
     verify: jest.fn().mockResolvedValue('otp_token'),
   };
 
+  const mockNeighbourhoodRepo = {
+    find: jest.fn().mockResolvedValue([]),
+    findOneBy: jest.fn(),
+  };
+
   beforeEach(async () => {
+    jest.spyOn(geo, 'geocodeAddress').mockResolvedValue(null);
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
         { provide: getRepositoryToken(User, 'mongodb'), useValue: mockUserRepo },
         { provide: getRepositoryToken(RefreshToken, 'mongodb'), useValue: mockRefreshTokenRepo },
+        { provide: getRepositoryToken(Neighbourhood, 'mongodb'), useValue: mockNeighbourhoodRepo },
         { provide: JwtService, useValue: mockJwtService },
         { provide: OtpService, useValue: mockOtpService },
       ],
@@ -51,7 +61,7 @@ describe('AuthService', () => {
   });
 
   describe('signup', () => {
-    const dto = { email: 'test@test.com', password: 'Password1!', firstName: 'John', lastName: 'Doe' };
+    const dto = { email: 'test@test.com', password: 'Password1!', firstName: 'John', lastName: 'Doe', address: '15 rue de la Paix, 75018 Paris' };
 
     it('throws ConflictException when email already taken', async () => {
       mockUserRepo.findOne.mockResolvedValue({ email: dto.email });
