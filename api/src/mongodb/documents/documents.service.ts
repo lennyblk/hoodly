@@ -327,7 +327,6 @@ export class DocumentsService implements OnModuleInit {
       signerIds.length > 0 && signerIds.every((sid) => signedIds.includes(sid));
     if (allSigned) {
       doc.status = DocumentStatus.SIGNED;
-      await this.transferPoints(doc);
     }
 
     return this.documentsRepository.save(doc);

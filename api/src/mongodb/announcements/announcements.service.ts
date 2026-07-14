@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -139,6 +140,75 @@ export class AnnouncementsService {
     announcement.status = 'accepted' as any;
     announcement.acceptedBy = userId;
     if (serviceDetails) announcement.serviceDetails = serviceDetails;
+    return this.announcementsRepository.save(announcement);
+  }
+
+  async updateByAuthor(id: string, userId: string, dto: UpdateAnnouncementDto) {
+    const announcement = await this.findOne(id);
+    if (announcement.authorId !== userId) {
+      throw new ForbiddenException('Seul l\'auteur peut modifier cette annonce');
+    }
+    if (announcement.status !== AnnouncementStatus.OPEN) {
+      throw new BadRequestException('Impossible de modifier une annonce déjà acceptée');
+    }
+    Object.assign(announcement, dto);
+    return this.announcementsRepository.save(announcement);
+  }
+
+  async removeByAuthor(id: string, userId: string) {
+    const announcement = await this.findOne(id);
+    if (announcement.authorId !== userId) {
+      throw new ForbiddenException('Seul l\'auteur peut supprimer cette annonce');
+    }
+    if (announcement.status !== AnnouncementStatus.OPEN) {
+      throw new BadRequestException('Impossible de supprimer une annonce déjà acceptée');
+    }
+    return this.announcementsRepository.remove(announcement);
+  }
+
+  async cancel(id: string, userId: string) {
+    const announcement = await this.findOne(id);
+    if (announcement.authorId !== userId && announcement.acceptedBy !== userId) {
+      throw new ForbiddenException('Seul l\'auteur ou l\'accepteur peut annuler');
+    }
+    if (announcement.status === AnnouncementStatus.DONE || announcement.status === AnnouncementStatus.CANCELLED) {
+      throw new BadRequestException('Annonce déjà terminée ou annulée');
+    }
+
+    const serviceDate = announcement.serviceDetails?.chosenDate;
+    if (serviceDate) {
+      const diff = new Date(serviceDate).getTime() - Date.now();
+      const oneDayMs = 24 * 60 * 60 * 1000;
+      if (diff < oneDayMs) {
+        throw new BadRequestException('Annulation impossible moins de 24h avant la prestation');
+      }
+    }
+
+    announcement.status = AnnouncementStatus.CANCELLED;
+    return this.announcementsRepository.save(announcement);
+  }
+
+  async withdraw(id: string, userId: string) {
+    const announcement = await this.findOne(id);
+    if (announcement.acceptedBy !== userId) {
+      throw new ForbiddenException('Seul l\'accepteur peut se désister');
+    }
+    if (announcement.status !== AnnouncementStatus.ACCEPTED) {
+      throw new BadRequestException('Cette annonce n\'est pas en cours');
+    }
+
+    const serviceDate = announcement.serviceDetails?.chosenDate;
+    if (serviceDate) {
+      const diff = new Date(serviceDate).getTime() - Date.now();
+      const oneDayMs = 24 * 60 * 60 * 1000;
+      if (diff < oneDayMs) {
+        throw new BadRequestException('Désistement impossible moins de 24h avant la prestation');
+      }
+    }
+
+    announcement.status = AnnouncementStatus.OPEN;
+    announcement.acceptedBy = null as any;
+    announcement.serviceDetails = null as any;
     return this.announcementsRepository.save(announcement);
   }
 

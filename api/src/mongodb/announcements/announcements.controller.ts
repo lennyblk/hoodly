@@ -65,6 +65,42 @@ export class AnnouncementsController {
     return this.announcementsService.accept(id, user.userId, dto?.serviceDetails);
   }
 
+  @ApiOperation({ summary: 'Modifier son annonce (auteur, tant que non acceptée)' })
+  @ApiParam({ name: 'id', description: 'ObjectId MongoDB de l\'annonce' })
+  @ApiResponse({ status: 200, type: Announcement })
+  @Patch(':id/mine')
+  updateMine(@Param('id') id: string, @Req() req: Request, @Body() dto: UpdateAnnouncementDto) {
+    const user = (req as any).user as { userId: string };
+    return this.announcementsService.updateByAuthor(id, user.userId, dto);
+  }
+
+  @ApiOperation({ summary: 'Supprimer son annonce (auteur, tant que non acceptée)' })
+  @ApiParam({ name: 'id', description: 'ObjectId MongoDB de l\'annonce' })
+  @ApiResponse({ status: 200, description: 'Annonce supprimée.' })
+  @Delete(':id/mine')
+  removeMine(@Param('id') id: string, @Req() req: Request) {
+    const user = (req as any).user as { userId: string };
+    return this.announcementsService.removeByAuthor(id, user.userId);
+  }
+
+  @ApiOperation({ summary: 'Annuler une annonce (auteur ou accepteur, min 24h avant prestation)' })
+  @ApiParam({ name: 'id', description: 'ObjectId MongoDB de l\'annonce' })
+  @ApiResponse({ status: 200, type: Announcement })
+  @Post(':id/cancel')
+  cancel(@Param('id') id: string, @Req() req: Request) {
+    const user = (req as any).user as { userId: string };
+    return this.announcementsService.cancel(id, user.userId);
+  }
+
+  @ApiOperation({ summary: 'Se désister d\'une annonce acceptée (min 24h avant prestation)' })
+  @ApiParam({ name: 'id', description: 'ObjectId MongoDB de l\'annonce' })
+  @ApiResponse({ status: 200, type: Announcement })
+  @Post(':id/withdraw')
+  withdraw(@Param('id') id: string, @Req() req: Request) {
+    const user = (req as any).user as { userId: string };
+    return this.announcementsService.withdraw(id, user.userId);
+  }
+
   @ApiOperation({ summary: 'Mettre à jour une annonce — modérateur ou admin' })
   @ApiParam({ name: 'id', description: 'ObjectId MongoDB de l\'annonce' })
   @ApiResponse({ status: 200, type: Announcement })

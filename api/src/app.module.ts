@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ScheduleModule } from '@nestjs/schedule';
 import { UsersModule } from './mongodb/users/users.module';
 import { AuthModule } from './mongodb/auth/auth.module';
 import { AnnouncementsModule } from './mongodb/announcements/announcements.module';
@@ -52,6 +53,7 @@ import { DocumentsModule } from './mongodb/documents/documents.module';
       synchronize: true,
       logging: process.env.NODE_ENV === 'development',
     }),
+    ScheduleModule.forRoot(),
     UsersModule,
     AuthModule,
     AnnouncementsModule,

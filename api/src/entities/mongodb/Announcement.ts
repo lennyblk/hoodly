@@ -10,6 +10,7 @@ export enum AnnouncementStatus {
   OPEN = 'open',
   ACCEPTED = 'accepted',
   DONE = 'done',
+  CANCELLED = 'cancelled',
 }
 
 export class AvailabilitySlot {

@@ -6,6 +6,7 @@ import { Announcement } from '../../entities/mongodb/Announcement';
 import { Neighbourhood } from '../../entities/mongodb/Neighbourhood';
 import { UsersModule } from '../users/users.module';
 import { RolesGuard } from '../../common/guards/roles.guard';
+import { AnnouncementsCron } from './announcements.cron';
 
 @Module({
   imports: [
@@ -13,7 +14,7 @@ import { RolesGuard } from '../../common/guards/roles.guard';
     UsersModule,
   ],
   controllers: [AnnouncementsController],
-  providers: [AnnouncementsService, RolesGuard],
+  providers: [AnnouncementsService, AnnouncementsCron, RolesGuard],
   exports: [AnnouncementsService],
 })
 export class AnnouncementsModule {}
