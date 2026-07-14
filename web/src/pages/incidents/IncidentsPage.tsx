@@ -176,21 +176,23 @@ function IncidentCard({ incident, deleting, onEdit, onDelete }: IncidentCardProp
 
       <p className="text-sm text-charbon/70 leading-relaxed whitespace-pre-wrap">{incident.description}</p>
 
-      <div className="mt-3 flex items-center gap-4">
-        <button
-          onClick={() => onEdit(incident)}
-          className="text-xs text-vert-foret font-medium hover:underline"
-        >
-          Modifier
-        </button>
-        <button
-          onClick={() => onDelete(incident.id)}
-          disabled={deleting}
-          className="text-xs text-red-500 font-medium hover:underline disabled:opacity-50"
-        >
-          {deleting ? 'Suppression...' : 'Supprimer'}
-        </button>
-      </div>
+      {isOpen && (
+        <div className="mt-3 flex items-center gap-4">
+          <button
+            onClick={() => onEdit(incident)}
+            className="text-xs text-vert-foret font-medium hover:underline"
+          >
+            Modifier
+          </button>
+          <button
+            onClick={() => onDelete(incident.id)}
+            disabled={deleting}
+            className="text-xs text-red-500 font-medium hover:underline disabled:opacity-50"
+          >
+            {deleting ? 'Suppression...' : 'Supprimer'}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
