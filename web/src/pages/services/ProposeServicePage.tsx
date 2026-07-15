@@ -21,6 +21,7 @@ type Location = 'moi' | 'beneficiaire' | 'flexible';
 type AvailType = 'recurrent' | 'dates_exactes' | 'continu';
 
 interface AnnouncementWithAvail extends Announcement {
+  duration?: string;
   availabilities?: {
     type: AvailType;
     dates?: string[];
@@ -52,6 +53,39 @@ const CATEGORIES = [
 ];
 
 const DAYS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+
+const DURATION_REGEX = /^(\d+(?:\.\d+)?)\s*(minutes?|heures?|min|h)$/i;
+
+function isDurationValid(duration: string): boolean {
+  const match = duration.trim().match(DURATION_REGEX);
+  return !!match && parseFloat(match[1]) > 0;
+}
+
+function isTimeRangeValid(startTime: string, endTime: string): boolean {
+  if (!startTime || !endTime) return true;
+  return endTime > startTime;
+}
+
+function parseDurationMinutes(duration: string): number | null {
+  const match = duration.trim().match(DURATION_REGEX);
+  if (!match) return null;
+  const value = parseFloat(match[1]);
+  return match[2].toLowerCase().startsWith('h') ? value * 60 : value;
+}
+
+function windowMinutes(startTime: string, endTime: string): number | null {
+  if (!startTime || !endTime) return null;
+  const [sh, sm] = startTime.split(':').map(Number);
+  const [eh, em] = endTime.split(':').map(Number);
+  return (eh * 60 + em) - (sh * 60 + sm);
+}
+
+function matchesDuration(duration: string, startTime: string, endTime: string): boolean {
+  const durationMinutes = parseDurationMinutes(duration);
+  const window = windowMinutes(startTime, endTime);
+  if (durationMinutes === null || window === null) return true;
+  return window === durationMinutes;
+}
 
 interface FormState {
   type: ServiceType;
@@ -125,7 +159,7 @@ export default function ProposeServicePage() {
           category,
           title: data.title,
           description,
-          duration,
+          duration: (data as AnnouncementWithAvail).duration ?? duration,
           points: data.points,
           location,
           availType: slot?.type ?? f.availType,
@@ -170,6 +204,7 @@ export default function ProposeServicePage() {
         await api.patch(`/announcements/${id}/mine`, {
           title: form.title,
           description: enrichedDescription,
+          duration: form.duration,
           type: form.type,
           isPaid: form.points > 0,
           points: form.points,
@@ -180,6 +215,7 @@ export default function ProposeServicePage() {
         const payload: CreateAnnouncementDto = {
           title: form.title,
           description: enrichedDescription,
+          duration: form.duration,
           type: form.type,
           isPaid: form.points > 0,
           points: form.points,
@@ -338,6 +374,11 @@ export default function ProposeServicePage() {
                     placeholder="30 minutes"
                     className={inputClass}
                   />
+                  {form.duration && !isDurationValid(form.duration) && (
+                    <p className="font-sans text-xs text-red-600">
+                      Valeur numérique positive suivie d'une unité (ex. « 30 minutes », « 2 heures »)
+                    </p>
+                  )}
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <label className="font-sans text-sm font-semibold text-charbon">Points (montant fixe)</label>
@@ -386,7 +427,7 @@ export default function ProposeServicePage() {
               )}
 
               <button
-                disabled={!form.title}
+                disabled={!form.title || !isDurationValid(form.duration)}
                 onClick={() => setStep(3)}
                 className="w-full rounded-xl bg-vert-foret py-3.5 font-sans text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -444,6 +485,14 @@ export default function ProposeServicePage() {
                       <input type="time" value={form.endTime} onChange={(e) => setForm((f) => ({ ...f, endTime: e.target.value }))} className={inputClass} />
                     </div>
                   </div>
+                  {!isTimeRangeValid(form.startTime, form.endTime) && (
+                    <p className="font-sans text-xs text-red-600">L'heure de fin doit être postérieure à l'heure de début</p>
+                  )}
+                  {isTimeRangeValid(form.startTime, form.endTime) && !matchesDuration(form.duration, form.startTime, form.endTime) && (
+                    <p className="font-sans text-xs text-red-600">
+                      La plage horaire ({windowMinutes(form.startTime, form.endTime)} min) doit correspondre à la durée de la séance ({parseDurationMinutes(form.duration)} min)
+                    </p>
+                  )}
                 </>
               )}
 
@@ -490,6 +539,14 @@ export default function ProposeServicePage() {
                       <input type="time" value={form.endTime} onChange={(e) => setForm((f) => ({ ...f, endTime: e.target.value }))} className={inputClass} />
                     </div>
                   </div>
+                  {!isTimeRangeValid(form.startTime, form.endTime) && (
+                    <p className="font-sans text-xs text-red-600">L'heure de fin doit être postérieure à l'heure de début</p>
+                  )}
+                  {isTimeRangeValid(form.startTime, form.endTime) && !matchesDuration(form.duration, form.startTime, form.endTime) && (
+                    <p className="font-sans text-xs text-red-600">
+                      La plage horaire ({windowMinutes(form.startTime, form.endTime)} min) doit correspondre à la durée de la séance ({parseDurationMinutes(form.duration)} min)
+                    </p>
+                  )}
                 </>
               )}
 
@@ -531,9 +588,11 @@ export default function ProposeServicePage() {
               )}
               <button
                 disabled={
-                  submitting || (
-                    form.availType === 'recurrent' ? form.days.length === 0 :
-                    form.availType === 'dates_exactes' ? form.exactDates.length === 0 :
+                  submitting ||
+                  !isDurationValid(form.duration) ||
+                  (
+                    form.availType === 'recurrent' ? (form.days.length === 0 || !isTimeRangeValid(form.startTime, form.endTime) || !matchesDuration(form.duration, form.startTime, form.endTime)) :
+                    form.availType === 'dates_exactes' ? (form.exactDates.length === 0 || !isTimeRangeValid(form.startTime, form.endTime) || !matchesDuration(form.duration, form.startTime, form.endTime)) :
                     !form.availStartDate
                   )
                 }

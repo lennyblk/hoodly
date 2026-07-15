@@ -35,6 +35,11 @@ export class CreateAnnouncementDto {
   @IsNotEmpty()
   description: string;
 
+  @ApiPropertyOptional({ example: '30 minutes' })
+  @IsString()
+  @IsOptional()
+  duration?: string;
+
   @ApiProperty({ enum: AnnouncementType, example: AnnouncementType.OFFER })
   @IsEnum(AnnouncementType)
   @IsNotEmpty()

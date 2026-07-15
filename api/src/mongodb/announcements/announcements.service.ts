@@ -7,7 +7,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { MongoRepository } from 'typeorm';
 import { ObjectId } from 'mongodb';
-import { Announcement, AnnouncementStatus, ServiceDetails } from '../../entities/mongodb/Announcement';
+import { Announcement, AnnouncementStatus, AvailabilitySlot, ServiceDetails } from '../../entities/mongodb/Announcement';
 import { Neighbourhood } from '../../entities/mongodb/Neighbourhood';
 import { Document, DocumentStatus } from '../../entities/mongodb/Document';
 import { CreateAnnouncementDto } from './dto/create-announcement.dto';
@@ -50,6 +50,45 @@ export class AnnouncementsService {
     return announcement;
   }
 
+  private validateDuration(duration?: string) {
+    if (duration === undefined || duration === null || duration === '') return;
+    const match = duration.trim().match(/^(\d+(?:\.\d+)?)\s*(minutes?|heures?|min|h)$/i);
+    if (!match || parseFloat(match[1]) <= 0) {
+      throw new BadRequestException(
+        "La durée doit être une valeur numérique positive suivie d'une unité (minutes ou heures)",
+      );
+    }
+  }
+
+  private parseDurationMinutes(duration?: string): number | null {
+    if (!duration) return null;
+    const match = duration.trim().match(/^(\d+(?:\.\d+)?)\s*(minutes?|heures?|min|h)$/i);
+    if (!match) return null;
+    const value = parseFloat(match[1]);
+    return match[2].toLowerCase().startsWith('h') ? value * 60 : value;
+  }
+
+  private validateAvailabilities(slots?: AvailabilitySlot[], duration?: string) {
+    if (!slots) return;
+    const durationMinutes = this.parseDurationMinutes(duration);
+    for (const slot of slots) {
+      if (!slot.startTime || !slot.endTime) continue;
+      if (slot.endTime <= slot.startTime) {
+        throw new BadRequestException("L'heure de fin doit être postérieure à l'heure de début");
+      }
+      if (durationMinutes !== null) {
+        const [sh, sm] = slot.startTime.split(':').map(Number);
+        const [eh, em] = slot.endTime.split(':').map(Number);
+        const windowMinutes = (eh * 60 + em) - (sh * 60 + sm);
+        if (windowMinutes !== durationMinutes) {
+          throw new BadRequestException(
+            `La plage horaire (${windowMinutes} min) doit correspondre à la durée de la séance déclarée (${durationMinutes} min)`,
+          );
+        }
+      }
+    }
+  }
+
   private async validateReferences(authorId?: string, neighbourhoodId?: string, acceptedBy?: string, currentAnnouncement?: Announcement) {
     const finalAuthorId = authorId || currentAnnouncement?.authorId;
     const finalAcceptedBy = acceptedBy !== undefined ? acceptedBy : currentAnnouncement?.acceptedBy;
@@ -89,6 +128,8 @@ export class AnnouncementsService {
   }
 
   async create(createAnnouncementDto: CreateAnnouncementDto) {
+    this.validateDuration(createAnnouncementDto.duration);
+    this.validateAvailabilities(createAnnouncementDto.availabilities, createAnnouncementDto.duration);
     await this.validateReferences(
       createAnnouncementDto.authorId,
       createAnnouncementDto.neighbourhoodId
@@ -100,6 +141,12 @@ export class AnnouncementsService {
 
   async update(id: string, updateAnnouncementDto: UpdateAnnouncementDto) {
     const announcement = await this.findOne(id);
+
+    this.validateDuration(updateAnnouncementDto.duration);
+    this.validateAvailabilities(
+      updateAnnouncementDto.availabilities,
+      updateAnnouncementDto.duration ?? announcement.duration,
+    );
 
     await this.validateReferences(
       updateAnnouncementDto.authorId,
@@ -154,6 +201,8 @@ export class AnnouncementsService {
     if (announcement.status !== AnnouncementStatus.OPEN) {
       throw new BadRequestException('Impossible de modifier une annonce déjà acceptée');
     }
+    this.validateDuration(dto.duration);
+    this.validateAvailabilities(dto.availabilities, dto.duration ?? announcement.duration);
     Object.assign(announcement, dto);
     return this.announcementsRepository.save(announcement);
   }
