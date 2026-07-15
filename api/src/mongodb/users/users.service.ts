@@ -11,6 +11,7 @@ import { DataSource, MongoRepository } from 'typeorm';
 import { ObjectId } from 'mongodb';
 import { User, UserRole, UserLang } from '../../entities/mongodb/User';
 import { Neighbourhood } from '../../entities/mongodb/Neighbourhood';
+import { Announcement, AnnouncementStatus } from '../../entities/mongodb/Announcement';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { geocodeAddress, pointInPolygon } from '../../common/utils/geo';
@@ -22,6 +23,8 @@ export class UsersService {
     private usersRepository: MongoRepository<User>,
     @InjectRepository(Neighbourhood, 'mongodb')
     private neighbourhoodsRepository: MongoRepository<Neighbourhood>,
+    @InjectRepository(Announcement, 'mongodb')
+    private announcementsRepository: MongoRepository<Announcement>,
     @InjectDataSource('mongodb')
     private dataSource: DataSource,
   ) { }
@@ -89,6 +92,7 @@ export class UsersService {
 
   async update(id: string, updateUserDto: UpdateUserDto) {
     const existingUser = await this.findOne(id);
+    const oldNeighbourhoodId = existingUser.neighbourhoodId;
 
     if (updateUserDto.email) {
       const userWithSameEmail = await this.findByEmail(updateUserDto.email);
@@ -118,7 +122,28 @@ export class UsersService {
     }
 
     Object.assign(existingUser, updateUserDto);
-    return this.usersRepository.save(existingUser);
+    const saved = await this.usersRepository.save(existingUser);
+
+    if (oldNeighbourhoodId && oldNeighbourhoodId !== saved.neighbourhoodId) {
+      await this.cancelActiveAnnouncementsInNeighbourhood(id, oldNeighbourhoodId);
+    }
+
+    return saved;
+  }
+
+  private async cancelActiveAnnouncementsInNeighbourhood(authorId: string, neighbourhoodId: string) {
+    const activeAnnouncements = await this.announcementsRepository.find({
+      where: {
+        authorId,
+        neighbourhoodId,
+        status: { $in: [AnnouncementStatus.OPEN, AnnouncementStatus.ACCEPTED] },
+      } as any,
+    });
+    if (!activeAnnouncements.length) return;
+    for (const announcement of activeAnnouncements) {
+      announcement.status = AnnouncementStatus.CANCELLED;
+    }
+    await this.announcementsRepository.save(activeAnnouncements);
   }
 
   async delete(id: string) {

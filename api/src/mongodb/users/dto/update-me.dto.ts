@@ -44,4 +44,9 @@ export class UpdateMeDto {
   @IsOptional()
   @IsString()
   address?: string;
+
+  @ApiPropertyOptional({ example: '64a1f2c3e4b5f6a7b8c9d0e1', description: 'Rejoindre (ou null pour quitter) un quartier' })
+  @IsOptional()
+  @IsString()
+  neighbourhoodId?: string;
 }

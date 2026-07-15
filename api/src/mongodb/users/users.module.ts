@@ -7,10 +7,11 @@ import { PointsService } from './points.service';
 import { User } from '../../entities/mongodb/User';
 import { Neighbourhood } from '../../entities/mongodb/Neighbourhood';
 import { PointsTransaction } from '../../entities/mongodb/PointsTransaction';
+import { Announcement } from '../../entities/mongodb/Announcement';
 import { RolesGuard } from '../../common/guards/roles.guard';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User, Neighbourhood, PointsTransaction], 'mongodb')],
+  imports: [TypeOrmModule.forFeature([User, Neighbourhood, PointsTransaction, Announcement], 'mongodb')],
   controllers: [UsersController],
   providers: [UsersService, PointsService, RolesGuard],
   exports: [UsersService, PointsService],
