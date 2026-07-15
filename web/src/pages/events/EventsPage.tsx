@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../../api/axios';
 import { useUser } from '../../contexts/useUser';
+import { EVENT_EMOJI_CHOICES, getEventVisual } from '../../constants/eventVisuals';
 
 interface Event {
   id: string;
@@ -13,20 +14,12 @@ interface Event {
   date: string;
   participants: string[];
   interestUsers: string[];
+  status?: 'active' | 'cancelled';
+  emoji?: string;
   createdAt: string;
 }
 
 const DAY_NAMES = ['dim', 'lun', 'mar', 'mer', 'jeu', 'ven', 'sam'];
-
-const THUMBNAILS = [
-  { bg: '#E8F4ED', emoji: '🎉' },
-  { bg: '#FFF3E0', emoji: '🌿' },
-  { bg: '#E3F2FD', emoji: '🏃' },
-  { bg: '#FCE4EC', emoji: '🍳' },
-  { bg: '#F3E5F5', emoji: '🎨' },
-  { bg: '#E8EAF6', emoji: '🤝' },
-  { bg: '#FFF8E1', emoji: '🎵' },
-];
 
 function sameDay(a: Date, b: Date) {
   return (
@@ -34,10 +27,6 @@ function sameDay(a: Date, b: Date) {
     a.getMonth() === b.getMonth() &&
     a.getDate() === b.getDate()
   );
-}
-
-function getThumbnail(id: string) {
-  return THUMBNAILS[id.charCodeAt(id.length - 1) % THUMBNAILS.length];
 }
 
 function formatTime(dateStr: string) {
@@ -100,11 +89,13 @@ function EventCard({
   userId,
   onRsvp,
   onInterest,
+  neighbourhoodName,
 }: {
   event: Event;
   userId: string;
   onRsvp: (id: string) => Promise<void>;
   onInterest: (id: string) => Promise<void>;
+  neighbourhoodName?: string;
 }) {
   const navigate = useNavigate();
   const [rsvpLoading, setRsvpLoading] = useState(false);
@@ -112,7 +103,9 @@ function EventCard({
   const isParticipant = event.participants?.includes(userId);
   const isInterested = event.interestUsers?.includes(userId);
   const isPast = new Date(event.date) < new Date();
-  const { bg, emoji } = getThumbnail(event.id);
+  const isCancelled = event.status === 'cancelled';
+  const isClosed = isPast || isCancelled;
+  const { bg, emoji } = getEventVisual(event);
   const count = event.participants?.length ?? 0;
 
   async function clickRsvp(e: React.MouseEvent) {
@@ -164,7 +157,12 @@ function EventCard({
           <span>🕐 {formatTime(event.date)}</span>
         </div>
         <p className="text-xs text-charbon/40 mt-1 line-clamp-1">{event.description}</p>
-        <div className="flex gap-1.5 mt-2">
+        <div className="flex gap-1.5 mt-2 flex-wrap">
+          {neighbourhoodName && (
+            <span className="text-[10px] bg-vert-foret/10 text-vert-foret font-medium px-2 py-0.5 rounded-full">
+              📍 {neighbourhoodName}
+            </span>
+          )}
           <span className="text-[10px] bg-sable/20 text-charbon/50 px-2 py-0.5 rounded-full">
             Présentiel
           </span>
@@ -176,6 +174,11 @@ function EventCard({
               Contractuel
             </span>
           )}
+          {isCancelled && (
+            <span className="text-[10px] bg-red-500 text-white font-semibold px-2 py-0.5 rounded-full">
+              Annulé
+            </span>
+          )}
         </div>
       </div>
 
@@ -183,9 +186,9 @@ function EventCard({
       <div className="flex flex-col gap-2 justify-center flex-shrink-0">
         <button
           onClick={clickInterest}
-          disabled={intLoading || isPast}
+          disabled={intLoading || isClosed}
           className={`px-3 py-1.5 rounded-xl text-xs font-medium border transition-colors whitespace-nowrap ${
-            isPast
+            isClosed
               ? 'border-sable/30 text-charbon/25 cursor-not-allowed'
               : isInterested
               ? 'border-vert-clair text-vert-foret bg-vert-clair/10'
@@ -196,16 +199,16 @@ function EventCard({
         </button>
         <button
           onClick={clickRsvp}
-          disabled={rsvpLoading || isPast}
+          disabled={rsvpLoading || isClosed}
           className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-colors whitespace-nowrap ${
-            isPast
+            isClosed
               ? 'bg-sable/20 text-charbon/25 cursor-not-allowed'
               : isParticipant
               ? 'bg-vert-foret/10 text-vert-foret border border-vert-foret/30'
               : 'bg-vert-foret text-white hover:bg-vert-moyen'
           }`}
         >
-          {rsvpLoading ? '...' : isPast ? 'Terminé' : isParticipant ? '✓ Inscrit' : 'Participer'}
+          {rsvpLoading ? '...' : isCancelled ? 'Annulé' : isPast ? 'Terminé' : isParticipant ? '✓ Inscrit' : 'Participer'}
         </button>
       </div>
     </div>
@@ -228,6 +231,7 @@ function CreateEventModal({
     description: '',
     date: '',
     type: 'other' as 'other' | 'contract',
+    emoji: '',
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -245,7 +249,12 @@ function CreateEventModal({
     setLoading(true);
     setError('');
     try {
-      await api.post('/events', { ...form, organizerId: userId, neighbourhoodId });
+      await api.post('/events', {
+        ...form,
+        emoji: form.emoji || undefined,
+        organizerId: userId,
+        neighbourhoodId,
+      });
       onCreated();
       onClose();
     } catch {
@@ -319,6 +328,37 @@ function CreateEventModal({
             </select>
           </div>
 
+          <div>
+            <label className="block text-sm font-medium text-charbon/70 mb-1">Emoji</label>
+            <div className="flex flex-wrap gap-1.5">
+              <button
+                type="button"
+                onClick={() => set('emoji', '')}
+                className={`h-9 px-2.5 rounded-xl border text-xs font-medium transition-colors ${
+                  form.emoji === ''
+                    ? 'border-vert-foret bg-vert-foret/10 text-vert-foret'
+                    : 'border-sable/40 text-charbon/50 hover:bg-sable/10'
+                }`}
+              >
+                Auto
+              </button>
+              {EVENT_EMOJI_CHOICES.map((em) => (
+                <button
+                  type="button"
+                  key={em}
+                  onClick={() => set('emoji', em)}
+                  className={`w-9 h-9 rounded-xl border text-lg leading-none transition-colors ${
+                    form.emoji === em
+                      ? 'border-vert-foret bg-vert-foret/10'
+                      : 'border-sable/40 hover:bg-sable/10'
+                  }`}
+                >
+                  {em}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {error && <p className="text-red-500 text-sm">{error}</p>}
 
           <div className="flex gap-3 pt-1">
@@ -351,6 +391,11 @@ export default function EventsPage() {
   const [showModal, setShowModal] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [statusFilter, setStatusFilter] = useState<'all' | 'inscrit' | 'interesse'>('all');
+  const [search, setSearch] = useState('');
+  const [neighbourhoodFilter, setNeighbourhoodFilter] = useState('all');
+  const [neighbourhoods, setNeighbourhoods] = useState<{ id: string; name: string }[]>([]);
+
+  const isAdmin = user?.role === 'admin';
 
   useEffect(() => {
     if ((location.state as { openCreate?: boolean } | null)?.openCreate) {
@@ -359,21 +404,34 @@ export default function EventsPage() {
   }, [location.state]);
 
   const fetchEvents = useCallback(async () => {
-    if (!user?.neighbourhoodId) {
+    if (!user) return;
+    // Admin : pas de quartier → voir tous les événements ; sinon ceux du quartier
+    if (!isAdmin && !user.neighbourhoodId) {
       setLoading(false);
       return;
     }
     try {
-      const { data } = await api.get<Event[]>('/events', { params: { neighbourhoodId: user.neighbourhoodId } });
+      const params = isAdmin ? {} : { neighbourhoodId: user.neighbourhoodId };
+      const { data } = await api.get<Event[]>('/events', { params });
       setEvents(data);
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, isAdmin]);
 
   useEffect(() => {
     fetchEvents();
   }, [fetchEvents]);
+
+  // Noms des quartiers (badge sur les cartes + filtre) — utile surtout pour l'admin
+  useEffect(() => {
+    if (!isAdmin) return;
+    api.get<{ id: string; name: string }[]>('/neighbourhoods')
+      .then(({ data }) => setNeighbourhoods(data.map((n) => ({ id: String(n.id), name: n.name }))))
+      .catch(() => {});
+  }, [isAdmin]);
+
+  const neighbourhoodNames = new Map(neighbourhoods.map((n) => [n.id, n.name]));
 
   async function handleRsvp(eventId: string) {
     if (!user) return;
@@ -391,6 +449,13 @@ export default function EventsPage() {
   const userId = user?._id ?? '';
   const filtered = events
     .filter((e) => !selectedDate || sameDay(new Date(e.date), selectedDate))
+    .filter((e) => {
+      if (!search) return true;
+      const q = search.toLowerCase();
+      const quartier = neighbourhoodNames.get(e.neighbourhoodId)?.toLowerCase() ?? '';
+      return e.title.toLowerCase().includes(q) || quartier.includes(q);
+    })
+    .filter((e) => neighbourhoodFilter === 'all' || e.neighbourhoodId === neighbourhoodFilter)
     .filter((e) => {
       if (statusFilter === 'inscrit') return e.participants?.includes(userId);
       if (statusFilter === 'interesse') return e.interestUsers?.includes(userId);
@@ -424,6 +489,35 @@ export default function EventsPage() {
         <DateStrip selected={selectedDate} onSelect={setSelectedDate} />
       </div>
 
+      {/* Recherche par nom / quartier */}
+      <div className="px-5 pb-3 flex gap-2">
+        <div className="flex-1 flex items-center gap-2 rounded-xl border border-sable/50 bg-white px-3 py-2">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="text-sable shrink-0">
+            <circle cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="2" />
+            <path d="M21 21l-4.35-4.35" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          </svg>
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={isAdmin ? 'Rechercher par nom ou quartier...' : 'Rechercher un événement...'}
+            className="flex-1 bg-transparent text-sm text-charbon outline-none placeholder:text-sable min-w-0"
+          />
+        </div>
+        {isAdmin && (
+          <select
+            value={neighbourhoodFilter}
+            onChange={(e) => setNeighbourhoodFilter(e.target.value)}
+            className="rounded-xl border border-sable/50 bg-white px-3 py-2 text-sm text-charbon outline-none focus:ring-2 focus:ring-vert-foret/30 max-w-[45%]"
+          >
+            <option value="all">Tous les quartiers</option>
+            {neighbourhoods.map((n) => (
+              <option key={n.id} value={n.id}>{n.name}</option>
+            ))}
+          </select>
+        )}
+      </div>
+
       {/* Status filters */}
       <div className="px-5 pb-3 flex gap-2">
         <button
@@ -454,7 +548,7 @@ export default function EventsPage() {
           <div className="flex items-center justify-center py-24 text-charbon/40">
             Chargement...
           </div>
-        ) : !user?.neighbourhoodId ? (
+        ) : !isAdmin && !user?.neighbourhoodId ? (
           <div className="flex flex-col items-center justify-center py-24 text-center text-charbon/40">
             <span className="text-5xl mb-4">🏘️</span>
             <p className="font-medium text-charbon/60">Aucun quartier assigné</p>
@@ -477,6 +571,7 @@ export default function EventsPage() {
                 userId={user?._id ?? ''}
                 onRsvp={handleRsvp}
                 onInterest={handleInterest}
+                neighbourhoodName={isAdmin ? neighbourhoodNames.get(event.neighbourhoodId) : undefined}
               />
             ))}
           </div>

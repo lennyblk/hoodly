@@ -1,8 +1,9 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { MongoRepository } from 'typeorm';
 import { ObjectId } from 'mongodb';
-import { Event } from '../../entities/mongodb/Event';
+import { Event, EventStatus } from '../../entities/mongodb/Event';
+import { UserRole } from '../../entities/mongodb/User';
 import { Neighbourhood } from '../../entities/mongodb/Neighbourhood';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
@@ -68,12 +69,35 @@ export class EventsService {
     return this.eventsRepository.save(event);
   }
 
-  async update(id: string, dto: UpdateEventDto) {
+  // Organisateur, modérateur ou admin
+  private assertCanManage(event: Event, requester: { userId: string; role: string }) {
+    const isOrganizer = event.organizerId === requester.userId;
+    const isStaff =
+      requester.role === UserRole.MODERATEUR || requester.role === UserRole.ADMIN;
+    if (!isOrganizer && !isStaff) {
+      throw new ForbiddenException(
+        "Seul l'organisateur (ou un modérateur/admin) peut gérer cet événement",
+      );
+    }
+  }
+
+  async update(id: string, dto: UpdateEventDto, requester: { userId: string; role: string }) {
     const event = await this.findOne(id);
-    Object.assign(event, {
-      ...dto,
-      ...(dto.date && { date: new Date(dto.date) }),
-    });
+    this.assertCanManage(event, requester);
+    if (event.status === EventStatus.CANCELLED) {
+      throw new BadRequestException('Un événement annulé ne peut plus être modifié');
+    }
+    Object.assign(event, dto);
+    return this.eventsRepository.save(event);
+  }
+
+  async cancel(id: string, requester: { userId: string; role: string }) {
+    const event = await this.findOne(id);
+    this.assertCanManage(event, requester);
+    if (event.status === EventStatus.CANCELLED) {
+      throw new BadRequestException('Cet événement est déjà annulé');
+    }
+    event.status = EventStatus.CANCELLED;
     return this.eventsRepository.save(event);
   }
 
@@ -84,6 +108,9 @@ export class EventsService {
 
   async rsvp(id: string, userId: string) {
     const event = await this.findOne(id);
+    if (event.status === EventStatus.CANCELLED) {
+      throw new BadRequestException('Cet événement a été annulé');
+    }
     if (!event.participants) event.participants = [];
     const idx = event.participants.indexOf(userId);
     if (idx === -1) {
@@ -107,6 +134,9 @@ export class EventsService {
 
   async interest(id: string, userId: string) {
     const event = await this.findOne(id);
+    if (event.status === EventStatus.CANCELLED) {
+      throw new BadRequestException('Cet événement a été annulé');
+    }
     if (!event.interestUsers) event.interestUsers = [];
     const idx = event.interestUsers.indexOf(userId);
     if (idx === -1) {
