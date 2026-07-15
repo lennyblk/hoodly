@@ -147,14 +147,16 @@ export default function ServicesPage() {
           </div>
         ) : (
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4">
-            {filtered.map((announcement) => (
+            {filtered.map((announcement) => {
+              const isOffer = announcement.type === 'offer';
+              return (
               <button
                 key={announcement.id}
                 onClick={() => navigate(`/services/${announcement.id}`)}
                 className="flex flex-col rounded-2xl overflow-hidden bg-white border border-sable/40 hover:shadow-md transition-shadow text-left"
               >
-                {/* Top — couleur + icône */}
-                <div className="relative flex flex-col items-start justify-end bg-[#E8F5EE] px-4 pt-5 pb-3 min-h-[110px]">
+                {/* Top — couleur + icône selon le type (offre / demande) */}
+                <div className={`relative flex flex-col items-start justify-end px-4 pt-5 pb-3 min-h-[110px] ${isOffer ? 'bg-[#E8F5EE]' : 'bg-ambre/10'}`}>
                   {announcement.status !== 'open' && (
                     <span className={`absolute top-3 right-3 rounded-full px-2.5 py-1 font-sans text-xs font-semibold ${
                       STATUS_LABELS[announcement.status]?.className ?? 'bg-white/80 text-charbon'
@@ -162,10 +164,15 @@ export default function ServicesPage() {
                       {STATUS_LABELS[announcement.status]?.label ?? announcement.status}
                     </span>
                   )}
-                  <span className="text-3xl mb-2">📋</span>
-                  <span className="flex items-center gap-1 rounded-full bg-white/80 px-2.5 py-1 font-sans text-xs font-semibold text-ambre">
-                    ★ {announcement.points} pts
-                  </span>
+                  <span className="text-3xl mb-2">{isOffer ? '🤝' : '🙋'}</span>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className={`rounded-full bg-white/80 px-2.5 py-1 font-sans text-xs font-semibold ${isOffer ? 'text-vert-foret' : 'text-ambre'}`}>
+                      {isOffer ? 'Offre' : "Demande d'aide"}
+                    </span>
+                    <span className="flex items-center gap-1 rounded-full bg-white/80 px-2.5 py-1 font-sans text-xs font-semibold text-ambre">
+                      ★ {announcement.points} pts
+                    </span>
+                  </div>
                 </div>
 
                 {/* Bottom — infos */}
@@ -178,7 +185,8 @@ export default function ServicesPage() {
                   </div>
                 </div>
               </button>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
