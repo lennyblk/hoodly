@@ -564,7 +564,6 @@ interface EditForm {
   firstName: string;
   lastName: string;
   email: string;
-  lang: 'fr' | 'en';
   isActive: boolean;
 }
 
@@ -579,7 +578,6 @@ function UserPanel({ user, onClose, onSaved }: UserPanelProps) {
     firstName: user.firstName,
     lastName: user.lastName,
     email: user.email,
-    lang: user.lang as 'fr' | 'en',
     isActive: user.isActive,
   });
   const [pendingRole, setPendingRole] = useState<UserRole>(user.role as UserRole);
@@ -726,30 +724,17 @@ function UserPanel({ user, onClose, onSaved }: UserPanelProps) {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-charbon/60">Rôle</label>
-                <select
-                  value={pendingRole}
-                  onChange={(e) => { setPendingRole(e.target.value as UserRole); setSaved(false); }}
-                  className="border border-sable/40 rounded-xl px-3 py-2 text-sm text-charbon focus:outline-none focus:ring-2 focus:ring-vert-foret/30"
-                >
-                  {(Object.keys(ROLE_LABELS) as UserRole[]).map((r) => (
-                    <option key={r} value={r}>{ROLE_LABELS[r]}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-charbon/60">Langue</label>
-                <select
-                  value={form.lang}
-                  onChange={(e) => field('lang', e.target.value)}
-                  className="border border-sable/40 rounded-xl px-3 py-2 text-sm text-charbon focus:outline-none focus:ring-2 focus:ring-vert-foret/30"
-                >
-                  <option value="fr">Français</option>
-                  <option value="en">English</option>
-                </select>
-              </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-charbon/60">Rôle</label>
+              <select
+                value={pendingRole}
+                onChange={(e) => { setPendingRole(e.target.value as UserRole); setSaved(false); }}
+                className="border border-sable/40 rounded-xl px-3 py-2 text-sm text-charbon focus:outline-none focus:ring-2 focus:ring-vert-foret/30"
+              >
+                {(Object.keys(ROLE_LABELS) as UserRole[]).map((r) => (
+                  <option key={r} value={r}>{ROLE_LABELS[r]}</option>
+                ))}
+              </select>
             </div>
 
             <div className="flex items-center justify-between p-4 bg-creme rounded-2xl">

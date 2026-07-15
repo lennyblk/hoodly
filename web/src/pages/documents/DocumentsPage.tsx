@@ -281,7 +281,7 @@ export default function DocumentsPage() {
 
       {/* Filters */}
       <div className="flex gap-2 flex-wrap">
-        {(['all', 'pending', 'signed', 'draft'] as const).map((f) => (
+        {(['all', 'pending', 'signed'] as const).map((f) => (
           <button
             key={f}
             onClick={() => setFilter(f)}
