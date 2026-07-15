@@ -342,13 +342,21 @@ export default function ProposeServicePage() {
           {/* ── Étape 2 ── */}
           {step === 2 && (
             <div className="flex flex-col gap-5">
+              <div className="rounded-xl bg-[#E8F5EE] border border-vert-foret/20 px-4 py-3">
+                <p className="font-sans text-sm font-semibold text-vert-foret">
+                  {form.type === 'offer' ? '🤝 Détails de votre offre de service' : "🙋 Détails de votre demande d'aide"}
+                </p>
+              </div>
+
               <div className="flex flex-col gap-1.5">
-                <label className="font-sans text-sm font-semibold text-charbon">Titre de l'annonce</label>
+                <label className="font-sans text-sm font-semibold text-charbon">
+                  {form.type === 'offer' ? "Titre de l'offre" : 'Titre de la demande'}
+                </label>
                 <input
                   type="text"
                   value={form.title}
                   onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-                  placeholder="Cours de guitare acoustique — tous niveaux"
+                  placeholder={form.type === 'offer' ? 'Cours de guitare acoustique — tous niveaux' : "Recherche aide pour cours de guitare"}
                   className={inputClass}
                 />
               </div>
@@ -358,7 +366,7 @@ export default function ProposeServicePage() {
                 <textarea
                   value={form.description}
                   onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-                  placeholder="Je propose des cours de guitare acoustique pour débutants et intermédiaires..."
+                  placeholder={form.type === 'offer' ? 'Je propose des cours de guitare acoustique pour débutants et intermédiaires...' : "Je cherche quelqu'un pour m'apprendre la guitare acoustique..."}
                   rows={4}
                   className={`${inputClass} resize-none`}
                 />
@@ -399,7 +407,11 @@ export default function ProposeServicePage() {
               <div className="rounded-xl bg-[#FFF8EE] border border-ambre/20 px-4 py-3">
                 <p className="font-sans text-xs font-semibold text-ambre mb-1">💡 Système de points</p>
                 <p className="font-sans text-xs text-charbon leading-relaxed">
-                  Mettez <span className="font-semibold">0 points</span> pour un service gratuit. Les points sont débités du compte du bénéficiaire et crédités sur le vôtre. Un contrat est généré automatiquement.
+                  Mettez <span className="font-semibold">0 points</span> pour un service gratuit.{' '}
+                  {form.type === 'offer'
+                    ? 'Les points sont débités du compte du bénéficiaire et crédités sur le vôtre.'
+                    : 'Les points seront débités de votre compte et crédités sur celui de la personne qui vous aide.'}
+                  {' '}Un contrat est généré automatiquement.
                 </p>
               </div>
 

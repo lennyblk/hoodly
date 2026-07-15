@@ -33,7 +33,7 @@ export class AnnouncementsCron {
     });
 
     for (const ann of announcements) {
-      const serviceDate = ann.serviceDetails?.chosenDate;
+      const serviceDate = ann.serviceDetails?.chosenDate ?? ann.serviceDetails?.startDate;
       if (!serviceDate || serviceDate !== today) continue;
       if (!ann.points || !ann.acceptedBy) continue;
 
