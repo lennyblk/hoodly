@@ -5,6 +5,7 @@ import { ObjectId } from 'mongodb';
 import { AnnouncementsService } from './announcements.service';
 import { Announcement, AnnouncementType, AnnouncementStatus } from '../../entities/mongodb/Announcement';
 import { Neighbourhood } from '../../entities/mongodb/Neighbourhood';
+import { Document } from '../../entities/mongodb/Document';
 import { UsersService } from '../users/users.service';
 import { Neo4jService } from '../../neo4j/neo4j.service';
 
@@ -45,6 +46,7 @@ describe('AnnouncementsService', () => {
   };
 
   const mockNeighbourhoodRepo = { findOneBy: jest.fn() };
+  const mockDocumentsRepo = { findOneBy: jest.fn(), save: jest.fn() };
   const mockUsersService = { findOne: jest.fn() };
   const mockNeo4jService = { run: jest.fn().mockResolvedValue({ records: [] }) };
 
@@ -54,6 +56,7 @@ describe('AnnouncementsService', () => {
         AnnouncementsService,
         { provide: getRepositoryToken(Announcement, 'mongodb'), useValue: mockRepo },
         { provide: getRepositoryToken(Neighbourhood, 'mongodb'), useValue: mockNeighbourhoodRepo },
+        { provide: getRepositoryToken(Document, 'mongodb'), useValue: mockDocumentsRepo },
         { provide: UsersService, useValue: mockUsersService },
         { provide: Neo4jService, useValue: mockNeo4jService },
       ],

@@ -6,13 +6,14 @@ import { Announcement } from '../../entities/mongodb/Announcement';
 import { Neighbourhood } from '../../entities/mongodb/Neighbourhood';
 import { Vote } from '../../entities/mongodb/Vote';
 import { Event } from '../../entities/mongodb/Event';
+import { Document } from '../../entities/mongodb/Document';
 import { UsersModule } from '../users/users.module';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { AnnouncementsCron } from './announcements.cron';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Announcement, Neighbourhood, Vote, Event], 'mongodb'),
+    TypeOrmModule.forFeature([Announcement, Neighbourhood, Vote, Event, Document], 'mongodb'),
     UsersModule,
   ],
   controllers: [AnnouncementsController],

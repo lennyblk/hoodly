@@ -9,6 +9,7 @@ import { MongoRepository } from 'typeorm';
 import { ObjectId } from 'mongodb';
 import { Announcement, AnnouncementStatus, ServiceDetails } from '../../entities/mongodb/Announcement';
 import { Neighbourhood } from '../../entities/mongodb/Neighbourhood';
+import { Document, DocumentStatus } from '../../entities/mongodb/Document';
 import { CreateAnnouncementDto } from './dto/create-announcement.dto';
 import { UpdateAnnouncementDto } from './dto/update-announcement.dto';
 import { UsersService } from '../users/users.service';
@@ -21,6 +22,8 @@ export class AnnouncementsService {
     private announcementsRepository: MongoRepository<Announcement>,
     @InjectRepository(Neighbourhood, 'mongodb')
     private neighbourhoodsRepository: MongoRepository<Neighbourhood>,
+    @InjectRepository(Document, 'mongodb')
+    private documentsRepository: MongoRepository<Document>,
     private usersService: UsersService,
     private neo4jService: Neo4jService,
   ) {}
@@ -212,9 +215,23 @@ export class AnnouncementsService {
       }
     }
 
+    if (announcement.contractId) {
+      try {
+        const contractObjectId = new ObjectId(announcement.contractId);
+        const doc = await this.documentsRepository.findOneBy({ _id: contractObjectId } as any);
+        if (doc && doc.status !== DocumentStatus.REFUSED) {
+          doc.status = DocumentStatus.REFUSED;
+          await this.documentsRepository.save(doc);
+        }
+      } catch (e: any) {
+        console.warn('[AnnouncementsService] Failed to auto-refuse contract on withdraw (non-fatal):', e.message);
+      }
+    }
+
     announcement.status = AnnouncementStatus.OPEN;
     announcement.acceptedBy = null as any;
     announcement.serviceDetails = null as any;
+    announcement.contractId = null as any;
     return this.announcementsRepository.save(announcement);
   }
 

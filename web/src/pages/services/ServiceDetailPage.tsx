@@ -472,6 +472,7 @@ export default function ServiceDetailPage() {
   }
 
   const isOwner = String(user?._id) === announcement.authorId;
+  const isAdmin = user?.role === 'admin';
   const isAccepter = !!announcement.acceptedBy && String(user?._id) === announcement.acceptedBy;
   const authorFullName = author ? `${author.firstName} ${author.lastName}` : '?';
 
@@ -630,13 +631,15 @@ export default function ServiceDetailPage() {
           ) : isAccepter && announcement.status === 'accepted' ? (
             canCancelOrWithdraw ? (
               <>
-                <button
-                  onClick={handleCancel}
-                  disabled={cancelling}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-xl border-2 border-red-500 py-3 font-sans text-sm font-semibold text-red-500 hover:bg-red-500 hover:text-white transition-colors disabled:opacity-50"
-                >
-                  {cancelling ? 'Annulation...' : 'Annuler'}
-                </button>
+                {isAdmin && (
+                  <button
+                    onClick={handleCancel}
+                    disabled={cancelling}
+                    className="flex flex-1 items-center justify-center gap-2 rounded-xl border-2 border-red-500 py-3 font-sans text-sm font-semibold text-red-500 hover:bg-red-500 hover:text-white transition-colors disabled:opacity-50"
+                  >
+                    {cancelling ? 'Annulation...' : 'Annuler'}
+                  </button>
+                )}
                 <button
                   onClick={handleWithdraw}
                   disabled={withdrawing}

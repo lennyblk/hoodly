@@ -384,7 +384,27 @@ export class DocumentsService implements OnModuleInit {
     }
 
     doc.status = DocumentStatus.REFUSED;
-    return this.documentsRepository.save(doc);
+    const saved = await this.documentsRepository.save(doc);
+
+    if (doc.announcementId) {
+      try {
+        const announcementObjectId = new ObjectId(doc.announcementId);
+        const announcement = await this.announcementsRepository.findOneBy({
+          _id: announcementObjectId,
+        } as any);
+        if (announcement) {
+          announcement.status = AnnouncementStatus.OPEN;
+          announcement.acceptedBy = null as any;
+          announcement.contractId = null as any;
+          announcement.serviceDetails = null as any;
+          await this.announcementsRepository.save(announcement);
+        }
+      } catch (e: any) {
+        console.warn("[DocumentsService] Failed to release announcement after refusal (non-fatal):", e.message);
+      }
+    }
+
+    return saved;
   }
 
   private async stampRefused(pdfBuffer: Buffer): Promise<Buffer> {
