@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../../api/axios';
 import type { components } from '../../api/types.generated';
-import { queryLangApi, type QueryLangResult } from '../../api/queryLang';
+import { queryLangApi, type HqlDocument, type QueryLangResult } from '../../api/queryLang';
 
 type User = components['schemas']['User'];
 type Neighbourhood = components['schemas']['Neighbourhood'];
@@ -28,17 +28,38 @@ const EXAMPLE_QUERIES = [
   'FIND documents LIMIT 5',
 ];
 
+const DOC_STATUS_LABELS: Record<HqlDocument['status'], string> = {
+  draft: 'Brouillon',
+  pending: 'En attente',
+  signed: 'Signé',
+  archived: 'Archivé',
+  refused: 'Refusé',
+};
+
+const DOC_STATUS_COLORS: Record<HqlDocument['status'], string> = {
+  draft: 'bg-sable/30 text-charbon/60',
+  pending: 'bg-ambre/10 text-ambre',
+  signed: 'bg-vert-foret/10 text-vert-foret',
+  archived: 'bg-sable/50 text-charbon/50',
+  refused: 'bg-red-100 text-red-600',
+};
+
 function QueryConsole() {
   const [query, setQuery] = useState(EXAMPLE_QUERIES[0]);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<QueryLangResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [view, setView] = useState<'table' | 'json'>('table');
+  const [fileBusy, setFileBusy] = useState<string | null>(null);
+  const [fileError, setFileError] = useState<string | null>(null);
+  const [preview, setPreview] = useState<{ url: string; title: string } | null>(null);
 
   async function runQuery() {
     if (!query.trim() || loading) return;
     setLoading(true);
     setError(null);
     setResult(null);
+    setFileError(null);
     try {
       const { data } = await queryLangApi.execute(query);
       setResult(data);
@@ -47,6 +68,42 @@ function QueryConsole() {
     } finally {
       setLoading(false);
     }
+  }
+
+  async function fetchFile(doc: HqlDocument): Promise<string | null> {
+    setFileBusy(doc.id);
+    setFileError(null);
+    try {
+      const { data } = await queryLangApi.getDocumentFile(doc.id);
+      return URL.createObjectURL(data);
+    } catch {
+      setFileError(`Impossible de récupérer le fichier de « ${doc.title} »`);
+      return null;
+    } finally {
+      setFileBusy(null);
+    }
+  }
+
+  async function viewDoc(doc: HqlDocument) {
+    const url = await fetchFile(doc);
+    if (url) setPreview({ url, title: doc.title });
+  }
+
+  async function downloadDoc(doc: HqlDocument) {
+    const url = await fetchFile(doc);
+    if (!url) return;
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = doc.name || `${doc.title}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  function closePreview() {
+    if (preview) URL.revokeObjectURL(preview.url);
+    setPreview(null);
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
@@ -113,11 +170,126 @@ function QueryConsole() {
             <span className="font-medium text-vert-foret">{result.collection}</span>
             <span>{result.count} résultat{result.count !== 1 ? 's' : ''}</span>
             <span>{result.tookMs} ms</span>
+            <div className="ml-auto flex rounded-lg overflow-hidden border border-sable/40">
+              {(['table', 'json'] as const).map((v) => (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() => setView(v)}
+                  className={`px-2.5 py-1 text-xs font-medium transition-colors ${
+                    view === v ? 'bg-vert-foret text-white' : 'bg-white text-charbon/50 hover:bg-creme'
+                  }`}
+                >
+                  {v === 'table' ? 'Tableau' : 'JSON'}
+                </button>
+              ))}
+            </div>
           </div>
-          <pre className="bg-charbon text-vert-clair text-xs rounded-xl p-4 overflow-auto max-h-96">
-            {JSON.stringify(result.results, null, 2)}
-          </pre>
+
+          {fileError && (
+            <p className="text-xs text-red-600 bg-red-50 px-3 py-2 rounded-xl mb-2">{fileError}</p>
+          )}
+
+          {view === 'json' ? (
+            <pre className="bg-charbon text-vert-clair text-xs rounded-xl p-4 overflow-auto max-h-96">
+              {JSON.stringify(result.results, null, 2)}
+            </pre>
+          ) : result.results.length === 0 ? (
+            <p className="text-center text-sm text-charbon/40 py-6 border border-sable/30 rounded-xl">
+              Aucun document
+            </p>
+          ) : (
+            <div className="overflow-x-auto rounded-xl border border-sable/30 max-h-96 overflow-y-auto">
+              <table className="w-full text-sm">
+                <thead className="sticky top-0 z-10">
+                  <tr className="bg-creme border-b border-sable/30">
+                    <th className="text-left px-4 py-3 font-semibold text-charbon/70 text-xs">Titre</th>
+                    <th className="text-left px-4 py-3 font-semibold text-charbon/70 text-xs">Type</th>
+                    <th className="text-left px-4 py-3 font-semibold text-charbon/70 text-xs">Statut</th>
+                    <th className="text-left px-4 py-3 font-semibold text-charbon/70 text-xs">Créé le</th>
+                    <th className="px-4 py-3" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {result.results.map((doc) => (
+                    <tr key={doc.id} className="border-b border-sable/20 last:border-0 hover:bg-creme/40 transition-colors">
+                      <td className="px-4 py-3">
+                        <span className="font-medium text-charbon">{doc.title}</span>
+                        <p className="text-xs text-charbon/40">{doc.name}</p>
+                      </td>
+                      <td className="px-4 py-3 text-charbon/60 text-xs">
+                        {doc.type === 'contract' ? 'Contrat' : 'Autre'}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${DOC_STATUS_COLORS[doc.status] ?? 'bg-sable/30 text-charbon/60'}`}>
+                          {DOC_STATUS_LABELS[doc.status] ?? doc.status}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-charbon/60 text-xs whitespace-nowrap">
+                        {doc.createdAt
+                          ? new Date(doc.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
+                          : '—'}
+                      </td>
+                      <td className="px-4 py-3 text-right whitespace-nowrap">
+                        {doc.gridfsId ? (
+                          <div className="flex gap-2 justify-end">
+                            <button
+                              type="button"
+                              disabled={fileBusy === doc.id}
+                              onClick={() => viewDoc(doc)}
+                              className="text-xs px-3 py-1.5 rounded-lg font-medium border border-vert-foret/20 text-vert-foret hover:bg-vert-foret/5 transition-colors disabled:opacity-40"
+                            >
+                              {fileBusy === doc.id ? '...' : 'Voir'}
+                            </button>
+                            <button
+                              type="button"
+                              disabled={fileBusy === doc.id}
+                              onClick={() => downloadDoc(doc)}
+                              className="text-xs px-3 py-1.5 rounded-lg font-medium border border-sable/40 text-charbon/60 hover:bg-creme transition-colors disabled:opacity-40"
+                            >
+                              Télécharger
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-charbon/30">Pas de fichier</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
+      )}
+
+      {preview && (
+        <>
+          <div
+            className="fixed inset-0 bg-charbon/40 backdrop-blur-sm z-40"
+            onClick={closePreview}
+          />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl h-[85vh] flex flex-col pointer-events-auto">
+              <div className="flex items-center justify-between px-6 py-4 border-b border-sable/30">
+                <h3 className="font-heading text-base font-bold text-charbon truncate">{preview.title}</h3>
+                <button
+                  onClick={closePreview}
+                  className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-sable/30 text-charbon/50 transition-colors shrink-0"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                    <path d="M18 6 6 18M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <iframe
+                src={preview.url}
+                title={preview.title}
+                className="flex-1 w-full rounded-b-3xl"
+              />
+            </div>
+          </div>
+        </>
       )}
     </div>
   );
