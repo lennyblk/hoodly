@@ -17,6 +17,7 @@ interface NeighbourUser {
   firstName: string;
   lastName: string;
   neighbourhoodId?: string;
+  role?: string;
 }
 
 function getInitials(firstName: string, lastName: string) {
@@ -40,6 +41,29 @@ export default function MessagesPage() {
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [onlineIds, setOnlineIds] = useState<Set<string>>(new Set());
+  const [extraUsers, setExtraUsers] = useState<Record<string, NeighbourUser>>({});
+
+  useEffect(() => {
+    if (!user) return;
+    const known = new Set([user._id, ...neighbours.map((n) => n._id), ...Object.keys(extraUsers)]);
+    const missing = [...new Set(
+      conversations.flatMap((c) => c.participants).filter((p) => !known.has(p)),
+    )];
+    if (missing.length === 0) return;
+    Promise.all(
+      missing.map((id) =>
+        api.get<NeighbourUser>(`/users/${id}`).then(({ data }) => data).catch(() => null),
+      ),
+    ).then((users) => {
+      const found = users.filter((u): u is NeighbourUser => u !== null);
+      if (found.length === 0) return;
+      setExtraUsers((prev) => {
+        const next = { ...prev };
+        for (const u of found) next[u._id] = u;
+        return next;
+      });
+    });
+  }, [user, conversations, neighbours, extraUsers]);
 
   const fetchConversations = useCallback(async () => {
     if (!user) return;
@@ -52,11 +76,29 @@ export default function MessagesPage() {
   }, [user]);
 
   const fetchNeighbours = useCallback(async () => {
-    if (!user?.neighbourhoodId) return;
-    const { data } = await api.get<NeighbourUser[]>('/users/neighbourhood', {
-      params: { neighbourhoodId: user.neighbourhoodId },
-    });
-    setNeighbours(data.filter((u) => u._id !== user._id));
+    if (!user) return;
+
+    // Admin : peut contacter tout le monde, peu importe le quartier
+    if (user.role === 'admin') {
+      const { data } = await api.get<NeighbourUser[]>('/users');
+      setNeighbours(data.filter((u) => u._id !== user._id));
+      return;
+    }
+
+    // Habitant : voisins du quartier + admins (support, tous quartiers)
+    const [neighboursRes, adminsRes] = await Promise.all([
+      user.neighbourhoodId
+        ? api.get<NeighbourUser[]>('/users/neighbourhood', {
+            params: { neighbourhoodId: user.neighbourhoodId },
+          })
+        : Promise.resolve({ data: [] as NeighbourUser[] }),
+      api.get<NeighbourUser[]>('/users/admins').catch(() => ({ data: [] as NeighbourUser[] })),
+    ]);
+
+    const merged = new Map<string, NeighbourUser>();
+    for (const u of [...adminsRes.data, ...neighboursRes.data]) merged.set(u._id, u);
+    merged.delete(user._id);
+    setNeighbours([...merged.values()]);
   }, [user]);
 
   useEffect(() => {
@@ -106,6 +148,9 @@ export default function MessagesPage() {
 
   const nameMap: Record<string, NeighbourUser> = {};
   for (const n of neighbours) nameMap[n._id] = n;
+  for (const [id, u] of Object.entries(extraUsers)) {
+    if (!nameMap[id]) nameMap[id] = u;
+  }
 
   function getOtherParticipantId(conv: Conversation) {
     return conv.participants.find((p) => p !== user?._id) ?? '';
@@ -239,7 +284,7 @@ export default function MessagesPage() {
 
             {neighbours.length === 0 ? (
               <p className="text-sm text-charbon/50 py-4 text-center">
-                Aucun voisin dans votre quartier.
+                Aucun contact disponible.
               </p>
             ) : (
               <div className="space-y-1 max-h-64 overflow-y-auto">
@@ -263,9 +308,14 @@ export default function MessagesPage() {
                         }`}
                       />
                     </div>
-                    <span className="text-sm font-medium text-charbon">
+                    <span className="text-sm font-medium text-charbon flex-1 min-w-0 truncate">
                       {n.firstName} {n.lastName}
                     </span>
+                    {n.role === 'admin' && (
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-vert-foret/10 text-vert-foret flex-shrink-0">
+                        Admin
+                      </span>
+                    )}
                   </button>
                 ))}
               </div>

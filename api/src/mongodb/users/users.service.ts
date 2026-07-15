@@ -34,6 +34,19 @@ export class UsersService {
     return this.usersRepository.find({ where: { neighbourhoodId } as any });
   }
 
+  async findAdmins() {
+    const admins = await this.usersRepository.find({
+      where: { role: UserRole.ADMIN } as any,
+    });
+    return admins.map(({ _id, firstName, lastName, role, neighbourhoodId }) => ({
+      _id,
+      firstName,
+      lastName,
+      role,
+      neighbourhoodId,
+    }));
+  }
+
   async findAll() {
     const users = await this.usersRepository.find();
     if (users.length === 0) {

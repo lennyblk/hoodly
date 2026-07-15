@@ -59,6 +59,13 @@ export class UsersController {
     return this.usersService.findByNeighbourhood(neighbourhoodId);
   }
 
+  @ApiOperation({ summary: 'Lister les administrateurs — accessible à tout utilisateur connecté (contact support)' })
+  @ApiResponse({ status: 200, type: [User] })
+  @Get('admins')
+  findAdmins() {
+    return this.usersService.findAdmins();
+  }
+
   @ApiOperation({ summary: 'Récupérer un utilisateur par ID' })
   @ApiParam({ name: 'id', description: 'ObjectId MongoDB de l\'utilisateur' })
   @ApiResponse({ status: 200, type: User })
