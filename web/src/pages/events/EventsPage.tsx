@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../../api/axios';
 import { useUser } from '../../contexts/useUser';
+import { EVENT_EMOJI_CHOICES, getEventVisual } from '../../constants/eventVisuals';
 
 interface Event {
   id: string;
@@ -14,20 +15,11 @@ interface Event {
   participants: string[];
   interestUsers: string[];
   status?: 'active' | 'cancelled';
+  emoji?: string;
   createdAt: string;
 }
 
 const DAY_NAMES = ['dim', 'lun', 'mar', 'mer', 'jeu', 'ven', 'sam'];
-
-const THUMBNAILS = [
-  { bg: '#E8F4ED', emoji: '🎉' },
-  { bg: '#FFF3E0', emoji: '🌿' },
-  { bg: '#E3F2FD', emoji: '🏃' },
-  { bg: '#FCE4EC', emoji: '🍳' },
-  { bg: '#F3E5F5', emoji: '🎨' },
-  { bg: '#E8EAF6', emoji: '🤝' },
-  { bg: '#FFF8E1', emoji: '🎵' },
-];
 
 function sameDay(a: Date, b: Date) {
   return (
@@ -35,10 +27,6 @@ function sameDay(a: Date, b: Date) {
     a.getMonth() === b.getMonth() &&
     a.getDate() === b.getDate()
   );
-}
-
-function getThumbnail(id: string) {
-  return THUMBNAILS[id.charCodeAt(id.length - 1) % THUMBNAILS.length];
 }
 
 function formatTime(dateStr: string) {
@@ -117,7 +105,7 @@ function EventCard({
   const isPast = new Date(event.date) < new Date();
   const isCancelled = event.status === 'cancelled';
   const isClosed = isPast || isCancelled;
-  const { bg, emoji } = getThumbnail(event.id);
+  const { bg, emoji } = getEventVisual(event);
   const count = event.participants?.length ?? 0;
 
   async function clickRsvp(e: React.MouseEvent) {
@@ -243,6 +231,7 @@ function CreateEventModal({
     description: '',
     date: '',
     type: 'other' as 'other' | 'contract',
+    emoji: '',
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -260,7 +249,12 @@ function CreateEventModal({
     setLoading(true);
     setError('');
     try {
-      await api.post('/events', { ...form, organizerId: userId, neighbourhoodId });
+      await api.post('/events', {
+        ...form,
+        emoji: form.emoji || undefined,
+        organizerId: userId,
+        neighbourhoodId,
+      });
       onCreated();
       onClose();
     } catch {
@@ -332,6 +326,37 @@ function CreateEventModal({
               <option value="other">Général</option>
               <option value="contract">Contractuel</option>
             </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-charbon/70 mb-1">Emoji</label>
+            <div className="flex flex-wrap gap-1.5">
+              <button
+                type="button"
+                onClick={() => set('emoji', '')}
+                className={`h-9 px-2.5 rounded-xl border text-xs font-medium transition-colors ${
+                  form.emoji === ''
+                    ? 'border-vert-foret bg-vert-foret/10 text-vert-foret'
+                    : 'border-sable/40 text-charbon/50 hover:bg-sable/10'
+                }`}
+              >
+                Auto
+              </button>
+              {EVENT_EMOJI_CHOICES.map((em) => (
+                <button
+                  type="button"
+                  key={em}
+                  onClick={() => set('emoji', em)}
+                  className={`w-9 h-9 rounded-xl border text-lg leading-none transition-colors ${
+                    form.emoji === em
+                      ? 'border-vert-foret bg-vert-foret/10'
+                      : 'border-sable/40 hover:bg-sable/10'
+                  }`}
+                >
+                  {em}
+                </button>
+              ))}
+            </div>
           </div>
 
           {error && <p className="text-red-500 text-sm">{error}</p>}

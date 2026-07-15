@@ -1,4 +1,4 @@
-import { IsDateString, IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsDateString, IsEnum, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { EventType } from '../../../entities/mongodb/Event';
 
@@ -32,4 +32,10 @@ export class CreateEventDto {
   @IsDateString()
   @IsNotEmpty()
   date: string;
+
+  @ApiPropertyOptional({ example: '🎉', description: 'Emoji choisi par l\'organisateur' })
+  @IsString()
+  @MaxLength(16)
+  @IsOptional()
+  emoji?: string;
 }

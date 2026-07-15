@@ -49,6 +49,10 @@ export class Event {
   @Column({ type: 'array', nullable: true })
   interestUsers: string[];
 
+  @ApiPropertyOptional({ example: '🎉', description: 'Emoji choisi par l\'organisateur' })
+  @Column({ nullable: true })
+  emoji?: string;
+
   @ApiProperty({ enum: EventStatus, default: EventStatus.ACTIVE })
   @Column({ default: EventStatus.ACTIVE })
   status: EventStatus;

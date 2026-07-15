@@ -1,4 +1,4 @@
-import { IsEnum, IsOptional, IsString } from 'class-validator';
+import { IsEnum, IsOptional, IsString, MaxLength } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { EventType } from '../../../entities/mongodb/Event';
 
@@ -19,4 +19,10 @@ export class UpdateEventDto {
   @IsEnum(EventType)
   @IsOptional()
   type?: EventType;
+
+  @ApiPropertyOptional({ example: '🎉', description: 'Emoji choisi par l\'organisateur (vide = automatique)' })
+  @IsString()
+  @MaxLength(16)
+  @IsOptional()
+  emoji?: string;
 }

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
 import { useUser } from '../../contexts/useUser';
+import { EVENT_EMOJI_CHOICES, getEventVisual } from '../../constants/eventVisuals';
 
 interface Event {
   id: string;
@@ -14,6 +15,7 @@ interface Event {
   participants: string[];
   interestUsers: string[];
   status?: 'active' | 'cancelled';
+  emoji?: string;
   createdAt: string;
 }
 
@@ -30,6 +32,7 @@ function EditEventModal({
     title: event.title,
     description: event.description,
     type: event.type as string,
+    emoji: event.emoji ?? '',
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -43,9 +46,10 @@ function EditEventModal({
     setSaving(true);
     setError('');
     try {
-      const payload: { title: string; description: string; type?: string } = {
+      const payload: { title: string; description: string; type?: string; emoji?: string } = {
         title: form.title,
         description: form.description,
+        emoji: form.emoji, // '' = retour au visuel automatique
       };
       if (isStandardType(form.type)) payload.type = form.type;
       await api.patch(`/events/${event.id}`, payload);
@@ -112,6 +116,37 @@ function EditEventModal({
           </div>
 
           <div>
+            <label className="block text-sm font-medium text-charbon/70 mb-1">Emoji</label>
+            <div className="flex flex-wrap gap-1.5">
+              <button
+                type="button"
+                onClick={() => setForm((f) => ({ ...f, emoji: '' }))}
+                className={`h-9 px-2.5 rounded-xl border text-xs font-medium transition-colors ${
+                  form.emoji === ''
+                    ? 'border-vert-foret bg-vert-foret/10 text-vert-foret'
+                    : 'border-sable/40 text-charbon/50 hover:bg-sable/10'
+                }`}
+              >
+                Auto
+              </button>
+              {EVENT_EMOJI_CHOICES.map((em) => (
+                <button
+                  type="button"
+                  key={em}
+                  onClick={() => setForm((f) => ({ ...f, emoji: em }))}
+                  className={`w-9 h-9 rounded-xl border text-lg leading-none transition-colors ${
+                    form.emoji === em
+                      ? 'border-vert-foret bg-vert-foret/10'
+                      : 'border-sable/40 hover:bg-sable/10'
+                  }`}
+                >
+                  {em}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
             <label className="block text-sm font-medium text-charbon/70 mb-1">Date et heure</label>
             <input
               disabled
@@ -147,21 +182,7 @@ function EditEventModal({
   );
 }
 
-const THUMBNAILS = [
-  { bg: '#E8F4ED', emoji: '🎉' },
-  { bg: '#FFF3E0', emoji: '🌿' },
-  { bg: '#E3F2FD', emoji: '🏃' },
-  { bg: '#FCE4EC', emoji: '🍳' },
-  { bg: '#F3E5F5', emoji: '🎨' },
-  { bg: '#E8EAF6', emoji: '🤝' },
-  { bg: '#FFF8E1', emoji: '🎵' },
-];
-
 const AVATAR_COLORS = ['#1E4D35', '#E07B39', '#52B788', '#F4A261', '#2D6A4F', '#C8B89A'];
-
-function getThumbnail(id: string) {
-  return THUMBNAILS[id.charCodeAt(id.length - 1) % THUMBNAILS.length];
-}
 
 function formatTime(dateStr: string) {
   return new Date(dateStr).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
@@ -281,7 +302,7 @@ export default function EventDetailPage() {
   const canManage =
     !!user &&
     (user._id === event.organizerId || user.role === 'moderateur' || user.role === 'admin');
-  const { bg, emoji } = getThumbnail(event.id);
+  const { bg, emoji } = getEventVisual(event);
 
   return (
     <div className="flex flex-col h-full bg-creme">
