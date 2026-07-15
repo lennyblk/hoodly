@@ -121,6 +121,26 @@ export class UsersController {
     return this.usersService.update(user.userId, dto);
   }
 
+  @ApiOperation({ summary: 'Ajuster le solde de points d\'un utilisateur — admin uniquement' })
+  @ApiParam({ name: 'id', description: 'ObjectId MongoDB de l\'utilisateur' })
+  @ApiResponse({ status: 200, description: 'Points ajustés.' })
+  @ApiResponse({ status: 400, description: 'Données invalides.' })
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Post(':id/points')
+  adjustPoints(
+    @Param('id') id: string,
+    @Req() req: Request,
+    @Body() body: { amount: number; reason: string },
+  ) {
+    const admin = req.user as { userId: string; email: string };
+    return this.pointsService.addPoints(
+      id,
+      body.amount,
+      `[Admin ${admin.email}] ${body.reason}`,
+    );
+  }
+
   @ApiOperation({ summary: 'Mettre à jour un utilisateur — admin uniquement' })
   @ApiParam({ name: 'id', description: 'ObjectId MongoDB de l\'utilisateur' })
   @ApiResponse({ status: 200, type: User })

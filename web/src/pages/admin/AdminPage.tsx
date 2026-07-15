@@ -152,6 +152,35 @@ function UserPanel({ user, onClose, onSaved }: UserPanelProps) {
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
 
+  const [pointsAmount, setPointsAmount] = useState('');
+  const [pointsReason, setPointsReason] = useState('');
+  const [pointsSaving, setPointsSaving] = useState(false);
+  const [pointsError, setPointsError] = useState<string | null>(null);
+  const [pointsSuccess, setPointsSuccess] = useState(false);
+  const [displayedPoints, setDisplayedPoints] = useState(user.points);
+
+  async function handleAdjustPoints(e: React.FormEvent) {
+    e.preventDefault();
+    const amount = parseInt(pointsAmount, 10);
+    if (!amount || !pointsReason.trim()) return;
+    setPointsSaving(true);
+    setPointsError(null);
+    setPointsSuccess(false);
+    try {
+      await api.post(`/users/${user._id}/points`, { amount, reason: pointsReason });
+      setDisplayedPoints((prev) => prev + amount);
+      const { data: refreshed } = await api.get<User>(`/users/${user._id}`);
+      onSaved(refreshed);
+      setPointsAmount('');
+      setPointsReason('');
+      setPointsSuccess(true);
+    } catch (err: any) {
+      setPointsError(err?.response?.data?.message ?? 'Erreur lors de l\'ajustement');
+    } finally {
+      setPointsSaving(false);
+    }
+  }
+
   function field(key: keyof EditForm, value: string | boolean) {
     setForm((f) => ({ ...f, [key]: value }));
     setSaved(false);
@@ -208,7 +237,7 @@ function UserPanel({ user, onClose, onSaved }: UserPanelProps) {
         <div className="px-6 py-3 bg-creme border-b border-sable/20 flex gap-4">
           <div className="text-center">
             <p className="text-xs text-charbon/40">Points</p>
-            <p className="font-semibold text-charbon">{user.points}</p>
+            <p className="font-semibold text-charbon">{displayedPoints}</p>
           </div>
           <div className="w-px bg-sable/30" />
           <div className="text-center">
@@ -226,97 +255,140 @@ function UserPanel({ user, onClose, onSaved }: UserPanelProps) {
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-6 py-6 flex flex-col gap-5">
-          <div className="grid grid-cols-2 gap-4">
+        <div className="flex-1 overflow-y-auto">
+          <form onSubmit={handleSubmit} className="px-6 py-6 flex flex-col gap-5">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold text-charbon/60">Prénom</label>
+                <input
+                  type="text"
+                  value={form.firstName}
+                  onChange={(e) => field('firstName', e.target.value)}
+                  className="border border-sable/40 rounded-xl px-3 py-2 text-sm text-charbon focus:outline-none focus:ring-2 focus:ring-vert-foret/30"
+                  required
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold text-charbon/60">Nom</label>
+                <input
+                  type="text"
+                  value={form.lastName}
+                  onChange={(e) => field('lastName', e.target.value)}
+                  className="border border-sable/40 rounded-xl px-3 py-2 text-sm text-charbon focus:outline-none focus:ring-2 focus:ring-vert-foret/30"
+                  required
+                />
+              </div>
+            </div>
+
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold text-charbon/60">Prénom</label>
+              <label className="text-xs font-semibold text-charbon/60">Email</label>
               <input
-                type="text"
-                value={form.firstName}
-                onChange={(e) => field('firstName', e.target.value)}
+                type="email"
+                value={form.email}
+                onChange={(e) => field('email', e.target.value)}
                 className="border border-sable/40 rounded-xl px-3 py-2 text-sm text-charbon focus:outline-none focus:ring-2 focus:ring-vert-foret/30"
                 required
               />
             </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold text-charbon/60">Nom</label>
-              <input
-                type="text"
-                value={form.lastName}
-                onChange={(e) => field('lastName', e.target.value)}
-                className="border border-sable/40 rounded-xl px-3 py-2 text-sm text-charbon focus:outline-none focus:ring-2 focus:ring-vert-foret/30"
-                required
-              />
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold text-charbon/60">Rôle</label>
+                <select
+                  value={pendingRole}
+                  onChange={(e) => { setPendingRole(e.target.value as UserRole); setSaved(false); }}
+                  className="border border-sable/40 rounded-xl px-3 py-2 text-sm text-charbon focus:outline-none focus:ring-2 focus:ring-vert-foret/30"
+                >
+                  {(Object.keys(ROLE_LABELS) as UserRole[]).map((r) => (
+                    <option key={r} value={r}>{ROLE_LABELS[r]}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold text-charbon/60">Langue</label>
+                <select
+                  value={form.lang}
+                  onChange={(e) => field('lang', e.target.value)}
+                  className="border border-sable/40 rounded-xl px-3 py-2 text-sm text-charbon focus:outline-none focus:ring-2 focus:ring-vert-foret/30"
+                >
+                  <option value="fr">Français</option>
+                  <option value="en">English</option>
+                </select>
+              </div>
             </div>
-          </div>
 
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-charbon/60">Email</label>
-            <input
-              type="email"
-              value={form.email}
-              onChange={(e) => field('email', e.target.value)}
-              className="border border-sable/40 rounded-xl px-3 py-2 text-sm text-charbon focus:outline-none focus:ring-2 focus:ring-vert-foret/30"
-              required
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold text-charbon/60">Rôle</label>
-              <select
-                value={pendingRole}
-                onChange={(e) => { setPendingRole(e.target.value as UserRole); setSaved(false); }}
-                className="border border-sable/40 rounded-xl px-3 py-2 text-sm text-charbon focus:outline-none focus:ring-2 focus:ring-vert-foret/30"
+            <div className="flex items-center justify-between p-4 bg-creme rounded-2xl">
+              <div>
+                <p className="text-sm font-medium text-charbon">Compte actif</p>
+                <p className="text-xs text-charbon/40 mt-0.5">L'utilisateur peut se connecter</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => field('isActive', !form.isActive)}
+                className={`relative w-11 h-6 rounded-full transition-colors ${form.isActive ? 'bg-vert-moyen' : 'bg-sable/50'}`}
               >
-                {(Object.keys(ROLE_LABELS) as UserRole[]).map((r) => (
-                  <option key={r} value={r}>{ROLE_LABELS[r]}</option>
-                ))}
-              </select>
+                <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${form.isActive ? 'translate-x-5' : ''}`} />
+              </button>
             </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold text-charbon/60">Langue</label>
-              <select
-                value={form.lang}
-                onChange={(e) => field('lang', e.target.value)}
-                className="border border-sable/40 rounded-xl px-3 py-2 text-sm text-charbon focus:outline-none focus:ring-2 focus:ring-vert-foret/30"
-              >
-                <option value="fr">Français</option>
-                <option value="en">English</option>
-              </select>
-            </div>
-          </div>
 
-          <div className="flex items-center justify-between p-4 bg-creme rounded-2xl">
-            <div>
-              <p className="text-sm font-medium text-charbon">Compte actif</p>
-              <p className="text-xs text-charbon/40 mt-0.5">L'utilisateur peut se connecter</p>
+            {error && (
+              <p className="text-sm text-red-600 bg-red-50 px-4 py-3 rounded-xl">{error}</p>
+            )}
+
+            {saved && (
+              <p className="text-sm text-vert-foret bg-vert-foret/5 px-4 py-3 rounded-xl">✓ Modifications sauvegardées</p>
+            )}
+
+            <button
+              type="submit"
+              disabled={saving}
+              className="w-full bg-vert-foret text-white py-3 rounded-xl text-sm font-semibold hover:bg-vert-moyen transition-colors disabled:opacity-50"
+            >
+              {saving ? 'Sauvegarde...' : 'Sauvegarder les modifications'}
+            </button>
+          </form>
+
+          {/* ── Ajustement points ── */}
+          <div className="px-6 py-5 border-t border-sable/20 flex flex-col gap-3">
+            <h3 className="text-sm font-bold text-charbon">Ajuster les points</h3>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold text-charbon/60">Montant</label>
+                <input
+                  type="number"
+                  value={pointsAmount}
+                  onChange={(e) => setPointsAmount(e.target.value)}
+                  placeholder="Ex : 50 ou -20"
+                  className="border border-sable/40 rounded-xl px-3 py-2 text-sm text-charbon focus:outline-none focus:ring-2 focus:ring-vert-foret/30"
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold text-charbon/60">Raison</label>
+                <input
+                  type="text"
+                  value={pointsReason}
+                  onChange={(e) => setPointsReason(e.target.value)}
+                  placeholder="Ex : Correction litige"
+                  className="border border-sable/40 rounded-xl px-3 py-2 text-sm text-charbon focus:outline-none focus:ring-2 focus:ring-vert-foret/30"
+                />
+              </div>
             </div>
+            {pointsError && (
+              <p className="text-xs text-red-600 bg-red-50 px-3 py-2 rounded-xl">{pointsError}</p>
+            )}
+            {pointsSuccess && (
+              <p className="text-xs text-vert-foret bg-vert-foret/5 px-3 py-2 rounded-xl">✓ Points ajustés</p>
+            )}
             <button
               type="button"
-              onClick={() => field('isActive', !form.isActive)}
-              className={`relative w-11 h-6 rounded-full transition-colors ${form.isActive ? 'bg-vert-moyen' : 'bg-sable/50'}`}
+              onClick={handleAdjustPoints}
+              disabled={pointsSaving || !pointsAmount || !pointsReason.trim()}
+              className="w-full bg-ambre text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-ambre/80 transition-colors disabled:opacity-40"
             >
-              <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${form.isActive ? 'translate-x-5' : ''}`} />
+              {pointsSaving ? 'En cours...' : 'Appliquer'}
             </button>
           </div>
-
-          {error && (
-            <p className="text-sm text-red-600 bg-red-50 px-4 py-3 rounded-xl">{error}</p>
-          )}
-
-          {saved && (
-            <p className="text-sm text-vert-foret bg-vert-foret/5 px-4 py-3 rounded-xl">✓ Modifications sauvegardées</p>
-          )}
-
-          <button
-            type="submit"
-            disabled={saving}
-            className="w-full bg-vert-foret text-white py-3 rounded-xl text-sm font-semibold hover:bg-vert-moyen transition-colors disabled:opacity-50"
-          >
-            {saving ? 'Sauvegarde...' : 'Sauvegarder les modifications'}
-          </button>
-        </form>
+        </div>
       </div>
       </div>
     </>
@@ -389,10 +461,10 @@ export default function AdminPage() {
   );
 
   return (
-    <div className="flex flex-col h-full px-4 lg:px-8 py-8 gap-6">
+    <div className="flex flex-col min-h-full px-4 lg:px-8 py-8 gap-8 overflow-y-auto">
       <h1 className="font-heading text-2xl font-bold text-charbon">Administration</h1>
 
-      <h2 className="font-heading text-xl font-bold text-charbon">Utilisateurs</h2>
+      <h2 className="font-heading text-xl font-bold text-charbon mt-2">Utilisateurs</h2>
 
       <div className="flex items-center gap-3">
         <input
@@ -408,16 +480,16 @@ export default function AdminPage() {
       {loading ? (
         <div className="text-sm text-charbon/40">Chargement...</div>
       ) : (
-        <div className="overflow-x-auto rounded-2xl border border-sable/30">
+        <div className="overflow-x-auto rounded-2xl border border-sable/30 max-h-[50vh] overflow-y-auto">
           <table className="w-full text-sm">
-            <thead>
+            <thead className="sticky top-0 z-10">
               <tr className="bg-creme border-b border-sable/30">
-                <th className="text-left px-4 py-3 font-semibold text-charbon/70 text-xs">Utilisateur</th>
-                <th className="text-left px-4 py-3 font-semibold text-charbon/70 text-xs">Email</th>
-                <th className="text-left px-4 py-3 font-semibold text-charbon/70 text-xs">Rôle</th>
-                <th className="text-left px-4 py-3 font-semibold text-charbon/70 text-xs">Points</th>
-                <th className="text-left px-4 py-3 font-semibold text-charbon/70 text-xs">Statut</th>
-                <th className="px-4 py-3" />
+                <th className="text-left px-5 py-3.5 font-semibold text-charbon/70 text-xs">Utilisateur</th>
+                <th className="text-left px-5 py-3.5 font-semibold text-charbon/70 text-xs">Email</th>
+                <th className="text-left px-5 py-3.5 font-semibold text-charbon/70 text-xs">Rôle</th>
+                <th className="text-left px-5 py-3.5 font-semibold text-charbon/70 text-xs">Points</th>
+                <th className="text-left px-5 py-3.5 font-semibold text-charbon/70 text-xs">Statut</th>
+                <th className="px-5 py-3.5" />
               </tr>
             </thead>
             <tbody>
@@ -429,11 +501,11 @@ export default function AdminPage() {
                     selectedUser?._id === u._id ? 'bg-vert-foret/5' : 'hover:bg-creme/40'
                   }`}
                 >
-                  <td className="px-4 py-3">
+                  <td className="px-5 py-3.5">
                     <span className="font-medium text-charbon">{u.firstName} {u.lastName}</span>
                   </td>
-                  <td className="px-4 py-3 text-charbon/60">{u.email}</td>
-                  <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                  <td className="px-5 py-3.5 text-charbon/60">{u.email}</td>
+                  <td className="px-5 py-3.5" onClick={(e) => e.stopPropagation()}>
                     <select
                       value={u.role}
                       disabled={updating === u._id}
@@ -445,13 +517,13 @@ export default function AdminPage() {
                       ))}
                     </select>
                   </td>
-                  <td className="px-4 py-3 text-charbon/60">{u.points}</td>
-                  <td className="px-4 py-3">
+                  <td className="px-5 py-3.5 text-charbon/60">{u.points}</td>
+                  <td className="px-5 py-3.5">
                     <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${u.isActive ? 'bg-vert-clair/10 text-vert-moyen' : 'bg-red-100 text-red-600'}`}>
                       {u.isActive ? 'Actif' : 'Désactivé'}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
+                  <td className="px-5 py-3.5 text-right" onClick={(e) => e.stopPropagation()}>
                     <button
                       disabled={updating === u._id}
                       onClick={() => quickUpdate(u._id, { isActive: !u.isActive })}
@@ -474,7 +546,7 @@ export default function AdminPage() {
         </div>
       )}
 
-      <h2 className="font-heading text-xl font-bold text-charbon">Quartiers</h2>
+      <h2 className="font-heading text-xl font-bold text-charbon mt-4">Quartiers</h2>
 
       <div className="flex items-center gap-3">
         <input
@@ -492,21 +564,21 @@ export default function AdminPage() {
       {neighbourhoodLoading ? (
         <div className="text-sm text-charbon/40">Chargement...</div>
       ) : (
-        <div className="overflow-x-auto rounded-2xl border border-sable/30">
+        <div className="overflow-x-auto rounded-2xl border border-sable/30 max-h-[40vh] overflow-y-auto">
           <table className="w-full text-sm">
-            <thead>
+            <thead className="sticky top-0 z-10">
               <tr className="bg-creme border-b border-sable/30">
-                <th className="text-left px-4 py-3 font-semibold text-charbon/70 text-xs">Nom</th>
-                <th className="text-left px-4 py-3 font-semibold text-charbon/70 text-xs">Habitants actifs</th>
-                <th className="text-left px-4 py-3 font-semibold text-charbon/70 text-xs">Créé le</th>
+                <th className="text-left px-5 py-3.5 font-semibold text-charbon/70 text-xs">Nom</th>
+                <th className="text-left px-5 py-3.5 font-semibold text-charbon/70 text-xs">Habitants actifs</th>
+                <th className="text-left px-5 py-3.5 font-semibold text-charbon/70 text-xs">Créé le</th>
               </tr>
             </thead>
             <tbody>
               {filteredNeighbourhoods.map((n) => (
                 <tr key={String(n.id)} className="border-b border-sable/20 last:border-0 hover:bg-creme/40 transition-colors">
-                  <td className="px-4 py-3 font-medium text-charbon">{n.name}</td>
-                  <td className="px-4 py-3 text-charbon/60">{neighbourhoodCounts[String(n.id)] ?? 0}</td>
-                  <td className="px-4 py-3 text-charbon/60">
+                  <td className="px-5 py-3.5 font-medium text-charbon">{n.name}</td>
+                  <td className="px-5 py-3.5 text-charbon/60">{neighbourhoodCounts[String(n.id)] ?? 0}</td>
+                  <td className="px-5 py-3.5 text-charbon/60">
                     {n.createdAt ? new Date(n.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
                   </td>
                 </tr>
@@ -519,6 +591,7 @@ export default function AdminPage() {
         </div>
       )}
 
+      <h2 className="font-heading text-xl font-bold text-charbon mt-4">Console</h2>
       <QueryConsole />
 
       {selectedUser && (
