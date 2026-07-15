@@ -46,6 +46,13 @@ function NeighbourhoodRoutes() {
   return <Outlet />;
 }
 
+function NonAdminRoutes() {
+  const { user } = useUser();
+  if (!user) return null;
+  if (user.role === 'admin') return <Navigate to="/admin" replace />;
+  return <Outlet />;
+}
+
 function AppRoutes() {
   const { fetchMe } = useUser();
   const [ready, setReady] = useState(false);
@@ -89,7 +96,9 @@ function AppRoutes() {
             <Route path="/messages" element={<MessagesPage />} />
             <Route path="/votes" element={<VotesPage />} />
             <Route path="/votes/:id" element={<VoteDetailPage />} />
-            <Route path="/incidents" element={<IncidentsPage />} />
+            <Route element={<NonAdminRoutes />}>
+              <Route path="/incidents" element={<IncidentsPage />} />
+            </Route>
             <Route path="/documents" element={<DocumentsPage />} />
             <Route path="/documents/:id" element={<ContractPage />} />
           </Route>
