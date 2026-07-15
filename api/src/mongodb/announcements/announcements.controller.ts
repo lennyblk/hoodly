@@ -33,7 +33,9 @@ export class AnnouncementsController {
   @ApiOperation({ summary: 'Créer une annonce' })
   @ApiResponse({ status: 201, type: Announcement })
   @Post()
-  create(@Body() createAnnouncementDto: CreateAnnouncementDto) {
+  create(@Body() createAnnouncementDto: CreateAnnouncementDto, @Req() req: Request) {
+    const user = (req as any).user as { userId: string };
+    createAnnouncementDto.authorId = user.userId;
     return this.announcementsService.create(createAnnouncementDto);
   }
 
@@ -88,8 +90,8 @@ export class AnnouncementsController {
   @ApiResponse({ status: 200, type: Announcement })
   @Post(':id/cancel')
   cancel(@Param('id') id: string, @Req() req: Request) {
-    const user = (req as any).user as { userId: string };
-    return this.announcementsService.cancel(id, user.userId);
+    const user = (req as any).user as { userId: string; role: string };
+    return this.announcementsService.cancel(id, user.userId, user.role);
   }
 
   @ApiOperation({ summary: 'Se désister d\'une annonce acceptée (min 24h avant prestation)' })

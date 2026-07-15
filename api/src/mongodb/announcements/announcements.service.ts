@@ -166,10 +166,10 @@ export class AnnouncementsService {
     return this.announcementsRepository.remove(announcement);
   }
 
-  async cancel(id: string, userId: string) {
+  async cancel(id: string, userId: string, userRole: string) {
     const announcement = await this.findOne(id);
-    if (announcement.authorId !== userId && announcement.acceptedBy !== userId) {
-      throw new ForbiddenException('Seul l\'auteur ou l\'accepteur peut annuler');
+    if (announcement.authorId !== userId && userRole !== 'admin') {
+      throw new ForbiddenException('Seul l\'auteur ou un admin peut annuler');
     }
     if (announcement.status === AnnouncementStatus.DONE || announcement.status === AnnouncementStatus.CANCELLED) {
       throw new BadRequestException('Annonce déjà terminée ou annulée');
