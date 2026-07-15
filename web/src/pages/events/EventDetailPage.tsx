@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
 import { useUser } from '../../contexts/useUser';
@@ -13,7 +13,138 @@ interface Event {
   date: string;
   participants: string[];
   interestUsers: string[];
+  status?: 'active' | 'cancelled';
   createdAt: string;
+}
+
+function EditEventModal({
+  event,
+  onClose,
+  onSaved,
+}: {
+  event: Event;
+  onClose: () => void;
+  onSaved: () => Promise<void>;
+}) {
+  const [form, setForm] = useState({
+    title: event.title,
+    description: event.description,
+    type: event.type as string,
+  });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  // Certains événements (données historiques) ont un type hors enum API ("social", "atelier"...)
+  // → on ne renvoie type que s'il vaut une valeur acceptée par l'API, sinon on le laisse tel quel
+  const isStandardType = (t: string) => t === 'contract' || t === 'other';
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setSaving(true);
+    setError('');
+    try {
+      const payload: { title: string; description: string; type?: string } = {
+        title: form.title,
+        description: form.description,
+      };
+      if (isStandardType(form.type)) payload.type = form.type;
+      await api.patch(`/events/${event.id}`, payload);
+      await onSaved();
+      onClose();
+    } catch {
+      setError("Erreur lors de la modification de l'événement.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div
+      className="fixed inset-0 bg-charbon/50 flex items-center justify-center z-50 p-4"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl">
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="font-heading text-xl font-bold text-charbon">Modifier l'événement</h2>
+          <button
+            onClick={onClose}
+            className="text-charbon/40 hover:text-charbon transition-colors text-xl leading-none"
+          >
+            ✕
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-charbon/70 mb-1">Titre</label>
+            <input
+              className="w-full border border-sable rounded-xl px-3 py-2.5 text-charbon text-sm focus:outline-none focus:ring-2 focus:ring-vert-foret/40 focus:border-vert-foret"
+              required
+              value={form.title}
+              onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-charbon/70 mb-1">Description</label>
+            <textarea
+              className="w-full border border-sable rounded-xl px-3 py-2.5 text-charbon text-sm focus:outline-none focus:ring-2 focus:ring-vert-foret/40 focus:border-vert-foret resize-none"
+              rows={3}
+              required
+              value={form.description}
+              onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-charbon/70 mb-1">Type</label>
+            <select
+              className="w-full border border-sable rounded-xl px-3 py-2.5 text-charbon text-sm focus:outline-none focus:ring-2 focus:ring-vert-foret/40 focus:border-vert-foret bg-white"
+              value={form.type}
+              onChange={(e) => setForm((f) => ({ ...f, type: e.target.value }))}
+            >
+              {!isStandardType(event.type as string) && (
+                <option value={event.type}>{event.type} (catégorie actuelle)</option>
+              )}
+              <option value="other">Général</option>
+              <option value="contract">Contractuel</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-charbon/70 mb-1">Date et heure</label>
+            <input
+              disabled
+              value={`${formatFullDate(event.date)} · ${formatTime(event.date)}`}
+              className="w-full border border-sable/40 bg-sable/10 rounded-xl px-3 py-2.5 text-charbon/50 text-sm capitalize"
+            />
+            <p className="text-xs text-charbon/40 mt-1">
+              La date n'est pas modifiable. Pour changer la date, annulez cet événement et créez-en un nouveau.
+            </p>
+          </div>
+
+          {error && <p className="text-red-500 text-sm">{error}</p>}
+
+          <div className="flex gap-3 pt-1">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 border border-sable text-charbon rounded-xl py-2.5 font-medium text-sm hover:bg-sable/20 transition-colors"
+            >
+              Annuler
+            </button>
+            <button
+              type="submit"
+              disabled={saving}
+              className="flex-1 bg-vert-foret text-white rounded-xl py-2.5 font-medium text-sm hover:bg-vert-moyen transition-colors disabled:opacity-50"
+            >
+              {saving ? 'Sauvegarde...' : 'Sauvegarder'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
 }
 
 const THUMBNAILS = [
@@ -56,6 +187,8 @@ export default function EventDetailPage() {
   const [rsvpLoading, setRsvpLoading] = useState(false);
   const [intLoading, setIntLoading] = useState(false);
   const [nameMap, setNameMap] = useState<Map<string, string>>(new Map());
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [cancelLoading, setCancelLoading] = useState(false);
 
   async function fetchEvent() {
     try {
@@ -106,6 +239,18 @@ export default function EventDetailPage() {
     }
   }
 
+  async function handleCancelEvent() {
+    if (!event || cancelLoading) return;
+    if (!window.confirm('Annuler cet événement ? Les participants ne pourront plus s\'y inscrire et cette action est définitive.')) return;
+    setCancelLoading(true);
+    try {
+      await api.post(`/events/${event.id}/cancel`);
+      await fetchEvent();
+    } finally {
+      setCancelLoading(false);
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full text-charbon/40">
@@ -132,6 +277,10 @@ export default function EventDetailPage() {
   const isParticipant = event.participants?.includes(user?._id ?? '');
   const isInterested = event.interestUsers?.includes(user?._id ?? '');
   const isPast = new Date(event.date) < new Date();
+  const isCancelled = event.status === 'cancelled';
+  const canManage =
+    !!user &&
+    (user._id === event.organizerId || user.role === 'moderateur' || user.role === 'admin');
   const { bg, emoji } = getThumbnail(event.id);
 
   return (
@@ -149,12 +298,39 @@ export default function EventDetailPage() {
             <path d="M19 12H5M12 19l-7-7 7-7"/>
           </svg>
         </button>
+        {canManage && !isCancelled && !isPast && (
+          <div className="absolute top-4 right-4 flex gap-2 z-10">
+            <button
+              onClick={() => setShowEditModal(true)}
+              className="bg-white rounded-full px-3.5 h-9 flex items-center gap-1.5 text-sm font-medium text-charbon hover:bg-sable/20 transition-colors shadow-sm"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+              </svg>
+              Modifier
+            </button>
+            <button
+              onClick={handleCancelEvent}
+              disabled={cancelLoading}
+              className="bg-white rounded-full px-3.5 h-9 flex items-center gap-1.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors shadow-sm disabled:opacity-50"
+            >
+              {cancelLoading ? '...' : 'Annuler l\'événement'}
+            </button>
+          </div>
+        )}
         <div className="absolute inset-0 flex items-center justify-center text-6xl select-none pointer-events-none">
           {emoji}
         </div>
-        <h1 className="relative z-10 font-heading text-2xl font-bold text-charbon drop-shadow-sm">
-          {event.title}
-        </h1>
+        <div className="relative z-10 flex items-center gap-3">
+          <h1 className="font-heading text-2xl font-bold text-charbon drop-shadow-sm">
+            {event.title}
+          </h1>
+          {isCancelled && (
+            <span className="bg-red-500 text-white text-xs font-semibold px-2.5 py-1 rounded-full">
+              Annulé
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Scrollable body */}
@@ -224,7 +400,11 @@ export default function EventDetailPage() {
 
       {/* Bottom actions */}
       <div className="px-5 py-4 bg-white border-t border-sable/20 flex gap-3">
-        {isPast ? (
+        {isCancelled ? (
+          <div className="flex-1 py-3 rounded-xl text-sm font-medium text-center bg-red-50 text-red-600 border border-red-200">
+            Cet événement a été annulé
+          </div>
+        ) : isPast ? (
           <div className="flex-1 py-3 rounded-xl text-sm font-medium text-center bg-sable/15 text-charbon/40 border border-sable/20">
             Événement passé
           </div>
@@ -255,6 +435,14 @@ export default function EventDetailPage() {
           </>
         )}
       </div>
+
+      {showEditModal && (
+        <EditEventModal
+          event={event}
+          onClose={() => setShowEditModal(false)}
+          onSaved={fetchEvent}
+        />
+      )}
     </div>
   );
 }

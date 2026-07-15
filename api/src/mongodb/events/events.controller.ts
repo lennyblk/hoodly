@@ -1,6 +1,7 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Req, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
+import { Request } from 'express';
 import { EventsService } from './events.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
@@ -57,16 +58,31 @@ export class EventsController {
     return this.eventsService.findOne(id);
   }
 
-  @ApiOperation({ summary: 'Modifier un événement — modérateur ou admin' })
+  @ApiOperation({
+    summary: 'Modifier un événement — organisateur, modérateur ou admin',
+    description: 'La date n\'est pas modifiable (élément essentiel) : annuler puis recréer si besoin.',
+  })
   @ApiParam({ name: 'id', description: 'ObjectId MongoDB de l\'événement' })
   @ApiResponse({ status: 200, type: Event })
+  @ApiResponse({ status: 400, description: 'Événement annulé, non modifiable.' })
   @ApiResponse({ status: 403, description: 'Accès refusé.' })
   @ApiResponse({ status: 404, description: 'Événement non trouvé.' })
-  @UseGuards(RolesGuard)
-  @Roles(UserRole.MODERATEUR, UserRole.ADMIN)
   @Patch(':id')
-  update(@Param('id') id: string, @Body() dto: UpdateEventDto) {
-    return this.eventsService.update(id, dto);
+  update(@Param('id') id: string, @Body() dto: UpdateEventDto, @Req() req: Request) {
+    const requester = req.user as { userId: string; role: string };
+    return this.eventsService.update(id, dto, requester);
+  }
+
+  @ApiOperation({ summary: 'Annuler un événement — organisateur, modérateur ou admin' })
+  @ApiParam({ name: 'id', description: 'ObjectId MongoDB de l\'événement' })
+  @ApiResponse({ status: 201, type: Event })
+  @ApiResponse({ status: 400, description: 'Événement déjà annulé.' })
+  @ApiResponse({ status: 403, description: 'Accès refusé.' })
+  @ApiResponse({ status: 404, description: 'Événement non trouvé.' })
+  @Post(':id/cancel')
+  cancel(@Param('id') id: string, @Req() req: Request) {
+    const requester = req.user as { userId: string; role: string };
+    return this.eventsService.cancel(id, requester);
   }
 
   @ApiOperation({ summary: 'Supprimer un événement — admin uniquement' })

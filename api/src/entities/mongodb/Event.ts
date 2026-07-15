@@ -6,6 +6,11 @@ export enum EventType {
   OTHER = 'other',
 }
 
+export enum EventStatus {
+  ACTIVE = 'active',
+  CANCELLED = 'cancelled',
+}
+
 @Entity('events')
 export class Event {
   @ApiProperty({ example: '64a1f2c3e4b5f6a7b8c9d0e1', type: String })
@@ -43,6 +48,10 @@ export class Event {
   @ApiPropertyOptional({ example: ['64a1f2c3e4b5f6a7b8c9d0e5'], type: [String] })
   @Column({ type: 'array', nullable: true })
   interestUsers: string[];
+
+  @ApiProperty({ enum: EventStatus, default: EventStatus.ACTIVE })
+  @Column({ default: EventStatus.ACTIVE })
+  status: EventStatus;
 
   @Column({ default: false })
   pointsRewarded: boolean;
