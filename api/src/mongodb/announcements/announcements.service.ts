@@ -175,12 +175,15 @@ export class AnnouncementsService {
       throw new BadRequestException('Annonce déjà terminée ou annulée');
     }
 
-    const serviceDate = announcement.serviceDetails?.chosenDate;
-    if (serviceDate) {
-      const diff = new Date(serviceDate).getTime() - Date.now();
-      const oneDayMs = 24 * 60 * 60 * 1000;
-      if (diff < oneDayMs) {
-        throw new BadRequestException('Annulation impossible moins de 24h avant la prestation');
+    // Regle des 24h uniquement si contrat formel (contractId present)
+    if (announcement.contractId) {
+      const serviceDate = announcement.serviceDetails?.chosenDate;
+      if (serviceDate) {
+        const diff = new Date(serviceDate).getTime() - Date.now();
+        const oneDayMs = 24 * 60 * 60 * 1000;
+        if (diff < oneDayMs) {
+          throw new BadRequestException('Annulation impossible moins de 24h avant la prestation');
+        }
       }
     }
 
@@ -197,12 +200,15 @@ export class AnnouncementsService {
       throw new BadRequestException('Cette annonce n\'est pas en cours');
     }
 
-    const serviceDate = announcement.serviceDetails?.chosenDate;
-    if (serviceDate) {
-      const diff = new Date(serviceDate).getTime() - Date.now();
-      const oneDayMs = 24 * 60 * 60 * 1000;
-      if (diff < oneDayMs) {
-        throw new BadRequestException('Désistement impossible moins de 24h avant la prestation');
+    // Regle des 24h uniquement si contrat formel (contractId present)
+    if (announcement.contractId) {
+      const serviceDate = announcement.serviceDetails?.chosenDate;
+      if (serviceDate) {
+        const diff = new Date(serviceDate).getTime() - Date.now();
+        const oneDayMs = 24 * 60 * 60 * 1000;
+        if (diff < oneDayMs) {
+          throw new BadRequestException('Désistement impossible moins de 24h avant la prestation');
+        }
       }
     }
 
