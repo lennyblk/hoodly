@@ -301,6 +301,7 @@ function CreateEventModal({
               type="datetime-local"
               className="w-full border border-sable rounded-xl px-3 py-2.5 text-charbon text-sm focus:outline-none focus:ring-2 focus:ring-vert-foret/40 focus:border-vert-foret"
               required
+              min={new Date().toISOString().slice(0, 16)}
               value={form.date}
               onChange={(e) => set('date', e.target.value)}
             />

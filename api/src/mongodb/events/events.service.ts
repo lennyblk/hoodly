@@ -55,6 +55,9 @@ export class EventsService {
   }
 
   async create(dto: CreateEventDto) {
+    if (new Date(dto.date) < new Date()) {
+      throw new BadRequestException('La date de l\'événement ne peut pas être dans le passé');
+    }
     await this.validateNeighbourhood(dto.neighbourhoodId);
     const event = this.eventsRepository.create({
       ...dto,
