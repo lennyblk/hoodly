@@ -4,6 +4,7 @@ import api from '../../api/axios';
 import type { components } from '../../api/types.generated';
 import { queryLangApi, type HqlDocument, type QueryLangResult } from '../../api/queryLang';
 import { useUser } from '../../contexts/useUser';
+import { HOODLY_INCIDENT_TARGET } from '../../constants/incidents';
 
 type User = components['schemas']['User'];
 type Neighbourhood = components['schemas']['Neighbourhood'];
@@ -71,7 +72,10 @@ function IncidentsConsole({ neighbourhoods }: { neighbourhoods: Neighbourhood[] 
     }
   }
 
-  const neighbourhoodName = (id: string) => neighbourhoods.find((n) => String(n.id) === id)?.name ?? '—';
+  const neighbourhoodName = (id: string) =>
+    id === HOODLY_INCIDENT_TARGET
+      ? '🛟 Hoodly (direct)'
+      : neighbourhoods.find((n) => String(n.id) === id)?.name ?? '—';
 
   const filtered = incidents.filter((i) => {
     if (filter === 'open') return i.status === 'open';

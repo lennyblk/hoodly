@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import api from '../../api/axios';
 import { useUser } from '../../contexts/useUser';
+import { HOODLY_INCIDENT_TARGET } from '../../constants/incidents';
 
 type IncidentStatus = 'open' | 'resolved';
 
@@ -29,7 +30,7 @@ function formatDate(dateStr: string) {
 
 interface IncidentFormModalProps {
   initial?: Incident;
-  neighbourhoodId: string;
+  neighbourhoodId?: string;
   reportedBy: string;
   onSaved: (incident: Incident) => void;
   onClose: () => void;
@@ -40,6 +41,7 @@ function IncidentFormModal({ initial, neighbourhoodId, reportedBy, onSaved, onCl
   const [title, setTitle] = useState(initial?.title ?? '');
   const [description, setDescription] = useState(initial?.description ?? '');
   const [category, setCategory] = useState(initial?.category ?? '');
+  const [target, setTarget] = useState<'quartier' | 'hoodly'>(neighbourhoodId ? 'quartier' : 'hoodly');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -62,7 +64,8 @@ function IncidentFormModal({ initial, neighbourhoodId, reportedBy, onSaved, onCl
           description: description.trim(),
           category,
           reportedBy,
-          neighborhoodId: neighbourhoodId,
+          neighborhoodId:
+            target === 'hoodly' || !neighbourhoodId ? HOODLY_INCIDENT_TARGET : neighbourhoodId,
         });
         onSaved(data);
       }
@@ -87,6 +90,42 @@ function IncidentFormModal({ initial, neighbourhoodId, reportedBy, onSaved, onCl
         </div>
 
         <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
+          {!isEdit && (
+            <div>
+              <label className="text-xs font-medium text-charbon/60 mb-1.5 block">Destinataire *</label>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  disabled={!neighbourhoodId}
+                  onClick={() => setTarget('quartier')}
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors disabled:opacity-40 ${
+                    target === 'quartier'
+                      ? 'bg-vert-foret text-white border-vert-foret'
+                      : 'border-sable text-charbon/60 hover:border-vert-foret'
+                  }`}
+                >
+                  Mon quartier (modérateurs)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTarget('hoodly')}
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                    target === 'hoodly'
+                      ? 'bg-vert-foret text-white border-vert-foret'
+                      : 'border-sable text-charbon/60 hover:border-vert-foret'
+                  }`}
+                >
+                  Hoodly (admins)
+                </button>
+              </div>
+              {target === 'hoodly' && (
+                <p className="text-xs text-charbon/40 mt-1.5">
+                  Ce signalement sera visible uniquement par l'équipe Hoodly, pas par les modérateurs du quartier.
+                </p>
+              )}
+            </div>
+          )}
+
           <div>
             <label className="text-xs font-medium text-charbon/60 mb-1.5 block">Catégorie *</label>
             <div className="flex flex-wrap gap-2">
@@ -169,8 +208,13 @@ function IncidentCard({ incident, deleting, onEdit, onDelete }: IncidentCardProp
         </span>
       </div>
 
-      <div className="flex items-center gap-2 mb-3">
+      <div className="flex items-center gap-2 mb-3 flex-wrap">
         <span className="text-xs px-2 py-0.5 rounded-full bg-sable/20 text-charbon/60">{incident.category}</span>
+        {incident.neighborhoodId === HOODLY_INCIDENT_TARGET && (
+          <span className="text-xs px-2 py-0.5 rounded-full bg-vert-foret/10 text-vert-foret font-medium">
+            🛟 Envoyé à Hoodly
+          </span>
+        )}
         <span className="text-xs text-charbon/40">{formatDate(incident.reportedAt)}</span>
       </div>
 
@@ -207,7 +251,7 @@ export default function IncidentsPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const fetchIncidents = useCallback(async () => {
-    if (!user?.neighbourhoodId) {
+    if (!user) {
       setLoading(false);
       return;
     }
@@ -295,12 +339,6 @@ export default function IncidentsPage() {
           <div className="flex items-center justify-center py-16 text-charbon/40 text-sm">
             Chargement...
           </div>
-        ) : !user?.neighbourhoodId ? (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <span className="text-4xl mb-3">🏘️</span>
-            <p className="text-charbon/60 font-medium">Aucun quartier assigné</p>
-            <p className="text-sm text-charbon/40 mt-1">Rejoins un quartier pour signaler un incident</p>
-          </div>
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <span className="text-4xl mb-3">🚧</span>
@@ -335,7 +373,7 @@ export default function IncidentsPage() {
         )}
       </div>
 
-      {showModal && user?.neighbourhoodId && (
+      {showModal && user && (
         <IncidentFormModal
           neighbourhoodId={user.neighbourhoodId}
           reportedBy={String(user._id)}
@@ -344,7 +382,7 @@ export default function IncidentsPage() {
         />
       )}
 
-      {editingIncident && user?.neighbourhoodId && (
+      {editingIncident && user && (
         <IncidentFormModal
           initial={editingIncident}
           neighbourhoodId={user.neighbourhoodId}
