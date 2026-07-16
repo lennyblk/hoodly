@@ -9,7 +9,7 @@ import { MongoRepository, Repository } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
 import { SignupDto } from './dto/signup.dto';
 import { SigninDto } from './dto/signin.dto';
-import { User, UserRole, UserLang } from '../../entities/mongodb/User';
+import { User, UserRole } from '../../entities/mongodb/User';
 import { RefreshToken } from '../../entities/mongodb/RefreshToken';
 import { Neighbourhood, GeoJsonPolygon } from '../../entities/mongodb/Neighbourhood';
 import { Tokens } from './types';
@@ -144,7 +144,6 @@ export class AuthService {
         role: UserRole.HABITANT,
         points: 50,
         isActive: true,
-        lang: UserLang.FR,
         ...dto,
         password: hash,
         neighbourhoodId: neighbourhoodId as any,

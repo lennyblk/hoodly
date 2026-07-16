@@ -134,7 +134,7 @@ async function seed() {
   const u = (id: ObjectId, email: string, password: string, firstName: string, lastName: string, role: string, nid: ObjectId | null, address: string | null, points: number, days: number) => ({
     _id: id, email, password, firstName, lastName, role,
     neighbourhoodId: nid ? nid.toString() : null,
-    address, points, isActive: true, lang: "fr", createdAt: past(days),
+    address, points, isActive: true, createdAt: past(days),
   });
 
   await db.collection("users").insertMany([

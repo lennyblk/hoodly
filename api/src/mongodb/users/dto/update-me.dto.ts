@@ -8,7 +8,6 @@ import {
   MinLength,
 } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { UserLang } from '../../../entities/mongodb/User';
 
 export class UpdateMeDto {
   @ApiPropertyOptional({ example: 'john.doe@email.com' })
@@ -34,11 +33,6 @@ export class UpdateMeDto {
   @MinLength(2)
   @MaxLength(50)
   lastName?: string;
-
-  @ApiPropertyOptional({ enum: UserLang })
-  @IsOptional()
-  @IsEnum(UserLang)
-  lang?: UserLang;
 
   @ApiPropertyOptional({ example: '15 rue de la Paix, 75018 Paris', description: 'Changer son adresse re-géocode automatiquement le quartier' })
   @IsOptional()

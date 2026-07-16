@@ -12,7 +12,7 @@ import {
   MinLength,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { UserLang, UserRole } from '../../../entities/mongodb/User';
+import { UserRole } from '../../../entities/mongodb/User';
 
 export class CreateUserDto {
   @ApiProperty({ example: 'john.doe@email.com' })
@@ -60,8 +60,4 @@ export class CreateUserDto {
   @IsBoolean()
   isActive?: boolean;
 
-  @ApiPropertyOptional({ enum: UserLang, default: UserLang.FR })
-  @IsOptional()
-  @IsEnum(UserLang)
-  lang?: UserLang;
 }

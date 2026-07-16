@@ -35,7 +35,6 @@ function EditEventModal({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
-   const isStandardType = (t: string) => t === 'contract' || t === 'other';
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();

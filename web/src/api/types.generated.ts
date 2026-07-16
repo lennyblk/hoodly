@@ -961,11 +961,6 @@ export interface components {
             points: number;
             /** @example true */
             isActive: boolean;
-            /**
-             * @default fr
-             * @enum {string}
-             */
-            lang: "fr" | "en";
             /** Format: date-time */
             createdAt: string;
         };
@@ -992,11 +987,6 @@ export interface components {
              * @example true
              */
             isActive: boolean;
-            /**
-             * @default fr
-             * @enum {string}
-             */
-            lang: "fr" | "en";
         };
         PointsTransaction: {
             /** @example 64a1f2c3e4b5f6a7b8c9d0e1 */
@@ -1024,8 +1014,6 @@ export interface components {
             firstName?: string;
             /** @example Doe */
             lastName?: string;
-            /** @enum {string} */
-            lang?: "fr" | "en";
             /**
              * @description Changer son adresse re-géocode automatiquement le quartier
              * @example 15 rue de la Paix, 75018 Paris
@@ -1041,8 +1029,6 @@ export interface components {
             firstName?: string;
             /** @example Doe */
             lastName?: string;
-            /** @enum {string} */
-            lang?: "fr" | "en";
             /** @example true */
             isActive?: boolean;
             /** @enum {string} */
@@ -1061,11 +1047,6 @@ export interface components {
             lastName: string;
             /** @example 15 rue de la Paix, 75018 Paris */
             address: string;
-            /**
-             * @default fr
-             * @enum {string}
-             */
-            lang: "fr" | "en";
         };
         SigninDto: {
             /** @example admin@hoodly.com */

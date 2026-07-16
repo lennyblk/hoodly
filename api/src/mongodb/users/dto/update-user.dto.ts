@@ -9,7 +9,7 @@ import {
   MinLength,
 } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { UserLang, UserRole } from '../../../entities/mongodb/User';
+import { UserRole } from '../../../entities/mongodb/User';
 
 export class UpdateUserDto {
   @ApiPropertyOptional({ example: 'john.doe@email.com' })
@@ -35,11 +35,6 @@ export class UpdateUserDto {
   @MinLength(2)
   @MaxLength(50)
   lastName?: string;
-
-  @ApiPropertyOptional({ enum: UserLang })
-  @IsOptional()
-  @IsEnum(UserLang)
-  lang?: UserLang;
 
   @ApiPropertyOptional({ example: true })
   @IsOptional()

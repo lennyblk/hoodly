@@ -7,10 +7,6 @@ export enum UserRole {
   ADMIN = 'admin',
 }
 
-export enum UserLang {
-  FR = 'fr',
-  EN = 'en',
-}
 
 @Entity('users')
 export class User {
@@ -52,10 +48,6 @@ export class User {
   @ApiProperty({ example: true })
   @Column({ default: true })
   isActive: boolean;
-
-  @ApiProperty({ enum: UserLang, default: UserLang.FR })
-  @Column({ default: UserLang.FR })
-  lang: UserLang;
 
   @ApiProperty()
   @CreateDateColumn()
