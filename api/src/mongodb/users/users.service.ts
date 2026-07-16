@@ -9,7 +9,7 @@ import * as bcrypt from 'bcryptjs';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { DataSource, MongoRepository } from 'typeorm';
 import { ObjectId } from 'mongodb';
-import { User, UserRole, UserLang } from '../../entities/mongodb/User';
+import { User, UserRole } from '../../entities/mongodb/User';
 import { Neighbourhood } from '../../entities/mongodb/Neighbourhood';
 import { Announcement, AnnouncementStatus } from '../../entities/mongodb/Announcement';
 import { CreateUserDto } from './dto/create-user.dto';
