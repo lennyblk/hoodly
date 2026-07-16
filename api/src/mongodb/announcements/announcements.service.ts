@@ -72,7 +72,18 @@ export class AnnouncementsService {
     if (!slots) return;
     const durationMinutes = this.parseDurationMinutes(duration);
     for (const slot of slots) {
-      if (!slot.startTime || !slot.endTime) continue;
+      const legacyType = (slot as any).type;
+      if (legacyType === 'recurrent' || legacyType === 'continu') {
+        throw new BadRequestException(
+          'Les disponibilités récurrentes ou continues ne sont plus supportées : indiquez des dates précises',
+        );
+      }
+      if (!slot.date || !/^\d{4}-\d{2}-\d{2}$/.test(slot.date)) {
+        throw new BadRequestException('Chaque disponibilité doit comporter une date (format AAAA-MM-JJ)');
+      }
+      if (!slot.startTime || !slot.endTime) {
+        throw new BadRequestException('Chaque disponibilité doit comporter une heure de début et de fin');
+      }
       if (slot.endTime <= slot.startTime) {
         throw new BadRequestException("L'heure de fin doit être postérieure à l'heure de début");
       }

@@ -26,29 +26,20 @@ type User = components['schemas']['User'];
 interface Conversation { id: string; }
 
 interface AvailabilitySlot {
-  type: 'dates_exactes' | 'recurrent' | 'continu';
-  dates?: string[];
-  days?: string[];
+  date?: string;
   startTime?: string;
   endTime?: string;
-  startDate?: string;
-  durationWeeks?: number;
 }
 
 interface ServiceDetails {
   chosenDate?: string;
-  chosenDates?: string[];
-  startDate?: string;
-  endDate?: string;
-  recurrentMode?: 'continue' | 'exacte';
-  durationWeeks?: number;
   timeSlot?: string;
   notes?: string;
 }
 
 type AnnouncementStatusExt = Announcement['status'] | 'cancelled';
 
-interface AnnouncementWithAvail extends Omit<Announcement, 'status'> {
+interface AnnouncementWithAvail extends Omit<Announcement, 'status' | 'availabilities' | 'serviceDetails'> {
   status: AnnouncementStatusExt;
   availabilities?: AvailabilitySlot[];
   serviceDetails?: ServiceDetails;
@@ -69,41 +60,13 @@ function hoursUntil(dateStr?: string): number | null {
 }
 
 function AvailabilityDisplay({ slot }: { slot: AvailabilitySlot }) {
-  if (slot.type === 'recurrent') {
-    return (
-      <div className="rounded-xl bg-vert-foret/5 border border-vert-foret/20 px-4 py-3">
-        <p className="text-xs font-semibold text-vert-foret mb-1">Récurrent</p>
-        <p className="text-sm text-charbon">{slot.days?.join(', ')} — {slot.startTime} à {slot.endTime}</p>
-      </div>
-    );
-  }
-  if (slot.type === 'dates_exactes') {
-    return (
-      <div className="rounded-xl bg-vert-foret/5 border border-vert-foret/20 px-4 py-3">
-        <p className="text-xs font-semibold text-vert-foret mb-1">Dates disponibles</p>
-        <div className="flex flex-wrap gap-1.5 mt-1">
-          {slot.dates?.map((d) => (
-            <span key={d} className="bg-vert-foret/10 text-vert-foret text-xs font-medium px-2.5 py-1 rounded-full">
-              {fmtDate(d)}
-            </span>
-          ))}
-        </div>
-        {(slot.startTime || slot.endTime) && (
-          <p className="text-xs text-sable mt-1.5">{slot.startTime} – {slot.endTime}</p>
-        )}
-      </div>
-    );
-  }
-  if (slot.type === 'continu') {
-    const start = slot.startDate ? fmtDate(slot.startDate, true) : '—';
-    return (
-      <div className="rounded-xl bg-vert-foret/5 border border-vert-foret/20 px-4 py-3">
-        <p className="text-xs font-semibold text-vert-foret mb-1">Prestation continue</p>
-        <p className="text-sm text-charbon">À partir du {start} — {slot.durationWeeks} semaine{(slot.durationWeeks ?? 0) > 1 ? 's' : ''}</p>
-      </div>
-    );
-  }
-  return null;
+  if (!slot.date) return null;
+  return (
+    <div className="rounded-xl bg-vert-foret/5 border border-vert-foret/20 px-4 py-3">
+      <p className="text-xs font-semibold text-vert-foret mb-1">{fmtDate(slot.date, true)}</p>
+      <p className="text-sm text-charbon">{slot.startTime} – {slot.endTime}</p>
+    </div>
+  );
 }
 
 interface AcceptModalProps {
@@ -115,7 +78,7 @@ interface AcceptModalProps {
 }
 
 function AcceptModal({ announcement, onClose, onConfirm, accepting, error }: AcceptModalProps) {
-  const slots = announcement.availabilities ?? [];
+  const slots = (announcement.availabilities ?? []).filter((s) => !!s.date);
   const [details, setDetails] = useState<ServiceDetails>({});
   const [selectedSlotIdx, setSelectedSlotIdx] = useState<number | null>(slots.length === 1 ? 0 : null);
 
@@ -124,8 +87,11 @@ function AcceptModal({ announcement, onClose, onConfirm, accepting, error }: Acc
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const finalDetails: ServiceDetails = { ...details };
-    if (slot?.type === 'recurrent' && slot.startTime && slot.endTime) {
-      finalDetails.timeSlot = `${slot.startTime}–${slot.endTime}`;
+    if (slot) {
+      finalDetails.chosenDate = slot.date;
+      if (slot.startTime && slot.endTime) {
+        finalDetails.timeSlot = `${slot.startTime}–${slot.endTime}`;
+      }
     }
     onConfirm(finalDetails);
   }
@@ -169,146 +135,13 @@ function AcceptModal({ announcement, onClose, onConfirm, accepting, error }: Acc
               </div>
             )}
 
-            {/* Champs selon le type de slot sélectionné */}
-            {slot?.type === 'dates_exactes' && slot.dates && slot.dates.length > 0 && (
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-charbon/60">Date souhaitée</label>
-                <select
-                  value={details.chosenDate ?? ''}
-                  onChange={(e) => setDetails((d) => ({ ...d, chosenDate: e.target.value }))}
-                  className="border border-sable/40 rounded-xl px-3 py-2.5 text-sm text-charbon focus:outline-none focus:ring-2 focus:ring-vert-foret/30"
-                  required
-                >
-                  <option value="">Choisir une date…</option>
-                  {slot.dates.map((d) => (
-                    <option key={d} value={d}>
-                      {fmtDate(d, true)}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-
-            {slot?.type === 'recurrent' && slot.days && (
-              <div className="flex flex-col gap-3">
-                <div className="flex flex-col gap-2">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-semibold text-charbon/60">Jours souhaités</label>
-                    <button
-                      type="button"
-                      onClick={() => setDetails((d) => ({ ...d, chosenDates: slot.days }))}
-                      className="text-xs text-vert-foret font-semibold hover:underline"
-                    >
-                      Tous sélectionner
-                    </button>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {slot.days.map((day) => {
-                      const selected = (details.chosenDates ?? []).includes(day);
-                      return (
-                        <button
-                          key={day}
-                          type="button"
-                          onClick={() => setDetails((d) => {
-                            const prev = d.chosenDates ?? [];
-                            return {
-                              ...d,
-                              chosenDates: selected
-                                ? prev.filter((x) => x !== day)
-                                : [...prev, day],
-                            };
-                          })}
-                          className={`px-4 py-2 rounded-xl text-sm font-medium border-2 transition-colors ${
-                            selected
-                              ? 'bg-vert-foret text-white border-vert-foret'
-                              : 'bg-white text-charbon border-sable/50 hover:border-vert-foret/50'
-                          }`}
-                        >
-                          {day}
-                        </button>
-                      );
-                    })}
-                  </div>
-                  {details.chosenDates && details.chosenDates.length > 0 && (
-                    <p className="text-xs text-sable">{details.chosenDates.length} jour{details.chosenDates.length > 1 ? 's' : ''} sélectionné{details.chosenDates.length > 1 ? 's' : ''} — créneau {slot.startTime}–{slot.endTime}</p>
-                  )}
-                </div>
-
-                {/* Sous-mode : continue ou exacte */}
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-semibold text-charbon/60">Type de prestation</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {(['continue', 'exacte'] as const).map((mode) => (
-                      <button
-                        key={mode}
-                        type="button"
-                        onClick={() => setDetails((d) => ({ ...d, recurrentMode: mode, endDate: undefined }))}
-                        className={`py-2.5 rounded-xl text-sm font-medium border-2 transition-colors ${
-                          details.recurrentMode === mode
-                            ? 'bg-vert-foret text-white border-vert-foret'
-                            : 'bg-white text-charbon border-sable/50 hover:border-vert-foret/50'
-                        }`}
-                      >
-                        {mode === 'continue' ? 'Continue (sans fin)' : 'Dates exactes'}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Date de début */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-charbon/60">Date de première séance</label>
-                  <input
-                    type="date"
-                    value={details.chosenDate ?? ''}
-                    onChange={(e) => setDetails((d) => ({ ...d, chosenDate: e.target.value }))}
-                    min={new Date().toISOString().split('T')[0]}
-                    className="border border-sable/40 rounded-xl px-3 py-2.5 text-sm text-charbon focus:outline-none focus:ring-2 focus:ring-vert-foret/30"
-                  />
-                </div>
-
-                {/* Date de fin — seulement si exacte */}
-                {details.recurrentMode === 'exacte' && (
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-semibold text-charbon/60">Date de dernière séance</label>
-                    <input
-                      type="date"
-                      value={(details as any).endDate ?? ''}
-                      onChange={(e) => setDetails((d) => ({ ...d, endDate: e.target.value } as any))}
-                      min={details.chosenDate ?? new Date().toISOString().split('T')[0]}
-                      className="border border-sable/40 rounded-xl px-3 py-2.5 text-sm text-charbon focus:outline-none focus:ring-2 focus:ring-vert-foret/30"
-                    />
-                  </div>
-                )}
-              </div>
-            )}
-
-            {slot?.type === 'continu' && (
-              <div className="grid grid-cols-2 gap-3">
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-charbon/60">Date de début souhaitée</label>
-                  <input
-                    type="date"
-                    value={details.startDate ?? ''}
-                    onChange={(e) => setDetails((d) => ({ ...d, startDate: e.target.value }))}
-                    min={slot.startDate ?? new Date().toISOString().split('T')[0]}
-                    className="border border-sable/40 rounded-xl px-3 py-2.5 text-sm text-charbon focus:outline-none focus:ring-2 focus:ring-vert-foret/30"
-                    required
-                  />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-charbon/60">Durée (sem.)</label>
-                  <input
-                    type="number"
-                    min={1}
-                    max={slot.durationWeeks ?? 52}
-                    value={details.durationWeeks ?? ''}
-                    onChange={(e) => setDetails((d) => ({ ...d, durationWeeks: Number(e.target.value) }))}
-                    placeholder={`max ${slot.durationWeeks ?? '?'}`}
-                    className="border border-sable/40 rounded-xl px-3 py-2.5 text-sm text-charbon focus:outline-none focus:ring-2 focus:ring-vert-foret/30"
-                    required
-                  />
-                </div>
+            {/* Récapitulatif du créneau sélectionné */}
+            {slot?.date && (
+              <div className="rounded-xl bg-vert-foret/5 border border-vert-foret/20 px-4 py-3">
+                <p className="text-xs font-semibold text-vert-foret mb-1">Créneau retenu</p>
+                <p className="text-sm text-charbon">
+                  {fmtDate(slot.date, true)}{slot.startTime && slot.endTime ? ` — ${slot.startTime} à ${slot.endTime}` : ''}
+                </p>
               </div>
             )}
 
@@ -484,7 +317,7 @@ export default function ServiceDetailPage() {
   const isAccepter = !!announcement.acceptedBy && String(user?._id) === announcement.acceptedBy;
   const authorFullName = author ? `${author.firstName} ${author.lastName}` : '?';
 
-  const serviceDate = announcement.serviceDetails?.chosenDate ?? announcement.serviceDetails?.startDate;
+  const serviceDate = announcement.serviceDetails?.chosenDate;
   const hrsUntilService = hoursUntil(serviceDate);
   const canCancelOrWithdraw = hrsUntilService === null || hrsUntilService >= 24;
   const insufficientBalance = !isOwner && !!user && announcement.status === 'open' && user.points < announcement.points;

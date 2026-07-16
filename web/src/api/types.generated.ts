@@ -1092,31 +1092,12 @@ export interface components {
             code: string;
         };
         AvailabilitySlot: {
-            /** @enum {string} */
-            type: "dates_exactes" | "recurrent" | "continu";
-            /**
-             * @example [
-             *       "2026-07-15",
-             *       "2026-07-22"
-             *     ]
-             */
-            dates?: string[];
-            /**
-             * @example [
-             *       "Lun",
-             *       "Mer",
-             *       "Ven"
-             *     ]
-             */
-            days?: string[];
+            /** @example 2026-07-15 */
+            date: string;
             /** @example 09:00 */
-            startTime?: string;
-            /** @example 17:00 */
-            endTime?: string;
-            /** @example 2026-07-01 */
-            startDate?: string;
-            /** @example 4 */
-            durationWeeks?: number;
+            startTime: string;
+            /** @example 10:00 */
+            endTime: string;
         };
         CreateAnnouncementDto: {
             /** @example 64a1f2c3e4b5f6a7b8c9d0e1 */
@@ -1152,11 +1133,6 @@ export interface components {
         ServiceDetails: {
             /** @example 2026-07-15 */
             chosenDate?: string;
-            chosenDates?: string[];
-            /** @example 2026-07-01 */
-            startDate?: string;
-            /** @example 3 */
-            durationWeeks?: number;
             /** @example 09:00-12:00 */
             timeSlot?: string;
             /** @example Accès par la porte de derrière */

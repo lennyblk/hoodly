@@ -678,10 +678,6 @@ export class DocumentsService implements OnModuleInit {
           return s; // day name ("Lun") or unknown — display as-is
         };
         if (sd.chosenDate) pdfDoc.text(`Date choisie : ${fmtIso(sd.chosenDate)}`);
-        if (sd.chosenDates?.length) pdfDoc.text(`Jours / dates : ${sd.chosenDates.join(", ")}`);
-        if (sd.startDate) pdfDoc.text(`Début : ${fmtIso(sd.startDate)}`);
-        if ((sd as any).endDate) pdfDoc.text(`Fin : ${fmtIso((sd as any).endDate)}`);
-        if (sd.durationWeeks) pdfDoc.text(`Durée : ${sd.durationWeeks} semaine${sd.durationWeeks > 1 ? "s" : ""}`);
         if (sd.timeSlot) pdfDoc.text(`Créneau horaire : ${sd.timeSlot}`);
         if (sd.notes) { pdfDoc.text("Notes :"); pdfDoc.text(safe(sd.notes), { indent: 20 }); }
         pdfDoc.moveDown(1);

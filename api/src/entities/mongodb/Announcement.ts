@@ -14,40 +14,19 @@ export enum AnnouncementStatus {
 }
 
 export class AvailabilitySlot {
-  @ApiProperty({ enum: ['dates_exactes', 'recurrent', 'continu'] })
-  type: 'dates_exactes' | 'recurrent' | 'continu';
+  @ApiProperty({ example: '2026-07-15' })
+  date: string;
 
-  @ApiPropertyOptional({ type: [String], example: ['2026-07-15', '2026-07-22'] })
-  dates?: string[];
+  @ApiProperty({ example: '09:00' })
+  startTime: string;
 
-  @ApiPropertyOptional({ type: [String], example: ['Lun', 'Mer', 'Ven'] })
-  days?: string[];
-
-  @ApiPropertyOptional({ example: '09:00' })
-  startTime?: string;
-
-  @ApiPropertyOptional({ example: '17:00' })
-  endTime?: string;
-
-  @ApiPropertyOptional({ example: '2026-07-01' })
-  startDate?: string;
-
-  @ApiPropertyOptional({ example: 4 })
-  durationWeeks?: number;
+  @ApiProperty({ example: '10:00' })
+  endTime: string;
 }
 
 export class ServiceDetails {
   @ApiPropertyOptional({ example: '2026-07-15' })
   chosenDate?: string;
-
-  @ApiPropertyOptional({ type: [String] })
-  chosenDates?: string[];
-
-  @ApiPropertyOptional({ example: '2026-07-01' })
-  startDate?: string;
-
-  @ApiPropertyOptional({ example: 3 })
-  durationWeeks?: number;
 
   @ApiPropertyOptional({ example: '09:00-12:00' })
   timeSlot?: string;

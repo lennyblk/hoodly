@@ -18,19 +18,16 @@ type Announcement = components['schemas']['Announcement'];
 type User = components['schemas']['User'];
 type ServiceType = 'offer' | 'request';
 type Location = 'moi' | 'beneficiaire' | 'flexible';
-type AvailType = 'recurrent' | 'dates_exactes' | 'continu';
 
-interface AnnouncementWithAvail extends Announcement {
+interface AvailabilitySlot {
+  date: string;
+  startTime: string;
+  endTime: string;
+}
+
+interface AnnouncementWithAvail extends Omit<Announcement, 'availabilities'> {
   duration?: string;
-  availabilities?: {
-    type: AvailType;
-    dates?: string[];
-    days?: string[];
-    startTime?: string;
-    endTime?: string;
-    startDate?: string;
-    durationWeeks?: number;
-  }[];
+  availabilities?: Partial<AvailabilitySlot>[];
 }
 
 function parseEnrichedDescription(raw: string) {
@@ -51,8 +48,6 @@ const CATEGORIES = [
   { label: 'Transport', emoji: '🚗' },
   { label: 'Autre', emoji: '✨' },
 ];
-
-const DAYS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
 
 const DURATION_REGEX = /^(\d+(?:\.\d+)?)\s*(minutes?|heures?|min|h)$/i;
 
@@ -96,13 +91,7 @@ interface FormState {
   points: number;
   location: Location;
   // availability
-  availType: AvailType;
-  days: string[];
-  startTime: string;
-  endTime: string;
-  exactDates: string[];
-  availStartDate: string;
-  durationWeeks: number;
+  slots: AvailabilitySlot[];
 }
 
 function StepBar({ current }: { current: number }) {
@@ -137,14 +126,9 @@ export default function ProposeServicePage() {
     duration: '',
     points: 0,
     location: 'flexible',
-    availType: 'recurrent',
-    days: [],
-    startTime: '',
-    endTime: '',
-    exactDates: [],
-    availStartDate: '',
-    durationWeeks: 1,
+    slots: [],
   });
+  const [draftSlot, setDraftSlot] = useState<AvailabilitySlot>({ date: '', startTime: '', endTime: '' });
 
   useEffect(() => {
     if (!id) return;
@@ -152,7 +136,8 @@ export default function ProposeServicePage() {
     api.get<AnnouncementWithAvail>(`/announcements/${id}`)
       .then(({ data }) => {
         const { description, category, duration, location } = parseEnrichedDescription(data.description);
-        const slot = data.availabilities?.[0];
+        const slots = (data.availabilities ?? [])
+          .filter((s): s is AvailabilitySlot => !!s.date && !!s.startTime && !!s.endTime);
         setForm((f) => ({
           ...f,
           type: data.type,
@@ -162,13 +147,7 @@ export default function ProposeServicePage() {
           duration: (data as AnnouncementWithAvail).duration ?? duration,
           points: data.points,
           location,
-          availType: slot?.type ?? f.availType,
-          days: slot?.type === 'recurrent' ? (slot.days ?? []) : f.days,
-          startTime: (slot?.type === 'recurrent' || slot?.type === 'dates_exactes') ? (slot.startTime ?? '') : f.startTime,
-          endTime: (slot?.type === 'recurrent' || slot?.type === 'dates_exactes') ? (slot.endTime ?? '') : f.endTime,
-          exactDates: slot?.type === 'dates_exactes' ? (slot.dates ?? []) : f.exactDates,
-          availStartDate: slot?.type === 'continu' ? (slot.startDate ?? '') : f.availStartDate,
-          durationWeeks: slot?.type === 'continu' ? (slot.durationWeeks ?? 1) : f.durationWeeks,
+          slots,
         }));
       })
       .catch(() => setSubmitError("Impossible de charger l'annonce à modifier."))
@@ -184,19 +163,11 @@ export default function ProposeServicePage() {
       return;
     }
 
-    const availabilityLabel =
-      form.availType === 'dates_exactes' ? `dates : ${form.exactDates.join(', ')}` :
-      form.availType === 'continu' ? `à partir du ${form.availStartDate}, ${form.durationWeeks} sem.` :
-      `${form.days.join(', ')} de ${form.startTime} à ${form.endTime}`;
+    const availabilityLabel = form.slots
+      .map((s) => `${s.date} de ${s.startTime} à ${s.endTime}`)
+      .join(' ; ');
 
     const enrichedDescription = `${form.description}\n\n📍 Catégorie: ${form.category}\n⏱ Durée: ${form.duration}\n📅 Dispo: ${availabilityLabel}\n🏠 Lieu: ${form.location}`;
-
-    const availabilitySlot =
-      form.availType === 'dates_exactes'
-        ? { type: 'dates_exactes' as const, dates: form.exactDates, startTime: form.startTime, endTime: form.endTime }
-        : form.availType === 'continu'
-        ? { type: 'continu' as const, startDate: form.availStartDate, durationWeeks: form.durationWeeks }
-        : { type: 'recurrent' as const, days: form.days, startTime: form.startTime, endTime: form.endTime };
 
     setSubmitting(true);
     try {
@@ -208,7 +179,7 @@ export default function ProposeServicePage() {
           type: form.type,
           isPaid: form.points > 0,
           points: form.points,
-          availabilities: [availabilitySlot],
+          availabilities: form.slots,
         });
         navigate(`/services/${id}`);
       } else {
@@ -222,7 +193,7 @@ export default function ProposeServicePage() {
           authorId: String(user._id),
           neighbourhoodId: String(user.neighbourhoodId),
           status: 'open',
-          availabilities: [availabilitySlot],
+          availabilities: form.slots,
         } as any;
         await api.post('/announcements', payload);
         navigate('/services');
@@ -235,10 +206,28 @@ export default function ProposeServicePage() {
     }
   };
 
-  function toggleDay(day: string) {
+  const draftComplete = !!draftSlot.date && !!draftSlot.startTime && !!draftSlot.endTime;
+  const draftValid =
+    draftComplete &&
+    isTimeRangeValid(draftSlot.startTime, draftSlot.endTime) &&
+    matchesDuration(form.duration, draftSlot.startTime, draftSlot.endTime) &&
+    !form.slots.some((s) => s.date === draftSlot.date && s.startTime === draftSlot.startTime);
+
+  function addSlot() {
+    if (!draftValid) return;
     setForm((f) => ({
       ...f,
-      days: f.days.includes(day) ? f.days.filter((d) => d !== day) : [...f.days, day],
+      slots: [...f.slots, draftSlot].sort((a, b) =>
+        `${a.date} ${a.startTime}`.localeCompare(`${b.date} ${b.startTime}`),
+      ),
+    }));
+    setDraftSlot({ date: '', startTime: '', endTime: '' });
+  }
+
+  function removeSlot(slot: AvailabilitySlot) {
+    setForm((f) => ({
+      ...f,
+      slots: f.slots.filter((s) => !(s.date === slot.date && s.startTime === slot.startTime && s.endTime === slot.endTime)),
     }));
   }
 
@@ -452,126 +441,55 @@ export default function ProposeServicePage() {
           {step === 3 && (
             <div className="flex flex-col gap-5">
 
-              {/* Type de disponibilité */}
-              <div>
-                <label className="font-sans text-sm font-semibold text-charbon mb-3 block">Type de disponibilité</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {([
-                    { value: 'recurrent' as AvailType, label: 'Récurrent', sub: 'Jours fixes chaque semaine' },
-                    { value: 'dates_exactes' as AvailType, label: 'Dates précises', sub: 'Un ou plusieurs jours exacts' },
-                    { value: 'continu' as AvailType, label: 'Continu', sub: 'Période sur plusieurs semaines' },
-                  ] as const).map((opt) => (
-                    <button
-                      key={opt.value}
-                      onClick={() => setForm((f) => ({ ...f, availType: opt.value }))}
-                      className={`flex flex-col gap-1 rounded-2xl border-2 px-3 py-4 text-left transition-colors ${form.availType === opt.value ? 'border-vert-foret bg-[#E8F5EE]' : 'border-sable/50 bg-white hover:border-sable'}`}
-                    >
-                      <span className="font-sans text-sm font-bold text-charbon">{opt.label}</span>
-                      <span className="font-sans text-xs text-sable">{opt.sub}</span>
-                    </button>
-                  ))}
+              {/* Disponibilités : une date + un créneau horaire chacune */}
+              <div className="flex flex-col gap-2">
+                <label className="font-sans text-sm font-semibold text-charbon">Ajouter une disponibilité</label>
+                <p className="font-sans text-xs text-sable">Chaque disponibilité correspond à une date avec son créneau horaire. Vous pouvez en proposer plusieurs.</p>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="font-sans text-xs font-semibold text-charbon">Date</label>
+                    <input type="date" value={draftSlot.date} min={new Date().toISOString().split('T')[0]}
+                      onChange={(e) => setDraftSlot((s) => ({ ...s, date: e.target.value }))} className={inputClass} />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="font-sans text-xs font-semibold text-charbon">Heure de début</label>
+                    <input type="time" value={draftSlot.startTime}
+                      onChange={(e) => setDraftSlot((s) => ({ ...s, startTime: e.target.value }))} className={inputClass} />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="font-sans text-xs font-semibold text-charbon">Heure de fin</label>
+                    <input type="time" value={draftSlot.endTime}
+                      onChange={(e) => setDraftSlot((s) => ({ ...s, endTime: e.target.value }))} className={inputClass} />
+                  </div>
                 </div>
+                {!isTimeRangeValid(draftSlot.startTime, draftSlot.endTime) && (
+                  <p className="font-sans text-xs text-red-600">L'heure de fin doit être postérieure à l'heure de début</p>
+                )}
+                {isTimeRangeValid(draftSlot.startTime, draftSlot.endTime) && !matchesDuration(form.duration, draftSlot.startTime, draftSlot.endTime) && (
+                  <p className="font-sans text-xs text-red-600">
+                    La plage horaire ({windowMinutes(draftSlot.startTime, draftSlot.endTime)} min) doit correspondre à la durée de la séance ({parseDurationMinutes(form.duration)} min)
+                  </p>
+                )}
+                <button
+                  type="button"
+                  onClick={addSlot}
+                  disabled={!draftValid}
+                  className="self-start px-4 py-2 bg-vert-foret text-white rounded-xl text-sm font-semibold hover:bg-vert-moyen disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  + Ajouter cette disponibilité
+                </button>
               </div>
 
-              {/* Récurrent */}
-              {form.availType === 'recurrent' && (
-                <>
-                  <div>
-                    <label className="font-sans text-sm font-semibold text-charbon mb-3 block">Jours disponibles</label>
-                    <div className="flex flex-wrap gap-2">
-                      {DAYS.map((day) => (
-                        <button key={day} onClick={() => toggleDay(day)}
-                          className={`rounded-xl px-4 py-2 font-sans text-sm font-medium transition-colors ${form.days.includes(day) ? 'bg-vert-foret text-white' : 'border border-sable bg-white text-charbon hover:border-vert-moyen'}`}>
-                          {day}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="flex flex-col gap-1.5">
-                      <label className="font-sans text-sm font-semibold text-charbon">Heure de début</label>
-                      <input type="time" value={form.startTime} onChange={(e) => setForm((f) => ({ ...f, startTime: e.target.value }))} className={inputClass} />
-                    </div>
-                    <div className="flex flex-col gap-1.5">
-                      <label className="font-sans text-sm font-semibold text-charbon">Heure de fin</label>
-                      <input type="time" value={form.endTime} onChange={(e) => setForm((f) => ({ ...f, endTime: e.target.value }))} className={inputClass} />
-                    </div>
-                  </div>
-                  {!isTimeRangeValid(form.startTime, form.endTime) && (
-                    <p className="font-sans text-xs text-red-600">L'heure de fin doit être postérieure à l'heure de début</p>
-                  )}
-                  {isTimeRangeValid(form.startTime, form.endTime) && !matchesDuration(form.duration, form.startTime, form.endTime) && (
-                    <p className="font-sans text-xs text-red-600">
-                      La plage horaire ({windowMinutes(form.startTime, form.endTime)} min) doit correspondre à la durée de la séance ({parseDurationMinutes(form.duration)} min)
-                    </p>
-                  )}
-                </>
-              )}
-
-              {/* Dates exactes */}
-              {form.availType === 'dates_exactes' && (
-                <>
-                  <div className="flex flex-col gap-2">
-                    <label className="font-sans text-sm font-semibold text-charbon">Ajouter des dates</label>
-                    <div className="flex gap-2">
-                      <input type="date" id="exact-date-input" className={`${inputClass} flex-1`} min={new Date().toISOString().split('T')[0]} />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const input = document.getElementById('exact-date-input') as HTMLInputElement;
-                          const val = input.value;
-                          if (val && !form.exactDates.includes(val)) {
-                            setForm((f) => ({ ...f, exactDates: [...f.exactDates, val].sort() }));
-                            input.value = '';
-                          }
-                        }}
-                        className="px-4 py-2 bg-vert-foret text-white rounded-xl text-sm font-semibold hover:bg-vert-moyen"
-                      >
-                        Ajouter
-                      </button>
-                    </div>
-                    {form.exactDates.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mt-1">
-                        {form.exactDates.map((d) => (
-                          <span key={d} className="flex items-center gap-1.5 bg-vert-foret/10 text-vert-foret rounded-full px-3 py-1 text-xs font-medium">
-                            {fmtDate(d)}
-                            <button onClick={() => setForm((f) => ({ ...f, exactDates: f.exactDates.filter((x) => x !== d) }))} className="text-vert-foret/60 hover:text-red-500">✕</button>
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="flex flex-col gap-1.5">
-                      <label className="font-sans text-sm font-semibold text-charbon">Heure de début</label>
-                      <input type="time" value={form.startTime} onChange={(e) => setForm((f) => ({ ...f, startTime: e.target.value }))} className={inputClass} />
-                    </div>
-                    <div className="flex flex-col gap-1.5">
-                      <label className="font-sans text-sm font-semibold text-charbon">Heure de fin</label>
-                      <input type="time" value={form.endTime} onChange={(e) => setForm((f) => ({ ...f, endTime: e.target.value }))} className={inputClass} />
-                    </div>
-                  </div>
-                  {!isTimeRangeValid(form.startTime, form.endTime) && (
-                    <p className="font-sans text-xs text-red-600">L'heure de fin doit être postérieure à l'heure de début</p>
-                  )}
-                  {isTimeRangeValid(form.startTime, form.endTime) && !matchesDuration(form.duration, form.startTime, form.endTime) && (
-                    <p className="font-sans text-xs text-red-600">
-                      La plage horaire ({windowMinutes(form.startTime, form.endTime)} min) doit correspondre à la durée de la séance ({parseDurationMinutes(form.duration)} min)
-                    </p>
-                  )}
-                </>
-              )}
-
-              {/* Continu */}
-              {form.availType === 'continu' && (
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="flex flex-col gap-1.5">
-                    <label className="font-sans text-sm font-semibold text-charbon">Date de début</label>
-                    <input type="date" value={form.availStartDate} onChange={(e) => setForm((f) => ({ ...f, availStartDate: e.target.value }))} min={new Date().toISOString().split('T')[0]} className={inputClass} />
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <label className="font-sans text-sm font-semibold text-charbon">Durée (semaines)</label>
-                    <input type="number" min={1} max={52} value={form.durationWeeks} onChange={(e) => setForm((f) => ({ ...f, durationWeeks: Number(e.target.value) }))} className={inputClass} />
+              {form.slots.length > 0 && (
+                <div className="flex flex-col gap-2">
+                  <label className="font-sans text-sm font-semibold text-charbon">Disponibilités proposées</label>
+                  <div className="flex flex-wrap gap-2">
+                    {form.slots.map((s) => (
+                      <span key={`${s.date}-${s.startTime}`} className="flex items-center gap-1.5 bg-vert-foret/10 text-vert-foret rounded-full px-3 py-1.5 text-xs font-medium">
+                        {fmtDate(s.date)} · {s.startTime}–{s.endTime}
+                        <button onClick={() => removeSlot(s)} className="text-vert-foret/60 hover:text-red-500">✕</button>
+                      </span>
+                    ))}
                   </div>
                 </div>
               )}
@@ -602,11 +520,8 @@ export default function ProposeServicePage() {
                 disabled={
                   submitting ||
                   !isDurationValid(form.duration) ||
-                  (
-                    form.availType === 'recurrent' ? (form.days.length === 0 || !isTimeRangeValid(form.startTime, form.endTime) || !matchesDuration(form.duration, form.startTime, form.endTime)) :
-                    form.availType === 'dates_exactes' ? (form.exactDates.length === 0 || !isTimeRangeValid(form.startTime, form.endTime) || !matchesDuration(form.duration, form.startTime, form.endTime)) :
-                    !form.availStartDate
-                  )
+                  form.slots.length === 0 ||
+                  form.slots.some((s) => !isTimeRangeValid(s.startTime, s.endTime) || !matchesDuration(form.duration, s.startTime, s.endTime))
                 }
                 onClick={handleSubmit}
                 className="w-full rounded-xl bg-vert-foret py-3.5 font-sans text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
