@@ -21,7 +21,7 @@ const navItems: NavItem[] = [
     ),
   },
   {
-    label: 'Carte du quartier',
+    label: 'Carte des quartiers',
     to: '/map',
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
@@ -115,7 +115,7 @@ export default function Sidebar() {
   const navigate = useNavigate();
 
   async function handleLogout() {
-    await api.post('/auth/logout').catch(() => {});
+    await api.post('/auth/logout').catch(() => { });
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
     clearUser();
@@ -144,26 +144,26 @@ export default function Sidebar() {
           .filter((item) => item.to !== '/admin' || user?.role === 'admin')
           .filter((item) => item.to !== '/incidents' || (user?.role !== 'moderateur' && user?.role !== 'admin'))
           .map((item) => (
-          <NavLink
-            key={item.label}
-            to={item.to}
-            end={item.to !== '/services'}
-            className={({ isActive }) =>
-              `flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-left transition-colors ${isActive
-                ? 'bg-ambre text-white font-semibold'
-                : 'text-white/70 hover:bg-white/10 hover:text-white'
-              }`
-            }
-          >
-            <span className="shrink-0">{item.icon}</span>
-            <span className="font-sans text-sm flex-1">{item.label}</span>
-            {item.badge && (
-              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-ambre px-1.5 font-sans text-[10px] font-bold text-white">
-                {item.badge}
-              </span>
-            )}
-          </NavLink>
-        ))}
+            <NavLink
+              key={item.label}
+              to={item.to}
+              end={item.to !== '/services'}
+              className={({ isActive }) =>
+                `flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-left transition-colors ${isActive
+                  ? 'bg-ambre text-white font-semibold'
+                  : 'text-white/70 hover:bg-white/10 hover:text-white'
+                }`
+              }
+            >
+              <span className="shrink-0">{item.icon}</span>
+              <span className="font-sans text-sm flex-1">{item.label}</span>
+              {item.badge && (
+                <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-ambre px-1.5 font-sans text-[10px] font-bold text-white">
+                  {item.badge}
+                </span>
+              )}
+            </NavLink>
+          ))}
       </nav>
 
       {/* User */}

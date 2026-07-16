@@ -90,7 +90,7 @@ const quickActions = [
     ),
   },
   {
-    label: 'Carte du quartier',
+    label: 'Carte des quartiers',
     to: '/map',
     iconBg: 'bg-[#D8F3DC]',
     icon: (
