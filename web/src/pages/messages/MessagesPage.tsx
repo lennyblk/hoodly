@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
-import { io } from 'socket.io-client';
+import { io, type Socket } from 'socket.io-client';
 import api from '../../api/axios';
 import { useUser } from '../../contexts/useUser';
 import ChatView from './ChatView';
@@ -29,6 +29,13 @@ function avatarColor(id: string) {
   return AVATAR_COLORS[id.charCodeAt(id.length - 1) % AVATAR_COLORS.length];
 }
 
+function lastMessageLabel(msg: { type?: string; content?: string; fileName?: string }) {
+  if (msg.type === 'image') return 'Photo';
+  if (msg.type === 'audio') return 'Audio';
+  if (msg.type === 'file') return msg.fileName ?? 'Document';
+  return msg.content ?? '';
+}
+
 export default function MessagesPage() {
   const { user } = useUser();
   const location = useLocation();
@@ -43,6 +50,8 @@ export default function MessagesPage() {
   const [onlineIds, setOnlineIds] = useState<Set<string>>(new Set());
   const [extraUsers, setExtraUsers] = useState<Record<string, NeighbourUser>>({});
   const [contactsLoaded, setContactsLoaded] = useState(false);
+  const socketRef = useRef<Socket | null>(null);
+  const [socketReady, setSocketReady] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -112,6 +121,7 @@ export default function MessagesPage() {
   useEffect(() => {
     if (!user) return;
     const socket = io(import.meta.env.VITE_API_URL ?? 'http://localhost:3000');
+    socketRef.current = socket;
     socket.emit('register', user._id);
     socket.on('onlineUsers', (ids: string[]) => setOnlineIds(new Set(ids)));
     socket.on('userOnline', ({ userId }: { userId: string }) =>
@@ -124,10 +134,27 @@ export default function MessagesPage() {
         return next;
       }),
     );
+    socket.on('newMessage', (msg: { conversationId: string; type?: string; content?: string; fileName?: string }) => {
+      setConversations((prev) =>
+        prev.map((c) =>
+          c.id === msg.conversationId ? { ...c, lastMessage: lastMessageLabel(msg) } : c,
+        ),
+      );
+    });
+    setSocketReady(true);
     return () => {
+      setSocketReady(false);
+      socketRef.current = null;
       socket.disconnect();
     };
   }, [user]);
+
+
+  useEffect(() => {
+    const socket = socketRef.current;
+    if (!socketReady || !socket) return;
+    for (const conv of conversations) socket.emit('joinConversation', conv.id);
+  }, [socketReady, conversations]);
 
   async function openNewConvModal() {
     await fetchNeighbours();
