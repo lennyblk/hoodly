@@ -116,6 +116,9 @@ describe('MessagesService', () => {
         id: new ObjectId(CONV_ID),
         participants: [UID_A, UID_B],
       });
+      mockUsersService.findOne
+        .mockResolvedValueOnce(makeUser(UID_A, UserRole.HABITANT, NID_1))
+        .mockResolvedValueOnce(makeUser(UID_B, UserRole.HABITANT, NID_1));
       const fakeMsg = { conversationId: CONV_ID, senderId: UID_A, content: 'Hello' };
       mockMessagesRepo.create.mockReturnValue(fakeMsg);
       mockMessagesRepo.save.mockResolvedValue(fakeMsg);
@@ -125,6 +128,39 @@ describe('MessagesService', () => {
 
       expect(result).toEqual(fakeMsg);
       expect(mockMessagesRepo.save).toHaveBeenCalled();
+    });
+
+    it('throws ForbiddenException when participants no longer share the same neighbourhood (lecture seule)', async () => {
+      mockConversationsRepo.findOneBy.mockResolvedValue({
+        id: new ObjectId(CONV_ID),
+        participants: [UID_A, UID_B],
+      });
+      mockUsersService.findOne
+        .mockResolvedValueOnce(makeUser(UID_A, UserRole.HABITANT, NID_1))
+        .mockResolvedValueOnce(makeUser(UID_B, UserRole.HABITANT, NID_2));
+
+      await expect(
+        service.sendMessage({ conversationId: CONV_ID, senderId: UID_A, content: 'Hello' }),
+      ).rejects.toThrow(ForbiddenException);
+      expect(mockMessagesRepo.save).not.toHaveBeenCalled();
+    });
+
+    it('allows sending when an admin is a participant, regardless of neighbourhood', async () => {
+      mockConversationsRepo.findOneBy.mockResolvedValue({
+        id: new ObjectId(CONV_ID),
+        participants: [UID_A, UID_B],
+      });
+      mockUsersService.findOne
+        .mockResolvedValueOnce(makeUser(UID_A, UserRole.HABITANT, NID_1))
+        .mockResolvedValueOnce(makeUser(UID_B, UserRole.ADMIN, null));
+      const fakeMsg = { conversationId: CONV_ID, senderId: UID_A, content: 'Hello admin' };
+      mockMessagesRepo.create.mockReturnValue(fakeMsg);
+      mockMessagesRepo.save.mockResolvedValue(fakeMsg);
+      mockConversationsRepo.updateOne.mockResolvedValue(undefined);
+
+      const result = await service.sendMessage({ conversationId: CONV_ID, senderId: UID_A, content: 'Hello admin' });
+
+      expect(result).toEqual(fakeMsg);
     });
   });
 });
