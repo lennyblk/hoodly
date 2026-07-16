@@ -64,12 +64,16 @@ export default function ServicesPage() {
   }, [user?.neighbourhoodId]);
 
   const userId = String(user?._id);
-  const offresCount = announcements.filter((a) => a.authorId !== userId).length;
+
+  const isRelevantForUser = (a: Announcement) =>
+    a.status === 'open' || (a.acceptedBy === userId && a.status !== 'cancelled');
+
+  const offresCount = announcements.filter((a) => a.authorId !== userId && isRelevantForUser(a)).length;
   const demandesCount = announcements.filter((a) => a.authorId === userId).length;
 
   const filtered = announcements.filter((a) => {
     const isMine = a.authorId === userId;
-    if (tab === 'offer' && isMine) return false;
+    if (tab === 'offer' && (isMine || !isRelevantForUser(a))) return false;
     if (tab === 'request' && !isMine) return false;
     if (search && !a.title.toLowerCase().includes(search.toLowerCase())) return false;
     return true;

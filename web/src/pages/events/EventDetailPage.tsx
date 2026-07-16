@@ -37,9 +37,7 @@ function EditEventModal({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
-  // Certains événements (données historiques) ont un type hors enum API ("social", "atelier"...)
-  // → on ne renvoie type que s'il vaut une valeur acceptée par l'API, sinon on le laisse tel quel
-  const isStandardType = (t: string) => t === 'contract' || t === 'other';
+   const isStandardType = (t: string) => t === 'contract' || t === 'other';
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -208,6 +206,9 @@ export default function EventDetailPage() {
   const [rsvpLoading, setRsvpLoading] = useState(false);
   const [intLoading, setIntLoading] = useState(false);
   const [nameMap, setNameMap] = useState<Map<string, string>>(new Map());
+  const [nameMapLoaded, setNameMapLoaded] = useState(false);
+  const [leftUsers, setLeftUsers] = useState<Map<string, string>>(new Map());
+  const [goneIds, setGoneIds] = useState<Set<string>>(new Set());
   const [showEditModal, setShowEditModal] = useState(false);
   const [cancelLoading, setCancelLoading] = useState(false);
 
@@ -234,8 +235,35 @@ export default function EventDetailPage() {
       const map = new Map<string, string>();
       data.forEach((u) => map.set(u._id.toString(), `${u.firstName} ${u.lastName}`));
       setNameMap(map);
-    }).catch(() => {});
+    }).catch(() => {})
+      .finally(() => setNameMapLoaded(true));
   }, [event?.neighbourhoodId]);
+
+    useEffect(() => {
+    if (!event || !nameMapLoaded) return;
+    const missing = [...new Set(event.participants ?? [])].filter(
+      (pid) => !nameMap.has(pid) && !leftUsers.has(pid) && !goneIds.has(pid),
+    );
+    if (missing.length === 0) return;
+    Promise.all(
+      missing.map((pid) =>
+        api.get<{ _id: string; firstName: string; lastName: string }>(`/users/${pid}`)
+          .then(({ data }) => ({ pid, name: `${data.firstName} ${data.lastName}` }))
+          .catch(() => ({ pid, name: null as string | null })),
+      ),
+    ).then((results) => {
+      setLeftUsers((prev) => {
+        const next = new Map(prev);
+        for (const r of results) if (r.name) next.set(r.pid, r.name);
+        return next;
+      });
+      setGoneIds((prev) => {
+        const next = new Set(prev);
+        for (const r of results) if (!r.name) next.add(r.pid);
+        return next;
+      });
+    });
+  }, [event, nameMap, nameMapLoaded, leftUsers, goneIds]);
 
   async function handleRsvp() {
     if (!user || !event) return;
@@ -294,6 +322,9 @@ export default function EventDetailPage() {
       </div>
     );
   }
+
+  // Comptes supprimés (introuvables côté API) : retirés de la liste affichée
+  const visibleParticipants = (event.participants ?? []).filter((pid) => !goneIds.has(pid));
 
   const isParticipant = event.participants?.includes(user?._id ?? '');
   const isInterested = event.interestUsers?.includes(user?._id ?? '');
@@ -380,27 +411,40 @@ export default function EventDetailPage() {
             <p className="text-charbon/70 text-sm leading-relaxed">{event.description}</p>
           </section>
 
-          {/* Participants */}
+          {/* Participants — les comptes supprimés sont retirés, les partis du quartier signalés */}
           <section>
             <h2 className="font-heading font-semibold text-charbon mb-3">
-              Participants ({event.participants?.length ?? 0})
+              Participants ({visibleParticipants.length})
             </h2>
-            {(event.participants?.length ?? 0) === 0 ? (
+            {visibleParticipants.length === 0 ? (
               <p className="text-sm text-charbon/40 italic">Aucun participant pour l'instant.</p>
             ) : (
               <div className="flex flex-wrap gap-2">
-                {(event.participants ?? []).slice(0, 10).map((pid, i) => (
-                  <div
-                    key={pid}
-                    className="h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm px-3"
-                    style={{ backgroundColor: AVATAR_COLORS[i % AVATAR_COLORS.length] }}
-                  >
-                    {nameMap.get(pid) ?? '—'}
-                  </div>
-                ))}
-                {(event.participants?.length ?? 0) > 10 && (
+                {visibleParticipants.slice(0, 10).map((pid, i) => {
+                  const hasLeft = !nameMap.has(pid) && leftUsers.has(pid);
+                  const name = nameMap.get(pid) ?? leftUsers.get(pid) ?? '…';
+                  return hasLeft ? (
+                    <div
+                      key={pid}
+                      className="h-8 rounded-full flex items-center gap-1.5 bg-sable/30 text-charbon/50 text-xs font-bold px-3"
+                      title="Cet utilisateur ne fait plus partie du quartier"
+                    >
+                      <span className="line-through decoration-charbon/30">{name}</span>
+                      <span className="font-medium italic">· parti du quartier</span>
+                    </div>
+                  ) : (
+                    <div
+                      key={pid}
+                      className="h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm px-3"
+                      style={{ backgroundColor: AVATAR_COLORS[i % AVATAR_COLORS.length] }}
+                    >
+                      {name}
+                    </div>
+                  );
+                })}
+                {visibleParticipants.length > 10 && (
                   <div className="h-8 rounded-full bg-sable/30 flex items-center justify-center text-charbon/60 text-xs font-bold px-3">
-                    +{event.participants.length - 10}
+                    +{visibleParticipants.length - 10}
                   </div>
                 )}
               </div>

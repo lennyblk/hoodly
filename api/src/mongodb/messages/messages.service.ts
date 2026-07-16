@@ -129,6 +129,30 @@ export class MessagesService {
     return conversation;
   }
 
+  private async assertConversationWritable(conversation: Conversation) {
+    const users = await Promise.all(
+      conversation.participants.map((id) =>
+        this.usersService.findOne(id).catch(() => null),
+      ),
+    );
+    const present = users.filter((u): u is NonNullable<(typeof users)[number]> => u !== null);
+
+    const hasAdmin = present.some((u) => u.role === UserRole.ADMIN);
+    if (hasAdmin) return;
+
+    const neighbourhoodIds = present.map((u) => u.neighbourhoodId?.toString());
+    const allSameNeighbourhood =
+      present.length === conversation.participants.length &&
+      neighbourhoodIds.every((n) => n) &&
+      new Set(neighbourhoodIds).size === 1;
+
+    if (!allSameNeighbourhood) {
+      throw new ForbiddenException(
+        'Conversation en lecture seule : vous ne faites plus partie du même quartier',
+      );
+    }
+  }
+
   async sendMessage(dto: CreateMessageDto) {
     const conversation = await this.findConversationById(dto.conversationId);
 
@@ -138,6 +162,8 @@ export class MessagesService {
         'Vous ne participez pas à cette conversation',
       );
     }
+
+    await this.assertConversationWritable(conversation);
 
     const message = this.messagesRepository.create(dto);
     const saved = await this.messagesRepository.save(message);

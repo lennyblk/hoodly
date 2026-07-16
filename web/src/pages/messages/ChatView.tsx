@@ -19,6 +19,7 @@ interface Props {
   otherUserName: string;
   otherUserOnline: boolean;
   onBack: () => void;
+  readOnly?: boolean;
 }
 
 function formatHour(dateStr: string) {
@@ -31,7 +32,7 @@ function formatDuration(totalSeconds: number) {
   return `${m}:${s}`;
 }
 
-export default function ChatView({ conversationId, currentUserId, otherUserName, otherUserOnline, onBack }: Props) {
+export default function ChatView({ conversationId, currentUserId, otherUserName, otherUserOnline, onBack, readOnly = false }: Props) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
@@ -420,7 +421,19 @@ export default function ChatView({ conversationId, currentUserId, otherUserName,
         <div ref={bottomRef} />
       </div>
 
-      {/* Input */}
+      {/* Input — remplacé par un bandeau si la conversation est en lecture seule */}
+      {readOnly ? (
+        <div className="px-4 py-4 bg-creme border-t border-sable/20 flex items-center justify-center gap-2 flex-shrink-0">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-charbon/40 flex-shrink-0">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+          </svg>
+          <p className="text-xs text-charbon/50 text-center">
+            Conversation en lecture seule — {otherUserName} ne fait plus partie de votre quartier
+          </p>
+        </div>
+      ) : (
+      <>
       {mediaError && (
         <div className="px-4 py-2 bg-red-50 border-t border-red-100 text-xs text-red-600 flex-shrink-0">
           {mediaError}
@@ -503,6 +516,8 @@ export default function ChatView({ conversationId, currentUserId, otherUserName,
           </>
         )}
       </div>
+      </>
+      )}
 
       {/* Camera modal */}
       {showCamera && (

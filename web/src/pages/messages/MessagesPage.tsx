@@ -42,6 +42,7 @@ export default function MessagesPage() {
   const [creating, setCreating] = useState(false);
   const [onlineIds, setOnlineIds] = useState<Set<string>>(new Set());
   const [extraUsers, setExtraUsers] = useState<Record<string, NeighbourUser>>({});
+  const [contactsLoaded, setContactsLoaded] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -82,6 +83,7 @@ export default function MessagesPage() {
     if (user.role === 'admin') {
       const { data } = await api.get<NeighbourUser[]>('/users');
       setNeighbours(data.filter((u) => u._id !== user._id));
+      setContactsLoaded(true);
       return;
     }
 
@@ -99,6 +101,7 @@ export default function MessagesPage() {
     for (const u of [...adminsRes.data, ...neighboursRes.data]) merged.set(u._id, u);
     merged.delete(user._id);
     setNeighbours([...merged.values()]);
+    setContactsLoaded(true);
   }, [user]);
 
   useEffect(() => {
@@ -170,6 +173,13 @@ export default function MessagesPage() {
 
   const selectedConv = conversations.find((c) => c.id === selectedConvId) ?? null;
   const otherUserName = selectedConv ? getConvLabel(selectedConv) : '';
+
+  const selectedOtherId = selectedConv ? getOtherParticipantId(selectedConv) : '';
+  const selectedConvReadOnly =
+    !!selectedConv &&
+    contactsLoaded &&
+    user?.role !== 'admin' &&
+    !neighbours.some((n) => n._id === selectedOtherId);
 
   return (
     <div className="flex h-full bg-creme overflow-hidden">
@@ -255,6 +265,7 @@ export default function MessagesPage() {
             otherUserName={otherUserName}
             otherUserOnline={onlineIds.has(selectedConv ? getOtherParticipantId(selectedConv) : '')}
             onBack={() => setSelectedConvId(null)}
+            readOnly={selectedConvReadOnly}
           />
         ) : (
           <div className="flex flex-col items-center justify-center h-full text-charbon/40 gap-3">
