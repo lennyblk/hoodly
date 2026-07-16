@@ -910,6 +910,7 @@ export default function AdminPage() {
               <tr className="bg-creme border-b border-sable/30">
                 <th className="text-left px-5 py-3.5 font-semibold text-charbon/70 text-xs">Utilisateur</th>
                 <th className="text-left px-5 py-3.5 font-semibold text-charbon/70 text-xs">Email</th>
+                <th className="text-left px-5 py-3.5 font-semibold text-charbon/70 text-xs">Quartier</th>
                 <th className="text-left px-5 py-3.5 font-semibold text-charbon/70 text-xs">Rôle</th>
                 <th className="text-left px-5 py-3.5 font-semibold text-charbon/70 text-xs">Points</th>
                 <th className="text-left px-5 py-3.5 font-semibold text-charbon/70 text-xs">Statut</th>
@@ -929,6 +930,11 @@ export default function AdminPage() {
                     <span className="font-medium text-charbon">{u.firstName} {u.lastName}</span>
                   </td>
                   <td className="px-5 py-3.5 text-charbon/60">{u.email}</td>
+                  <td className="px-5 py-3.5 text-charbon/60">
+                    {u.neighbourhoodId
+                      ? (neighbourhoods.find((n) => String(n.id) === u.neighbourhoodId)?.name ?? '—')
+                      : <span className="text-charbon/30 italic text-xs">Aucun</span>}
+                  </td>
                   <td className="px-5 py-3.5" onClick={(e) => e.stopPropagation()}>
                     <select
                       value={u.role}
