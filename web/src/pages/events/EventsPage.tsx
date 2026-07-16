@@ -8,7 +8,6 @@ interface Event {
   id: string;
   title: string;
   description: string;
-  type: 'contract' | 'other';
   organizerId: string;
   neighbourhoodId: string;
   date: string;
@@ -163,17 +162,6 @@ function EventCard({
               📍 {neighbourhoodName}
             </span>
           )}
-          <span className="text-[10px] bg-sable/20 text-charbon/50 px-2 py-0.5 rounded-full">
-            Présentiel
-          </span>
-          <span className="text-[10px] bg-sable/20 text-charbon/50 px-2 py-0.5 rounded-full">
-            Collectif
-          </span>
-          {event.type === 'contract' && (
-            <span className="text-[10px] bg-ambre/15 text-ambre px-2 py-0.5 rounded-full">
-              Contractuel
-            </span>
-          )}
           {isCancelled && (
             <span className="text-[10px] bg-red-500 text-white font-semibold px-2 py-0.5 rounded-full">
               Annulé
@@ -230,7 +218,6 @@ function CreateEventModal({
     title: '',
     description: '',
     date: '',
-    type: 'other' as 'other' | 'contract',
     emoji: '',
   });
   const [loading, setLoading] = useState(false);
@@ -314,18 +301,6 @@ function CreateEventModal({
               value={form.date}
               onChange={(e) => set('date', e.target.value)}
             />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-charbon/70 mb-1">Type</label>
-            <select
-              className="w-full border border-sable rounded-xl px-3 py-2.5 text-charbon text-sm focus:outline-none focus:ring-2 focus:ring-vert-foret/40 focus:border-vert-foret bg-white"
-              value={form.type}
-              onChange={(e) => set('type', e.target.value as 'other' | 'contract')}
-            >
-              <option value="other">Général</option>
-              <option value="contract">Contractuel</option>
-            </select>
           </div>
 
           <div>

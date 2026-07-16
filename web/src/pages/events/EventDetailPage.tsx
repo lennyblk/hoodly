@@ -8,7 +8,6 @@ interface Event {
   id: string;
   title: string;
   description: string;
-  type: 'contract' | 'other';
   organizerId: string;
   neighbourhoodId: string;
   date: string;
@@ -31,7 +30,6 @@ function EditEventModal({
   const [form, setForm] = useState({
     title: event.title,
     description: event.description,
-    type: event.type as string,
     emoji: event.emoji ?? '',
   });
   const [saving, setSaving] = useState(false);
@@ -44,12 +42,11 @@ function EditEventModal({
     setSaving(true);
     setError('');
     try {
-      const payload: { title: string; description: string; type?: string; emoji?: string } = {
+      const payload: { title: string; description: string; emoji?: string } = {
         title: form.title,
         description: form.description,
         emoji: form.emoji, // '' = retour au visuel automatique
       };
-      if (isStandardType(form.type)) payload.type = form.type;
       await api.patch(`/events/${event.id}`, payload);
       await onSaved();
       onClose();
@@ -98,20 +95,6 @@ function EditEventModal({
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-charbon/70 mb-1">Type</label>
-            <select
-              className="w-full border border-sable rounded-xl px-3 py-2.5 text-charbon text-sm focus:outline-none focus:ring-2 focus:ring-vert-foret/40 focus:border-vert-foret bg-white"
-              value={form.type}
-              onChange={(e) => setForm((f) => ({ ...f, type: e.target.value }))}
-            >
-              {!isStandardType(event.type as string) && (
-                <option value={event.type}>{event.type} (catégorie actuelle)</option>
-              )}
-              <option value="other">Général</option>
-              <option value="contract">Contractuel</option>
-            </select>
-          </div>
 
           <div>
             <label className="block text-sm font-medium text-charbon/70 mb-1">Emoji</label>
@@ -393,15 +376,6 @@ export default function EventDetailPage() {
             📅 <span className="capitalize">{formatFullDate(event.date)}</span>
           </span>
           <span className="text-sm text-charbon/60">🕐 {formatTime(event.date)}</span>
-          <span
-            className={`text-xs font-medium px-2 py-0.5 rounded-full self-center ${
-              event.type === 'contract'
-                ? 'bg-ambre/15 text-ambre'
-                : 'bg-vert-clair/15 text-vert-foret'
-            }`}
-          >
-            {event.type === 'contract' ? 'Contractuel' : 'Général'}
-          </span>
         </div>
 
         <div className="px-5 py-5 space-y-6">
@@ -451,15 +425,6 @@ export default function EventDetailPage() {
             )}
           </section>
 
-          {/* Tags */}
-          <section className="flex gap-2 flex-wrap">
-            <span className="text-xs bg-sable/20 text-charbon/60 px-3 py-1 rounded-full">
-              Présentiel
-            </span>
-            <span className="text-xs bg-sable/20 text-charbon/60 px-3 py-1 rounded-full">
-              Collectif
-            </span>
-          </section>
         </div>
       </div>
 

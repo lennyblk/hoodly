@@ -215,8 +215,7 @@ export default function ProfilePage() {
         <div className="mt-4 rounded-2xl bg-white border border-sable/30 overflow-hidden">
           {[
             { icon: '✏️', label: 'Modifier mon profil', sub: 'Nom, email, quartier, mot de passe', to: '/profile/edit' },
-            { icon: '📄', label: 'Mes documents', sub: 'Contrats et accords', to: null },
-            { icon: '⚙️', label: 'Paramètres', sub: 'Langue, notifications', to: null },
+            { icon: '📄', label: 'Mes documents', sub: 'Contrats et accords', to: '/documents' },
           ].map((item, i, arr) => (
             <button
               key={item.label}

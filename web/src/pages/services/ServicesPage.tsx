@@ -22,6 +22,7 @@ export default function ServicesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [tab, setTab] = useState<ServiceTab>('offer');
   const [search, setSearch] = useState('');
+  const [showAll, setShowAll] = useState(false);
 
   useEffect(() => {
     const fetchAnnouncements = async () => {
@@ -65,16 +66,21 @@ export default function ServicesPage() {
 
   const userId = String(user?._id);
 
-  const isRelevantForUser = (a: Announcement) =>
-    a.status === 'open' || (a.acceptedBy === userId && a.status !== 'cancelled');
+  const isRelevant = (a: Announcement) => {
+    if (showAll) return true;
+    if (a.status === 'cancelled') return false;
+    if ((a.status === 'accepted' || a.status === 'done') && a.acceptedBy !== userId) return false;
+    return true;
+  };
 
-  const offresCount = announcements.filter((a) => a.authorId !== userId && isRelevantForUser(a)).length;
+  const offresCount = announcements.filter((a) => a.authorId !== userId && isRelevant(a)).length;
   const demandesCount = announcements.filter((a) => a.authorId === userId).length;
 
   const filtered = announcements.filter((a) => {
     const isMine = a.authorId === userId;
-    if (tab === 'offer' && (isMine || !isRelevantForUser(a))) return false;
+    if (tab === 'offer' && isMine) return false;
     if (tab === 'request' && !isMine) return false;
+    if (tab === 'offer' && !isRelevant(a)) return false;
     if (search && !a.title.toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   });
@@ -139,6 +145,18 @@ export default function ServicesPage() {
             Mes annonces ({demandesCount})
           </button>
         </div>
+
+        {tab === 'offer' && (
+          <label className="flex items-center gap-2 font-sans text-xs text-sable cursor-pointer w-fit">
+            <input
+              type="checkbox"
+              checked={showAll}
+              onChange={(e) => setShowAll(e.target.checked)}
+              className="rounded border-sable text-vert-foret focus:ring-vert-foret/40"
+            />
+            Afficher aussi les annonces annulées ou déjà prises
+          </label>
+        )}
 
         {/* ── Grille de cartes ── */}
         {isLoading ? (

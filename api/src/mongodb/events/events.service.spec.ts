@@ -3,7 +3,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { ObjectId } from 'mongodb';
 import { EventsService } from './events.service';
-import { Event, EventType } from '../../entities/mongodb/Event';
+import { Event } from '../../entities/mongodb/Event';
 import { Neighbourhood } from '../../entities/mongodb/Neighbourhood';
 import { Neo4jService } from '../../neo4j/neo4j.service';
 import { PointsService } from '../users/points.service';
@@ -17,7 +17,6 @@ function makeEvent(overrides: Partial<Event> = {}): Event {
     id: new ObjectId(VALID_ID),
     title: 'Soiree',
     description: 'Une soiree',
-    type: EventType.OTHER,
     organizerId: USER_ID,
     neighbourhoodId: NEIGHBOURHOOD_ID,
     date: new Date(),

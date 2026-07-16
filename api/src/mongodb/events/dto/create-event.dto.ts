@@ -1,6 +1,5 @@
-import { IsDateString, IsEnum, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsDateString, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { EventType } from '../../../entities/mongodb/Event';
 
 export class CreateEventDto {
   @ApiProperty({ example: 'Soirée de quartier' })
@@ -12,11 +11,6 @@ export class CreateEventDto {
   @IsString()
   @IsNotEmpty()
   description: string;
-
-  @ApiPropertyOptional({ enum: EventType, default: EventType.OTHER })
-  @IsEnum(EventType)
-  @IsOptional()
-  type?: EventType;
 
   @ApiProperty({ example: '64a1f2c3e4b5f6a7b8c9d0e2' })
   @IsString()

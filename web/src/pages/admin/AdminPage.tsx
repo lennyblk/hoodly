@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
 import type { components } from '../../api/types.generated';
 import { queryLangApi, type HqlDocument, type QueryLangResult } from '../../api/queryLang';
+import { useUser } from '../../contexts/useUser';
 
 type User = components['schemas']['User'];
 type Neighbourhood = components['schemas']['Neighbourhood'];
@@ -18,6 +20,267 @@ const ROLE_COLORS: Record<UserRole, string> = {
   moderateur: 'bg-ambre/10 text-ambre',
   admin: 'bg-vert-foret/10 text-vert-foret',
 };
+
+// ─── Incidents ────────────────────────────────────────────────────────────────
+
+type IncidentStatus = 'open' | 'resolved';
+
+interface Incident {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  status: IncidentStatus;
+  reportedBy: string;
+  neighborhoodId: string;
+  reportedAt: string;
+}
+
+function formatIncidentDate(dateStr: string) {
+  return new Date(dateStr).toLocaleDateString('fr-FR', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+function IncidentsConsole({ neighbourhoods }: { neighbourhoods: Neighbourhood[] }) {
+  const [incidents, setIncidents] = useState<Incident[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [updating, setUpdating] = useState<string | null>(null);
+  const [filter, setFilter] = useState<'all' | 'open' | 'resolved'>('all');
+  const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
+
+  useEffect(() => {
+    api.get<Incident[]>('/incidents')
+      .then(({ data }) => setIncidents(data))
+      .finally(() => setLoading(false));
+  }, []);
+
+  async function toggleStatus(incident: Incident) {
+    setUpdating(incident.id);
+    try {
+      const nextStatus: IncidentStatus = incident.status === 'open' ? 'resolved' : 'open';
+      const { data } = await api.patch<Incident>(`/incidents/${incident.id}`, { status: nextStatus });
+      setIncidents((prev) => prev.map((i) => (i.id === incident.id ? data : i)));
+      setSelectedIncident((prev) => (prev?.id === incident.id ? data : prev));
+    } finally {
+      setUpdating(null);
+    }
+  }
+
+  const neighbourhoodName = (id: string) => neighbourhoods.find((n) => String(n.id) === id)?.name ?? '—';
+
+  const filtered = incidents.filter((i) => {
+    if (filter === 'open') return i.status === 'open';
+    if (filter === 'resolved') return i.status === 'resolved';
+    return true;
+  });
+
+  return (
+    <>
+      <div className="flex items-center gap-3">
+        {([['all', 'Tous'], ['open', 'Ouverts'], ['resolved', 'Résolus']] as const).map(([val, label]) => (
+          <button
+            key={val}
+            onClick={() => setFilter(val)}
+            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+              filter === val ? 'bg-vert-foret text-white' : 'bg-sable/20 text-charbon/60 hover:bg-sable/40'
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+        <span className="text-xs text-charbon/40">{filtered.length} incident{filtered.length !== 1 ? 's' : ''}</span>
+      </div>
+
+      {loading ? (
+        <div className="text-sm text-charbon/40">Chargement...</div>
+      ) : (
+        <div className="overflow-x-auto rounded-2xl border border-sable/30 max-h-[50vh] overflow-y-auto">
+          <table className="w-full text-sm">
+            <thead className="sticky top-0 z-10">
+              <tr className="bg-creme border-b border-sable/30">
+                <th className="text-left px-5 py-3.5 font-semibold text-charbon/70 text-xs">Titre</th>
+                <th className="text-left px-5 py-3.5 font-semibold text-charbon/70 text-xs">Catégorie</th>
+                <th className="text-left px-5 py-3.5 font-semibold text-charbon/70 text-xs">Quartier</th>
+                <th className="text-left px-5 py-3.5 font-semibold text-charbon/70 text-xs">Signalé le</th>
+                <th className="text-left px-5 py-3.5 font-semibold text-charbon/70 text-xs">Statut</th>
+                <th className="px-5 py-3.5" />
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((i) => (
+                <tr
+                  key={i.id}
+                  onClick={() => setSelectedIncident(i)}
+                  className="border-b border-sable/20 last:border-0 hover:bg-creme/40 transition-colors align-top cursor-pointer"
+                >
+                  <td className="px-5 py-3.5">
+                    <p className="font-medium text-charbon">{i.title}</p>
+                    <p className="text-xs text-charbon/50 mt-0.5 max-w-md">{i.description}</p>
+                  </td>
+                  <td className="px-5 py-3.5 text-charbon/60">{i.category}</td>
+                  <td className="px-5 py-3.5 text-charbon/60">{neighbourhoodName(i.neighborhoodId)}</td>
+                  <td className="px-5 py-3.5 text-charbon/60">{formatIncidentDate(i.reportedAt)}</td>
+                  <td className="px-5 py-3.5">
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${
+                      i.status === 'open' ? 'bg-ambre/10 text-ambre' : 'bg-vert-clair/15 text-vert-foret'
+                    }`}>
+                      {i.status === 'open' ? 'Ouvert' : 'Résolu'}
+                    </span>
+                  </td>
+                  <td className="px-5 py-3.5 text-right" onClick={(e) => e.stopPropagation()}>
+                    <button
+                      disabled={updating === i.id}
+                      onClick={() => toggleStatus(i)}
+                      className="text-xs px-3 py-1.5 rounded-lg font-medium border border-vert-foret/20 text-vert-foret hover:bg-vert-foret/5 transition-colors disabled:opacity-40"
+                    >
+                      {updating === i.id ? '...' : i.status === 'open' ? 'Marquer résolu' : 'Rouvrir'}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {filtered.length === 0 && (
+            <p className="text-center text-sm text-charbon/40 py-8">Aucun incident trouvé</p>
+          )}
+        </div>
+      )}
+
+      {selectedIncident && (
+        <IncidentPanel
+          incident={selectedIncident}
+          neighbourhoodLabel={neighbourhoodName(selectedIncident.neighborhoodId)}
+          updating={updating === selectedIncident.id}
+          onToggleStatus={() => toggleStatus(selectedIncident)}
+          onClose={() => setSelectedIncident(null)}
+        />
+      )}
+    </>
+  );
+}
+
+interface IncidentPanelProps {
+  incident: Incident;
+  neighbourhoodLabel: string;
+  updating: boolean;
+  onToggleStatus: () => void;
+  onClose: () => void;
+}
+
+function IncidentPanel({ incident, neighbourhoodLabel, updating, onToggleStatus, onClose }: IncidentPanelProps) {
+  const navigate = useNavigate();
+  const { user } = useUser();
+  const [reporter, setReporter] = useState<User | null>(null);
+  const [loadingReporter, setLoadingReporter] = useState(true);
+  const [contacting, setContacting] = useState(false);
+
+  useEffect(() => {
+    setLoadingReporter(true);
+    api.get<User>(`/users/${incident.reportedBy}`)
+      .then(({ data }) => setReporter(data))
+      .catch(() => setReporter(null))
+      .finally(() => setLoadingReporter(false));
+  }, [incident.reportedBy]);
+
+  async function handleContact() {
+    if (!user?._id) return;
+    setContacting(true);
+    try {
+      const { data } = await api.post<{ id: string }>('/conversations', {
+        participants: [String(user._id), incident.reportedBy],
+      });
+      navigate('/messages', { state: { conversationId: data.id } });
+    } finally {
+      setContacting(false);
+    }
+  }
+
+  return (
+    <>
+      <div className="fixed inset-0 bg-charbon/40 backdrop-blur-sm z-40" onClick={onClose} />
+
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+        <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col pointer-events-auto">
+          <div className="flex items-center justify-between px-6 py-5 border-b border-sable/30">
+            <div>
+              <h2 className="font-heading text-lg font-bold text-charbon">{incident.title}</h2>
+              <p className="text-xs text-charbon/40 mt-0.5">{incident.category} · {neighbourhoodLabel}</p>
+            </div>
+            <button
+              onClick={onClose}
+              className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-sable/30 text-charbon/50 transition-colors shrink-0"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <path d="M18 6 6 18M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          <div className="px-6 py-3 bg-creme border-b border-sable/20 flex gap-4">
+            <div className="text-center">
+              <p className="text-xs text-charbon/40">Signalé le</p>
+              <p className="font-semibold text-charbon text-xs">{formatIncidentDate(incident.reportedAt)}</p>
+            </div>
+            <div className="w-px bg-sable/30" />
+            <div className="text-center">
+              <p className="text-xs text-charbon/40">Statut</p>
+              <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                incident.status === 'open' ? 'bg-ambre/10 text-ambre' : 'bg-vert-clair/15 text-vert-foret'
+              }`}>
+                {incident.status === 'open' ? 'Ouvert' : 'Résolu'}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex-1 overflow-y-auto px-6 py-6 flex flex-col gap-5">
+            <div>
+              <h3 className="text-xs font-semibold text-charbon/60 mb-1.5">Description</h3>
+              <p className="text-sm text-charbon/80 leading-relaxed whitespace-pre-wrap">{incident.description}</p>
+            </div>
+
+            <div>
+              <h3 className="text-xs font-semibold text-charbon/60 mb-1.5">Signalé par</h3>
+              {loadingReporter ? (
+                <p className="text-sm text-charbon/40">Chargement...</p>
+              ) : reporter ? (
+                <div className="flex items-center justify-between gap-3 rounded-xl border border-sable/30 px-4 py-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-charbon truncate">{reporter.firstName} {reporter.lastName}</p>
+                    <p className="text-xs text-charbon/50 truncate">{reporter.email}</p>
+                  </div>
+                  <button
+                    onClick={handleContact}
+                    disabled={contacting}
+                    className="shrink-0 text-xs px-3 py-1.5 rounded-lg font-medium border border-vert-foret/20 text-vert-foret hover:bg-vert-foret/5 transition-colors disabled:opacity-40"
+                  >
+                    {contacting ? '...' : 'Contacter'}
+                  </button>
+                </div>
+              ) : (
+                <p className="text-sm text-charbon/40">Utilisateur introuvable</p>
+              )}
+            </div>
+          </div>
+
+          <div className="px-6 py-4 border-t border-sable/20 flex justify-end">
+            <button
+              disabled={updating}
+              onClick={onToggleStatus}
+              className="text-sm px-4 py-2 rounded-xl font-medium border border-vert-foret/20 text-vert-foret hover:bg-vert-foret/5 transition-colors disabled:opacity-40"
+            >
+              {updating ? '...' : incident.status === 'open' ? 'Marquer résolu' : 'Rouvrir'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
 
 // ─── HQL Console ─────────────────────────────────────────────────────────────
 
@@ -301,7 +564,6 @@ interface EditForm {
   firstName: string;
   lastName: string;
   email: string;
-  lang: 'fr' | 'en';
   isActive: boolean;
 }
 
@@ -316,7 +578,6 @@ function UserPanel({ user, onClose, onSaved }: UserPanelProps) {
     firstName: user.firstName,
     lastName: user.lastName,
     email: user.email,
-    lang: user.lang as 'fr' | 'en',
     isActive: user.isActive,
   });
   const [pendingRole, setPendingRole] = useState<UserRole>(user.role as UserRole);
@@ -463,30 +724,17 @@ function UserPanel({ user, onClose, onSaved }: UserPanelProps) {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-charbon/60">Rôle</label>
-                <select
-                  value={pendingRole}
-                  onChange={(e) => { setPendingRole(e.target.value as UserRole); setSaved(false); }}
-                  className="border border-sable/40 rounded-xl px-3 py-2 text-sm text-charbon focus:outline-none focus:ring-2 focus:ring-vert-foret/30"
-                >
-                  {(Object.keys(ROLE_LABELS) as UserRole[]).map((r) => (
-                    <option key={r} value={r}>{ROLE_LABELS[r]}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-charbon/60">Langue</label>
-                <select
-                  value={form.lang}
-                  onChange={(e) => field('lang', e.target.value)}
-                  className="border border-sable/40 rounded-xl px-3 py-2 text-sm text-charbon focus:outline-none focus:ring-2 focus:ring-vert-foret/30"
-                >
-                  <option value="fr">Français</option>
-                  <option value="en">English</option>
-                </select>
-              </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-charbon/60">Rôle</label>
+              <select
+                value={pendingRole}
+                onChange={(e) => { setPendingRole(e.target.value as UserRole); setSaved(false); }}
+                className="border border-sable/40 rounded-xl px-3 py-2 text-sm text-charbon focus:outline-none focus:ring-2 focus:ring-vert-foret/30"
+              >
+                {(Object.keys(ROLE_LABELS) as UserRole[]).map((r) => (
+                  <option key={r} value={r}>{ROLE_LABELS[r]}</option>
+                ))}
+              </select>
             </div>
 
             <div className="flex items-center justify-between p-4 bg-creme rounded-2xl">
@@ -762,6 +1010,9 @@ export default function AdminPage() {
           )}
         </div>
       )}
+
+      <h2 className="font-heading text-xl font-bold text-charbon mt-4">Incidents</h2>
+      <IncidentsConsole neighbourhoods={neighbourhoods} />
 
       <h2 className="font-heading text-xl font-bold text-charbon mt-4">Console</h2>
       <QueryConsole />

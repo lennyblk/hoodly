@@ -78,6 +78,10 @@ export class Announcement {
   @Column()
   description: string;
 
+  @ApiPropertyOptional({ example: '30 minutes' })
+  @Column({ nullable: true })
+  duration?: string;
+
   @ApiProperty({ enum: AnnouncementType, example: AnnouncementType.OFFER })
   @Column()
   type: AnnouncementType;

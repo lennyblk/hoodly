@@ -33,7 +33,7 @@ function PasswordStrength({ password }: { password: string }) {
 }
 
 export default function SignupPage() {
-  const [form, setForm] = useState({ firstName: '', lastName: '', email: '', password: '', address: '', lang: 'fr' });
+  const [form, setForm] = useState({ firstName: '', lastName: '', email: '', password: '', address: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -55,7 +55,7 @@ export default function SignupPage() {
     setError('');
     setLoading(true);
     try {
-      const { data } = await authApi.signup({ ...form, lang: form.lang as 'fr' | 'en' });
+      const { data } = await authApi.signup(form);
       await otpApi.send(form.email, form.firstName);
       navigate('/verify-email', { state: { email: form.email, firstName: form.firstName, tokens: data } });
     } catch (err) {
@@ -172,13 +172,6 @@ export default function SignupPage() {
               <label htmlFor="password" className="font-sans text-sm font-semibold text-charbon">Mot de passe</label>
               <input id="password" type="password" value={form.password} onChange={(e) => update('password', e.target.value)} placeholder="••••••••" required className={inputClass} />
               <PasswordStrength password={form.password} />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="lang" className="font-sans text-sm font-semibold text-charbon">Langue</label>
-              <select id="lang" value={form.lang} onChange={(e) => update('lang', e.target.value)} className={inputClass}>
-                <option value="fr">Français</option>
-                <option value="en">English</option>
-              </select>
             </div>
             {error && <p className="rounded-lg bg-red-100 px-4 py-2.5 font-sans text-sm text-red-700">{error}</p>}
             <button

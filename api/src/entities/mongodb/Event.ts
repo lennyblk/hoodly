@@ -1,11 +1,6 @@
 import { Entity, ObjectIdColumn, ObjectId, Column, CreateDateColumn } from 'typeorm';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
-export enum EventType {
-  CONTRACT = 'contract',
-  OTHER = 'other',
-}
-
 export enum EventStatus {
   ACTIVE = 'active',
   CANCELLED = 'cancelled',
@@ -24,10 +19,6 @@ export class Event {
   @ApiProperty({ example: 'Une soirée conviviale pour les habitants du quartier.' })
   @Column()
   description: string;
-
-  @ApiProperty({ enum: EventType, default: EventType.OTHER })
-  @Column({ default: EventType.OTHER })
-  type: EventType;
 
   @ApiProperty({ example: '64a1f2c3e4b5f6a7b8c9d0e2' })
   @Column({ type: 'string' })

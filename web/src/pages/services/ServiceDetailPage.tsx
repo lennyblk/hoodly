@@ -360,15 +360,23 @@ export default function ServiceDetailPage() {
 
   useEffect(() => {
     if (!id) return;
+    let cancelled = false;
     setIsLoading(true);
+    setAnnouncement(null);
+    setAuthor(null);
     api.get<AnnouncementWithAvail>(`/announcements/${id}`)
       .then(({ data }) => {
+        if (cancelled) return;
         setAnnouncement(data);
         return api.get<User>(`/users/${data.authorId}`);
       })
-      .then(({ data }) => setAuthor(data))
-      .catch((err) => console.error(err))
-      .finally(() => setIsLoading(false));
+      .then((res) => {
+        if (cancelled || !res) return;
+        setAuthor(res.data);
+      })
+      .catch((err) => { if (!cancelled) console.error(err); })
+      .finally(() => { if (!cancelled) setIsLoading(false); });
+    return () => { cancelled = true; };
   }, [id]);
 
   async function handleContact() {
