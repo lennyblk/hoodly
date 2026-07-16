@@ -40,7 +40,11 @@ export class CreateIncidentDto {
   @IsNotEmpty()
   reportedBy: string;
 
-  @ApiProperty({ example: '507f1f77bcf86cd799439012', description: 'ID du quartier (MongoDB)' })
+  @ApiProperty({
+    example: '507f1f77bcf86cd799439012',
+    description:
+      'ID du quartier (MongoDB), ou la valeur spéciale "hoodly" pour un signalement adressé directement aux admins (invisible des modérateurs de quartier)',
+  })
   @IsString()
   @IsNotEmpty()
   neighborhoodId: string;
