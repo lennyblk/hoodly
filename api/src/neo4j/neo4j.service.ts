@@ -24,21 +24,6 @@ export class Neo4jService implements OnApplicationShutdown {
     }
   }
 
-  async getTopAttendee(neighbourhoodId: string): Promise<{ userId: string; attendCount: number } | null> {
-    const result = await this.run(
-      `MATCH (u:User)-[:ATTENDED]->(e:Event {neighbourhoodId: $neighbourhoodId})
-       RETURN u.id AS userId, count(e) AS attendCount
-       ORDER BY attendCount DESC LIMIT 1`,
-      { neighbourhoodId },
-    );
-    if (result.records.length === 0) return null;
-    const record = result.records[0];
-    return {
-      userId: record.get('userId'),
-      attendCount: record.get('attendCount').toNumber(),
-    };
-  }
-
   async onApplicationShutdown() {
     await this.driver.close();
   }
