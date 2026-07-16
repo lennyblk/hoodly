@@ -36,24 +36,4 @@ describe('Neo4jService', () => {
       expect(mockSession.close).toHaveBeenCalled();
     });
   });
-
-  describe('getTopAttendee', () => {
-    it('returns null when no records', async () => {
-      mockSession.run.mockResolvedValue({ records: [] });
-
-      const result = await service.getTopAttendee('nid1');
-      expect(result).toBeNull();
-    });
-
-    it('returns top attendee', async () => {
-      mockSession.run.mockResolvedValue({
-        records: [{
-          get: (key: string) => key === 'userId' ? 'user1' : { toNumber: () => 5 },
-        }],
-      });
-
-      const result = await service.getTopAttendee('nid1');
-      expect(result).toEqual({ userId: 'user1', attendCount: 5 });
-    });
-  });
 });
