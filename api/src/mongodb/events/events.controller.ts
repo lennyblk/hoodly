@@ -45,8 +45,11 @@ export class EventsController {
   ) {
     const ids = await this.eventsService.getRecommendations(userId, neighbourhoodId);
     if (!ids.length) return [];
+    const now = new Date();
     return Promise.all(ids.map((id) => this.eventsService.findOne(id).catch(() => null)))
-      .then((events) => events.filter(Boolean));
+      .then((events) => events.filter((e): e is Event =>
+        e !== null && e.status !== 'cancelled' && new Date(e.date) > now,
+      ));
   }
 
   @ApiOperation({ summary: 'Récupérer un événement par ID' })
