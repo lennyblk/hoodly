@@ -1,5 +1,6 @@
 package org.example.services;
 
+import org.example.config.ApiConfig;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -13,7 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class DirectoryService {
 
-    private static final String API_BASE = "http://localhost:3000";
+    private static final String API_BASE = ApiConfig.API_BASE;
 
     private static final HttpClient client = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(5))

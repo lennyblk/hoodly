@@ -1,5 +1,6 @@
 package org.example.services;
 
+import org.example.config.ApiConfig;
 import org.example.models.Incident;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -14,7 +15,7 @@ import java.util.List;
 
 public class SyncService {
 
-    private static final String API_BASE = "http://localhost:3000";
+    private static final String API_BASE = ApiConfig.API_BASE;
     private static final String INCIDENTS_URL = API_BASE + "/incidents";
 
     private static final HttpClient client = HttpClient.newBuilder()

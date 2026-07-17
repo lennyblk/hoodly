@@ -1,5 +1,6 @@
 package org.example.services;
 
+import org.example.config.ApiConfig;
 import org.json.JSONObject;
 
 import java.net.URI;
@@ -11,7 +12,7 @@ import java.util.Base64;
 
 public class AuthService {
 
-    private static final String API_URL = "http://localhost:3000";
+    private static final String API_URL = ApiConfig.API_BASE;
     private static final HttpClient client = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(10))
             .version(java.net.http.HttpClient.Version.HTTP_1_1)
