@@ -11,6 +11,7 @@ import javafx.scene.control.TextArea;
 import javafx.scene.control.cell.PropertyValueFactory;
 import org.example.Main;
 import org.example.models.Incident;
+import org.example.services.DirectoryService;
 import org.example.services.IncidentRepository;
 
 import java.io.IOException;
@@ -56,11 +57,24 @@ public class IncidentsController {
                 resolveBtn.setDisable(isAlreadyResolved);
                 managementInfoLabel.setText(isAlreadyResolved ? "L'incident est déjà résolu." : "");
 
-                detailReportedBy.setText(newSel.getReportedBy());
                 detailReportedAt.setText(newSel.getReportedAt());
-                detailNeighborhood.setText(newSel.getNeighborhoodId());
                 detailId.setText(newSel.getId());
                 detailDescription.setText(newSel.getDescription());
+
+                detailReportedBy.setText(newSel.getReportedBy());
+                detailNeighborhood.setText(newSel.getNeighborhoodId());
+                Thread resolver = new Thread(() -> {
+                    String reporterName = DirectoryService.resolveUserName(newSel.getReportedBy());
+                    String neighbourhoodName = DirectoryService.resolveNeighbourhoodName(newSel.getNeighborhoodId());
+                    javafx.application.Platform.runLater(() -> {
+                        if (incidentsTable.getSelectionModel().getSelectedItem() == newSel) {
+                            detailReportedBy.setText(reporterName);
+                            detailNeighborhood.setText(neighbourhoodName);
+                        }
+                    });
+                });
+                resolver.setDaemon(true);
+                resolver.start();
             } else {
                 resolveBtn.setDisable(true);
                 managementInfoLabel.setText("");
