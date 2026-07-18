@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../../api/axios';
 import { useUser } from '../../contexts/useUser';
+import NoNeighbourhoodState from '../../components/NoNeighbourhoodState';
 
 type VoteType = 'yesno' | 'multiple';
 
@@ -427,13 +428,17 @@ export default function VotesPage() {
     return true;
   });
 
+  if (user && !user.neighbourhoodId) {
+    return <NoNeighbourhoodState message="Rejoins un quartier pour voir les sondages" />;
+  }
+
   return (
     <div className="flex flex-col h-full bg-creme">
       {/* Header */}
       <div className="px-5 lg:px-8 pt-6 pb-4 bg-white border-b border-sable/20 flex-shrink-0">
         <div className="flex items-center justify-between mb-4">
           <h1 className="font-heading text-2xl font-bold text-charbon">Sondages</h1>
-          {canManage && (
+          {canManage && !!user?.neighbourhoodId && (
             <button
               onClick={() => setShowModal(true)}
               className="bg-vert-foret text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-vert-moyen transition-colors flex items-center gap-2"
@@ -469,12 +474,6 @@ export default function VotesPage() {
         {loading ? (
           <div className="flex items-center justify-center py-16 text-charbon/40 text-sm">
             Chargement...
-          </div>
-        ) : !user?.neighbourhoodId ? (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <span className="text-4xl mb-3">🏘️</span>
-            <p className="text-charbon/60 font-medium">Aucun quartier assigné</p>
-            <p className="text-sm text-charbon/40 mt-1">Rejoins un quartier pour voir les sondages</p>
           </div>
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">

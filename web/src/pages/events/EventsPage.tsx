@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../../api/axios';
 import { useUser } from '../../contexts/useUser';
 import { EVENT_EMOJI_CHOICES, getEventVisual } from '../../constants/eventVisuals';
+import NoNeighbourhoodState from '../../components/NoNeighbourhoodState';
 
 interface Event {
   id: string;
@@ -380,7 +381,6 @@ export default function EventsPage() {
 
   const fetchEvents = useCallback(async () => {
     if (!user) return;
-    // Admin : pas de quartier → voir tous les événements ; sinon ceux du quartier
     if (!isAdmin && !user.neighbourhoodId) {
       setLoading(false);
       return;
@@ -398,7 +398,6 @@ export default function EventsPage() {
     fetchEvents();
   }, [fetchEvents]);
 
-  // Noms des quartiers (badge sur les cartes + filtre) — utile surtout pour l'admin
   useEffect(() => {
     if (!isAdmin) return;
     api.get<{ id: string; name: string }[]>('/neighbourhoods')
@@ -446,17 +445,23 @@ export default function EventsPage() {
       return aFuture ? aTime - bTime : bTime - aTime;
     });
 
+  if (user && !isAdmin && !user.neighbourhoodId) {
+    return <NoNeighbourhoodState message="Rejoins un quartier pour voir les événements" />;
+  }
+
   return (
     <div className="flex flex-col h-full bg-creme">
       {/* Header */}
       <div className="flex items-center justify-between px-5 pt-6 pb-4">
         <h1 className="font-heading text-2xl font-bold text-charbon">Événements</h1>
-        <button
-          onClick={() => setShowModal(true)}
-          className="bg-vert-foret text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-vert-moyen transition-colors"
-        >
-          Soumettre
-        </button>
+        {user?.neighbourhoodId && (
+          <button
+            onClick={() => setShowModal(true)}
+            className="bg-vert-foret text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-vert-moyen transition-colors"
+          >
+            Soumettre
+          </button>
+        )}
       </div>
 
       {/* Date strip */}
@@ -522,12 +527,6 @@ export default function EventsPage() {
         {loading ? (
           <div className="flex items-center justify-center py-24 text-charbon/40">
             Chargement...
-          </div>
-        ) : !isAdmin && !user?.neighbourhoodId ? (
-          <div className="flex flex-col items-center justify-center py-24 text-center text-charbon/40">
-            <span className="text-5xl mb-4">🏘️</span>
-            <p className="font-medium text-charbon/60">Aucun quartier assigné</p>
-            <p className="text-sm mt-1">Rejoins un quartier pour voir les événements</p>
           </div>
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-charbon/40">

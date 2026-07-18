@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
 import type { components } from '../../api/types.generated';
 import { useUser } from '../../contexts/useUser';
+import NoNeighbourhoodState from '../../components/NoNeighbourhoodState';
 
 type Announcement = components['schemas']['Announcement'];
 type ServiceTab = 'offer' | 'request';
@@ -24,11 +25,20 @@ export default function ServicesPage() {
   const [search, setSearch] = useState('');
   const [showAll, setShowAll] = useState(false);
 
+  const isAdmin = user?.role === 'admin';
+  const hasNeighbourhood = !!user?.neighbourhoodId;
+
   useEffect(() => {
     const fetchAnnouncements = async () => {
+
+      if (!isAdmin && !user?.neighbourhoodId) {
+        setAnnouncements([]);
+        setIsLoading(false);
+        return;
+      }
       try {
         setIsLoading(true);
-        const params = user?.neighbourhoodId ? { neighbourhoodId: user.neighbourhoodId } : {};
+        const params = isAdmin ? {} : { neighbourhoodId: user!.neighbourhoodId };
         const response = await api.get('/announcements', { params });
 
         console.log('Réponse de l\'API /announcements:', response.data);
@@ -51,7 +61,7 @@ export default function ServicesPage() {
     };
 
     fetchAnnouncements();
-  }, [user?.neighbourhoodId]);
+  }, [user?.neighbourhoodId, isAdmin]);
 
   useEffect(() => {
     if (!user?.neighbourhoodId) return;
@@ -85,6 +95,11 @@ export default function ServicesPage() {
     return true;
   });
 
+  // Sans quartier (hors admin) : même écran que l'habitant, aucune action possible
+  if (user && !isAdmin && !hasNeighbourhood) {
+    return <NoNeighbourhoodState message="Rejoins un quartier pour voir les annonces de services" />;
+  }
+
   return (
     <div className="flex flex-col min-h-full">
 
@@ -97,13 +112,15 @@ export default function ServicesPage() {
           </p>
         </div>
         <div className="flex items-center gap-2 mt-1">
-          <button
-            onClick={() => navigate('/services/new')}
-            className="flex items-center gap-2 rounded-xl bg-vert-foret px-4 py-2 font-sans text-sm font-semibold text-white hover:bg-vert-moyen transition-colors"
-          >
-            <span className="text-base leading-none">+</span>
-            Proposer
-          </button>
+          {hasNeighbourhood && (
+            <button
+              onClick={() => navigate('/services/new')}
+              className="flex items-center gap-2 rounded-xl bg-vert-foret px-4 py-2 font-sans text-sm font-semibold text-white hover:bg-vert-moyen transition-colors"
+            >
+              <span className="text-base leading-none">+</span>
+              Proposer
+            </button>
+          )}
         </div>
       </div>
 
