@@ -8,6 +8,7 @@ import {
   MinLength,
 } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { IsJWT } from 'class-validator';
 
 export class UpdateMeDto {
   @ApiPropertyOptional({ example: 'john.doe@email.com' })
@@ -19,6 +20,11 @@ export class UpdateMeDto {
   @IsOptional()
   @IsStrongPassword()
   password?: string;
+
+  @ApiPropertyOptional({ description: 'OTP token requis si email ou password est modifié' })
+  @IsOptional()
+  @IsJWT()
+  otpToken?: string;
 
   @ApiPropertyOptional({ example: 'John', minLength: 2, maxLength: 50 })
   @IsOptional()

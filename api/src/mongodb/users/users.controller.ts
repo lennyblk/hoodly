@@ -9,8 +9,11 @@ import {
   UseGuards,
   Req,
   Query,
+  BadRequestException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
 import { ApiBearerAuth, ApiTags, ApiOperation, ApiParam, ApiQuery, ApiResponse } from '@nestjs/swagger';
 import { UsersService } from './users.service';
@@ -32,6 +35,7 @@ export class UsersController {
   constructor(
     private usersService: UsersService,
     private pointsService: PointsService,
+    private jwtService: JwtService,
   ) { }
 
   @ApiOperation({ summary: 'Récupérer tous les utilisateurs — admin uniquement' })
@@ -119,13 +123,34 @@ export class UsersController {
     return this.usersService.deleteAccount(user.userId);
   }
 
-  @ApiOperation({ summary: 'Modifier son propre profil (firstName, lastName, email, password, lang, neighbourhoodId)' })
+  @ApiOperation({ summary: 'Modifier son propre profil (firstName, lastName, email, password, neighbourhoodId). Email/password nécessitent un otpToken valide.' })
   @ApiResponse({ status: 200, type: User })
-  @ApiResponse({ status: 400, description: 'Données invalides.' })
+  @ApiResponse({ status: 400, description: 'OTP token manquant ou données invalides.' })
+  @ApiResponse({ status: 401, description: 'OTP token expiré ou invalide.' })
   @Patch('me')
-  updateMe(@Req() req: Request, @Body() dto: UpdateMeDto) {
-    const user = req.user as { userId: string };
-    return this.usersService.update(user.userId, dto);
+  async updateMe(@Req() req: Request, @Body() dto: UpdateMeDto) {
+    const user = req.user as { userId: string; email: string };
+
+    if (dto.email || dto.password) {
+      if (!dto.otpToken) {
+        throw new BadRequestException('Un code OTP est requis pour modifier l\'email ou le mot de passe');
+      }
+      try {
+        const payload = await this.jwtService.verifyAsync<{ email: string; type: string }>(
+          dto.otpToken,
+          { secret: process.env.OTP_SECRET },
+        );
+        if (payload.type !== 'otp' || payload.email !== user.email) {
+          throw new UnauthorizedException('OTP token invalide ou ne correspond pas à cet utilisateur');
+        }
+      } catch (err) {
+        if (err instanceof UnauthorizedException) throw err;
+        throw new UnauthorizedException('OTP token expiré ou invalide');
+      }
+    }
+
+    const { otpToken: _, ...updateData } = dto;
+    return this.usersService.update(user.userId, updateData);
   }
 
   @ApiOperation({ summary: 'Ajuster le solde de points d\'un utilisateur — admin uniquement' })
