@@ -326,6 +326,14 @@ export class DocumentsService implements OnModuleInit {
     const allSigned =
       signerIds.length > 0 && signerIds.every((sid) => signedIds.includes(sid));
     if (allSigned) {
+      const payment = await this.getPendingPayment(doc);
+      if (payment) {
+        const payer = await this.usersService.findOne(payment.payerId).catch(() => null);
+        if (!payer || (payer.points ?? 0) < payment.amount) {
+          await this.cancelForInsufficientFunds(doc, payment.announcement);
+        }
+      }
+
       doc.status = DocumentStatus.SIGNED;
       try {
         await this.transferPoints(doc);
@@ -339,13 +347,15 @@ export class DocumentsService implements OnModuleInit {
 
   // ─── Points transfer on contract signature
 
-  private async transferPoints(doc: Document): Promise<void> {
-    if (!doc.announcementId) return;
+  private async getPendingPayment(
+    doc: Document,
+  ): Promise<{ announcement: Announcement; payerId: string; providerId: string; amount: number } | null> {
+    if (!doc.announcementId) return null;
     const announcement = await this.announcementsRepository.findOne({
       where: { _id: new ObjectId(doc.announcementId) } as any,
     });
-    if (!announcement || !announcement.points) return;
-    if (announcement.status === AnnouncementStatus.DONE) return;
+    if (!announcement || !announcement.points) return null;
+    if (announcement.status === AnnouncementStatus.DONE) return null;
 
     // offer: author=prestataire, acceptedBy=beneficiaire (paye)
     // request: author=demandeur (paye), acceptedBy=prestataire
@@ -358,13 +368,46 @@ export class DocumentsService implements OnModuleInit {
       payerId = announcement.authorId;
       providerId = announcement.acceptedBy;
     }
-    if (!payerId || !providerId) return;
+    if (!payerId || !providerId) return null;
 
-    await this.pointsService.addPoints(payerId, -announcement.points, `Paiement contrat — ${announcement.title}`);
-    await this.pointsService.addPoints(providerId, announcement.points, `Contrat réglé — ${announcement.title}`);
+    return { announcement, payerId, providerId, amount: announcement.points };
+  }
+
+  private async transferPoints(doc: Document): Promise<void> {
+    const payment = await this.getPendingPayment(doc);
+    if (!payment) return;
+
+    const { announcement, payerId, providerId, amount } = payment;
+    await this.pointsService.addPoints(payerId, -amount, `Paiement contrat — ${announcement.title}`);
+    await this.pointsService.addPoints(providerId, amount, `Contrat réglé — ${announcement.title}`);
 
     announcement.status = AnnouncementStatus.DONE;
     await this.announcementsRepository.save(announcement);
+  }
+
+  private async cancelForInsufficientFunds(doc: Document, announcement: Announcement): Promise<never> {
+    if (doc.gridfsId) {
+      try {
+        const pdfBuffer = await this.downloadFromGridFS(doc.gridfsId);
+        const stamped = await this.stampRefused(pdfBuffer);
+        await this.deleteFromGridFS(doc.gridfsId);
+        doc.gridfsId = await this.uploadToGridFS(stamped, doc.name);
+      } catch (e: any) {
+        console.warn('[DocumentsService] Stamp cancelled failed (non-fatal):', e.message);
+      }
+    }
+    doc.status = DocumentStatus.REFUSED;
+    await this.documentsRepository.save(doc);
+
+    announcement.status = AnnouncementStatus.OPEN;
+    announcement.acceptedBy = null as any;
+    announcement.contractId = null as any;
+    announcement.serviceDetails = null as any;
+    await this.announcementsRepository.save(announcement);
+
+    throw new BadRequestException(
+      'Contrat annulé : le solde de points du payeur est insuffisant pour régler la prestation',
+    );
   }
 
   // ─── Refuse
