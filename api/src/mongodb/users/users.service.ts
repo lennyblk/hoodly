@@ -131,6 +131,48 @@ export class UsersService {
     return saved;
   }
 
+  async recheckResidentsAfterGeometryChange(neighbourhoodId: string) {
+    const residents = await this.usersRepository.find({
+      where: {
+        $or: [{ neighbourhoodId }, { neighbourhoodId: null }, { neighbourhoodId: { $exists: false } }],
+      } as any,
+    });
+    if (!residents.length) return;
+
+    const neighbourhoods = await this.neighbourhoodsRepository.find();
+
+    const changed: User[] = [];
+    const reassignments: { userId: string; oldNeighbourhoodId: string }[] = [];
+
+    for (const resident of residents) {
+      if (!resident.address) continue;
+
+      const coords = await geocodeAddress(resident.address);
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      if (!coords) continue;
+
+      const match = neighbourhoods.find(
+        (n) => n.geometry && pointInPolygon(coords.lng, coords.lat, n.geometry),
+      );
+      const newNeighbourhoodId = match ? match.id.toString() : null;
+
+      if (newNeighbourhoodId === resident.neighbourhoodId) continue;
+
+      reassignments.push({ userId: resident._id.toString(), oldNeighbourhoodId: resident.neighbourhoodId });
+      resident.neighbourhoodId = newNeighbourhoodId as any;
+      changed.push(resident);
+    }
+
+    if (!changed.length) return;
+
+    await this.usersRepository.save(changed);
+
+    for (const { userId, oldNeighbourhoodId } of reassignments) {
+      if (!oldNeighbourhoodId) continue;
+      await this.cancelActiveAnnouncementsInNeighbourhood(userId, oldNeighbourhoodId);
+    }
+  }
+
   private async cancelActiveAnnouncementsInNeighbourhood(authorId: string, neighbourhoodId: string) {
     const activeAnnouncements = await this.announcementsRepository.find({
       where: {

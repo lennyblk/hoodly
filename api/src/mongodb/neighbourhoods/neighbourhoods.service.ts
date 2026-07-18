@@ -57,11 +57,17 @@ export class NeighbourhoodsService {
 
   async update(id: string, updateNeighbourhoodDto: UpdateNeighbourhoodDto) {
     const neighbourhood = await this.findOne(id);
-    
+
     await this.validateReferences(updateNeighbourhoodDto.createdBy);
 
     Object.assign(neighbourhood, updateNeighbourhoodDto);
-    return this.neighbourhoodsRepository.save(neighbourhood);
+    const saved = await this.neighbourhoodsRepository.save(neighbourhood);
+
+    if (updateNeighbourhoodDto.geometry) {
+      await this.usersService.recheckResidentsAfterGeometryChange(id);
+    }
+
+    return saved;
   }
 
   async remove(id: string) {
