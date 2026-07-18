@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
 import { MongoRepository } from 'typeorm';
-import { Announcement, AnnouncementStatus, AnnouncementType } from '../../entities/mongodb/Announcement';
 import { Vote } from '../../entities/mongodb/Vote';
 import { Event } from '../../entities/mongodb/Event';
 import { PointsService } from '../users/points.service';
@@ -10,8 +9,6 @@ import { PointsService } from '../users/points.service';
 @Injectable()
 export class AnnouncementsCron {
   constructor(
-    @InjectRepository(Announcement, 'mongodb')
-    private announcementsRepository: MongoRepository<Announcement>,
     @InjectRepository(Vote, 'mongodb')
     private votesRepository: MongoRepository<Vote>,
     @InjectRepository(Event, 'mongodb')
@@ -21,42 +18,8 @@ export class AnnouncementsCron {
 
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   async handleDaily() {
-    await this.transferServicePoints();
     await this.rewardVoters();
     await this.rewardEventParticipants();
-  }
-
-  private async transferServicePoints() {
-    const today = new Date().toISOString().split('T')[0];
-    const announcements = await this.announcementsRepository.find({
-      where: { status: AnnouncementStatus.ACCEPTED } as any,
-    });
-
-    for (const ann of announcements) {
-      const serviceDate = ann.serviceDetails?.chosenDate;
-      if (!serviceDate || serviceDate !== today) continue;
-      if (!ann.points || !ann.acceptedBy) continue;
-
-      let payerId: string;
-      let providerId: string;
-      if (ann.type === AnnouncementType.OFFER) {
-        payerId = ann.acceptedBy;
-        providerId = ann.authorId;
-      } else {
-        payerId = ann.authorId;
-        providerId = ann.acceptedBy;
-      }
-
-      try {
-        await this.pointsService.addPoints(payerId, -ann.points, `Paiement contrat — ${ann.title}`);
-        await this.pointsService.addPoints(providerId, ann.points, `Contrat réglé — ${ann.title}`);
-        ann.status = AnnouncementStatus.DONE;
-        await this.announcementsRepository.save(ann);
-        console.log(`[Cron] Service points: ${ann.points}pts ${payerId} -> ${providerId}`);
-      } catch (e: any) {
-        console.warn(`[Cron] Service transfer failed ${ann.id}: ${e.message}`);
-      }
-    }
   }
 
   private async rewardVoters() {

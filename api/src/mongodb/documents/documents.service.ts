@@ -327,6 +327,11 @@ export class DocumentsService implements OnModuleInit {
       signerIds.length > 0 && signerIds.every((sid) => signedIds.includes(sid));
     if (allSigned) {
       doc.status = DocumentStatus.SIGNED;
+      try {
+        await this.transferPoints(doc);
+      } catch (e: any) {
+        console.warn('[DocumentsService] Points transfer failed (non-fatal):', e.message);
+      }
     }
 
     return this.documentsRepository.save(doc);
@@ -340,6 +345,7 @@ export class DocumentsService implements OnModuleInit {
       where: { _id: new ObjectId(doc.announcementId) } as any,
     });
     if (!announcement || !announcement.points) return;
+    if (announcement.status === AnnouncementStatus.DONE) return;
 
     // offer: author=prestataire, acceptedBy=beneficiaire (paye)
     // request: author=demandeur (paye), acceptedBy=prestataire
@@ -356,6 +362,9 @@ export class DocumentsService implements OnModuleInit {
 
     await this.pointsService.addPoints(payerId, -announcement.points, `Paiement contrat — ${announcement.title}`);
     await this.pointsService.addPoints(providerId, announcement.points, `Contrat réglé — ${announcement.title}`);
+
+    announcement.status = AnnouncementStatus.DONE;
+    await this.announcementsRepository.save(announcement);
   }
 
   // ─── Refuse
