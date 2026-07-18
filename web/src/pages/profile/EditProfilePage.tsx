@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../../contexts/useUser';
 import api from '../../api/axios';
+import { otpApi } from '../../api/otp';
 import type { components } from '../../api/types.generated';
 import { useAddressAutocomplete } from '../../hooks/useAddressAutocomplete';
 
@@ -34,6 +35,13 @@ export default function EditProfilePage() {
   const [success, setSuccess] = useState(false);
   const [showAddressSuggestions, setShowAddressSuggestions] = useState(false);
   const addressSuggestions = useAddressAutocomplete(form.address);
+
+  const [otpStep, setOtpStep] = useState(false);
+  const [otpDigits, setOtpDigits] = useState(['', '', '', '', '', '']);
+  const [otpError, setOtpError] = useState('');
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [pendingPayload, setPendingPayload] = useState<Record<string, string> | null>(null);
+  const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
     if (!user) return;
@@ -77,28 +85,115 @@ export default function EditProfilePage() {
       return;
     }
 
-    setLoading(true);
-    setError(null);
-
     const payload: Record<string, string> = {
       firstName: form.firstName,
       lastName: form.lastName,
-      email: form.email,
       address: form.address,
     };
-    if (form.password) payload.password = form.password;
+    const emailChanged = form.email !== user.email;
+    const passwordChanged = !!form.password;
+    const addressChanged = form.address !== (user.address ?? '');
+    if (emailChanged) payload.email = form.email;
+    if (passwordChanged) payload.password = form.password;
 
+    setLoading(true);
+    setError(null);
+
+    if (!emailChanged && !passwordChanged && !addressChanged) {
+      await submitPatch(payload);
+      return;
+    }
+
+    setPendingPayload(payload);
+    try {
+      const { data } = await otpApi.send(user.email, user.firstName);
+      if ((data as any)?.bypassed) {
+        await completeWithOtp(payload, '000000');
+      } else {
+        setOtpStep(true);
+        setLoading(false);
+      }
+    } catch (err: any) {
+      const msg = err?.response?.data?.message;
+      setError(Array.isArray(msg) ? msg[0] : (msg ?? 'Impossible d\'envoyer le code OTP.'));
+      setLoading(false);
+    }
+  }
+
+  async function completeWithOtp(payload: Record<string, string>, code: string) {
+    setOtpLoading(true);
+    setOtpError('');
+    try {
+      const { data } = await otpApi.verify(user!.email, code);
+      await submitPatch({ ...payload, otpToken: data.otpToken });
+    } catch (err: any) {
+      const msg = err?.response?.data?.message;
+      setOtpError(Array.isArray(msg) ? msg[0] : (msg ?? 'Code incorrect'));
+      setOtpLoading(false);
+      setLoading(false);
+    }
+  }
+
+  async function handleOtpSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const code = otpDigits.join('');
+    if (code.length < 6 || !pendingPayload) return;
+    await completeWithOtp(pendingPayload, code);
+  }
+
+  async function submitPatch(payload: Record<string, string>) {
     try {
       await api.patch('/users/me', payload);
       await fetchMe();
       setSuccess(true);
       setForm((f) => ({ ...f, password: '', confirmPassword: '' }));
+      setOtpStep(false);
+      setOtpDigits(['', '', '', '', '', '']);
+      setPendingPayload(null);
     } catch (err: any) {
-      const msg = err?.response?.data?.message;
-      setError(Array.isArray(msg) ? msg[0] : (msg ?? 'Une erreur est survenue.'));
+      const status = err?.response?.status;
+      if (payload.otpToken && status === 400) {
+        setOtpError('OTP token manquant');
+      } else if (payload.otpToken && status === 401) {
+        setOtpError('Code OTP expiré, recommence');
+      } else {
+        const msg = err?.response?.data?.message;
+        setError(Array.isArray(msg) ? msg[0] : (msg ?? 'Une erreur est survenue.'));
+      }
     } finally {
       setLoading(false);
+      setOtpLoading(false);
     }
+  }
+
+  function handleOtpDigitChange(index: number, value: string) {
+    const char = value.replace(/\D/g, '').slice(-1);
+    const next = [...otpDigits];
+    next[index] = char;
+    setOtpDigits(next);
+    if (char && index < 5) otpRefs.current[index + 1]?.focus();
+  }
+
+  function handleOtpKeyDown(index: number, e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === 'Backspace' && !otpDigits[index] && index > 0) {
+      otpRefs.current[index - 1]?.focus();
+    }
+  }
+
+  function handleOtpPaste(e: React.ClipboardEvent<HTMLInputElement>) {
+    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+    if (pasted.length === 6) {
+      setOtpDigits(pasted.split(''));
+      otpRefs.current[5]?.focus();
+    }
+  }
+
+  function cancelOtpStep() {
+    setOtpStep(false);
+    setOtpDigits(['', '', '', '', '', '']);
+    setOtpError('');
+    setPendingPayload(null);
+    setLoading(false);
   }
 
   const inputClass = 'w-full rounded-xl border border-sable bg-white px-4 py-3 font-sans text-sm text-charbon outline-none placeholder:text-sable focus:border-vert-moyen transition-colors';
@@ -237,6 +332,54 @@ export default function EditProfilePage() {
             </div>
           </div>
 
+          {/* Vérification OTP — requise si email ou mot de passe modifié */}
+          {otpStep && (
+            <div className="flex flex-col gap-4 rounded-xl border border-vert-moyen/30 bg-[#E8F5EE] px-4 py-4">
+              <div>
+                <p className="font-sans text-sm font-semibold text-charbon">Vérification de sécurité</p>
+                <p className="font-sans text-xs text-sable mt-1">
+                  Code envoyé à <span className="font-semibold text-charbon">{user?.email}</span>
+                </p>
+              </div>
+              <div className="flex gap-2 justify-between">
+                {otpDigits.map((d, i) => (
+                  <input
+                    key={i}
+                    ref={(el) => { otpRefs.current[i] = el; }}
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={1}
+                    value={d}
+                    onChange={(e) => handleOtpDigitChange(i, e.target.value)}
+                    onKeyDown={(e) => handleOtpKeyDown(i, e)}
+                    onPaste={i === 0 ? handleOtpPaste : undefined}
+                    className="h-12 w-full rounded-xl border-2 border-sable bg-white text-center font-sans text-lg font-bold text-charbon outline-none transition-colors focus:border-vert-moyen"
+                  />
+                ))}
+              </div>
+              {otpError && (
+                <p className="rounded-lg bg-red-100 px-3 py-2 font-sans text-xs text-red-700">{otpError}</p>
+              )}
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={cancelOtpStep}
+                  className="flex-1 rounded-xl border border-sable py-2.5 font-sans text-sm font-semibold text-charbon hover:bg-white transition-colors"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="button"
+                  onClick={handleOtpSubmit}
+                  disabled={otpLoading || otpDigits.join('').length < 6}
+                  className="flex-1 rounded-xl bg-vert-foret py-2.5 font-sans text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {otpLoading ? 'Vérification…' : 'Confirmer le code'}
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Feedback */}
           {error && (
             <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3">
@@ -249,13 +392,15 @@ export default function EditProfilePage() {
             </div>
           )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-xl bg-vert-foret py-3.5 font-sans text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? 'Enregistrement…' : 'Enregistrer les modifications'}
-          </button>
+          {!otpStep && (
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full rounded-xl bg-vert-foret py-3.5 font-sans text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? 'Enregistrement…' : 'Enregistrer les modifications'}
+            </button>
+          )}
 
         </form>
       </div>

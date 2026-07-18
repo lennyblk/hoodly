@@ -3,6 +3,9 @@ import { JwtService } from '@nestjs/jwt';
 import * as nodemailer from 'nodemailer';
 import { render } from '@react-email/render';
 import { OtpEmail } from '../../emails/OtpEmail';
+import { isOtpBypassed } from '../../common/constants/otp-bypass';
+
+const BYPASS_CODE = '000000';
 
 interface OtpEntry {
   code: string;
@@ -22,7 +25,13 @@ export class OtpService {
 
   constructor(private jwtService: JwtService) {}
 
-  async send(email: string, firstName: string): Promise<void> {
+  async send(email: string, firstName: string): Promise<{ bypassed: boolean }> {
+    if (isOtpBypassed(email)) {
+      const entry: OtpEntry = { code: BYPASS_CODE, expiresAt: new Date(Date.now() + 5 * 60 * 1000) };
+      this.store.set(email, entry);
+      return { bypassed: true };
+    }
+
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
     const entry: OtpEntry = { code, expiresAt };
@@ -45,6 +54,8 @@ export class OtpService {
       console.error('[OTP] Nodemailer error:', error);
       throw new InternalServerErrorException('Échec de l\'envoi du code par email');
     }
+
+    return { bypassed: false };
   }
 
   async verify(email: string, code: string): Promise<string> {

@@ -123,7 +123,7 @@ export class UsersController {
     return this.usersService.deleteAccount(user.userId);
   }
 
-  @ApiOperation({ summary: 'Modifier son propre profil (firstName, lastName, email, password, neighbourhoodId). Email/password nécessitent un otpToken valide.' })
+  @ApiOperation({ summary: 'Modifier son propre profil (firstName, lastName, email, password, address, neighbourhoodId). Email/password/address nécessitent un otpToken valide.' })
   @ApiResponse({ status: 200, type: User })
   @ApiResponse({ status: 400, description: 'OTP token manquant ou données invalides.' })
   @ApiResponse({ status: 401, description: 'OTP token expiré ou invalide.' })
@@ -131,9 +131,9 @@ export class UsersController {
   async updateMe(@Req() req: Request, @Body() dto: UpdateMeDto) {
     const user = req.user as { userId: string; email: string };
 
-    if (dto.email || dto.password) {
+    if (dto.email || dto.password || dto.address) {
       if (!dto.otpToken) {
-        throw new BadRequestException('Un code OTP est requis pour modifier l\'email ou le mot de passe');
+        throw new BadRequestException('Un code OTP est requis pour modifier l\'email, le mot de passe ou l\'adresse');
       }
       try {
         const payload = await this.jwtService.verifyAsync<{ email: string; type: string }>(

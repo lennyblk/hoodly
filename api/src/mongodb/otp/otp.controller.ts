@@ -20,8 +20,8 @@ export class OtpController {
   async send(@Body() dto: SendOtpDto) {
     const user = await this.usersService.findByEmail(dto.email);
     const firstName = user?.firstName ?? dto.firstName ?? 'Utilisateur';
-    await this.otpService.send(dto.email, firstName);
-    return { message: 'Code envoyé' };
+    const { bypassed } = await this.otpService.send(dto.email, firstName);
+    return bypassed ? { bypassed: true } : { message: 'Code envoyé' };
   }
 
   @ApiOperation({ summary: 'Vérifier un code OTP' })
