@@ -48,17 +48,39 @@ interface UploadModalProps {
   onUploaded: (doc: HoodlyDocument) => void;
 }
 
+interface NeighbourOption {
+  _id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+}
+
 function UploadModal({ onClose, onUploaded }: UploadModalProps) {
+  const { user } = useUser();
   const [title, setTitle] = useState('');
   const [signerEmail, setSignerEmail] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [neighbours, setNeighbours] = useState<NeighbourOption[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!user?.neighbourhoodId) return;
+    api
+      .get<NeighbourOption[]>('/users/neighbourhood', { params: { neighbourhoodId: user.neighbourhoodId } })
+      .then(({ data }) => setNeighbours(data.filter((n) => n.email !== user.email)))
+      .catch(() => setNeighbours([]));
+  }, [user?.neighbourhoodId, user?.email]);
+
+  const suggestions = signerEmail.trim()
+    ? neighbours.filter((n) => n.email.toLowerCase().includes(signerEmail.trim().toLowerCase())).slice(0, 5)
+    : [];
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!file || !title.trim()) return;
+    if (!file || !title.trim() || !signerEmail.trim()) return;
     setUploading(true);
     setError(null);
     try {
@@ -66,7 +88,7 @@ function UploadModal({ onClose, onUploaded }: UploadModalProps) {
       form.append('file', file);
       form.append('title', title.trim());
       form.append('type', 'other');
-      if (signerEmail.trim()) form.append('signerEmail', signerEmail.trim());
+      form.append('signerEmail', signerEmail.trim());
       const { data } = await api.post<HoodlyDocument>('/documents/upload', form, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
@@ -109,17 +131,39 @@ function UploadModal({ onClose, onUploaded }: UploadModalProps) {
               />
             </div>
 
-            <div className="flex flex-col gap-1.5">
+            <div className="flex flex-col gap-1.5 relative">
               <label className="text-xs font-semibold text-charbon/60">
-                Email de l'autre signataire <span className="font-normal text-charbon/30">(optionnel)</span>
+                Email de l'autre signataire
               </label>
               <input
                 type="email"
                 value={signerEmail}
                 onChange={(e) => setSignerEmail(e.target.value)}
+                onFocus={() => setShowSuggestions(true)}
+                onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
                 placeholder="voisin@example.com"
                 className="border border-sable/40 rounded-xl px-3 py-2 text-sm text-charbon focus:outline-none focus:ring-2 focus:ring-vert-foret/30"
+                required
               />
+              {showSuggestions && suggestions.length > 0 && (
+                <ul className="absolute top-full mt-1 left-0 right-0 bg-white border border-sable/40 rounded-xl shadow-lg z-10 overflow-hidden">
+                  {suggestions.map((n) => (
+                    <li key={n._id}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSignerEmail(n.email);
+                          setShowSuggestions(false);
+                        }}
+                        className="w-full text-left px-3 py-2 text-sm hover:bg-creme/60 transition-colors"
+                      >
+                        <span className="font-medium text-charbon">{n.firstName} {n.lastName}</span>
+                        <span className="text-charbon/50"> — {n.email}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
 
             <div className="flex flex-col gap-1.5">
@@ -159,7 +203,7 @@ function UploadModal({ onClose, onUploaded }: UploadModalProps) {
 
             <button
               type="submit"
-              disabled={!file || !title.trim() || uploading}
+              disabled={!file || !title.trim() || !signerEmail.trim() || uploading}
               className="w-full bg-vert-foret text-white py-3 rounded-xl text-sm font-semibold hover:bg-vert-moyen transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {uploading ? 'Upload en cours...' : 'Uploader'}

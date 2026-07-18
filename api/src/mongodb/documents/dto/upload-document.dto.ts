@@ -18,8 +18,8 @@ export class UploadDocumentDto {
   @IsOptional()
   announcementId?: string;
 
-  @ApiPropertyOptional({ example: 'voisin@example.com' })
+  @ApiProperty({ example: 'voisin@example.com' })
   @IsEmail()
-  @IsOptional()
-  signerEmail?: string;
+  @IsNotEmpty()
+  signerEmail: string;
 }
