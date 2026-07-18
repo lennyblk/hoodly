@@ -320,7 +320,13 @@ export default function ServiceDetailPage() {
   const serviceDate = announcement.serviceDetails?.chosenDate;
   const hrsUntilService = hoursUntil(serviceDate);
   const canCancelOrWithdraw = hrsUntilService === null || hrsUntilService >= 24;
-  const insufficientBalance = !isOwner && !!user && announcement.status === 'open' && user.points < announcement.points;
+
+  const insufficientBalance =
+    !isOwner &&
+    !!user &&
+    announcement.status === 'open' &&
+    announcement.type === 'offer' &&
+    user.points < announcement.points;
 
   return (
     <div className="flex flex-col min-h-full">
