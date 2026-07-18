@@ -43,6 +43,9 @@ async function seed() {
     modo_montmartre: new ObjectId(),
     modo_belleville: new ObjectId(),
     modo_marais: new ObjectId(),
+    modo_bastille: new ObjectId(),
+    modo_republique: new ObjectId(),
+    modo_bonmarche: new ObjectId(),
     // Montmartre habitants
     alice: new ObjectId(),
     bob: new ObjectId(),
@@ -142,6 +145,9 @@ async function seed() {
     u(uids.modo_montmartre, "modo.montmartre@hoodly.com", modoPw, "Sophie", "Leroux", "moderateur", nids.montmartre, null, 120, 80),
     u(uids.modo_belleville, "modo.belleville@hoodly.com", modoPw, "Marc", "Dupont", "moderateur", nids.belleville, null, 95, 75),
     u(uids.modo_marais, "modo.marais@hoodly.com", modoPw, "Nathalie", "Roche", "moderateur", nids.marais, null, 80, 70),
+    u(uids.modo_bastille, "modo.bastille@hoodly.com", modoPw, "Lucas", "Renard", "moderateur", nids.bastille, null, 75, 65),
+    u(uids.modo_republique, "modo.republique@hoodly.com", modoPw, "Inès", "Garnier", "moderateur", nids.republique, null, 70, 60),
+    u(uids.modo_bonmarche, "modo.bonmarche@hoodly.com", modoPw, "Antoine", "Vidal", "moderateur", nids.bonmarche, null, 65, 55),
     // Montmartre
     u(uids.alice, "alice@hoodly.com", pw, "Alice", "Martin", "habitant", nids.montmartre, "8 rue des Abbesses, 75018 Paris", 85, 60),
     u(uids.bob, "bob@hoodly.com", pw, "Bob", "Bernard", "habitant", nids.montmartre, "23 rue Caulaincourt, 75018 Paris", 60, 55),
