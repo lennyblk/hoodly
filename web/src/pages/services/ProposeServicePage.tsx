@@ -58,7 +58,9 @@ function isDurationValid(duration: string): boolean {
 
 function isTimeRangeValid(startTime: string, endTime: string): boolean {
   if (!startTime || !endTime) return true;
-  return endTime > startTime;
+  // endTime === startTime reste invalide (durée nulle). endTime < startTime
+  // veut dire que le créneau passe minuit (ex: 23:00 -> 00:15), donc valide.
+  return endTime !== startTime;
 }
 
 function parseDurationMinutes(duration: string): number | null {
@@ -72,7 +74,9 @@ function windowMinutes(startTime: string, endTime: string): number | null {
   if (!startTime || !endTime) return null;
   const [sh, sm] = startTime.split(':').map(Number);
   const [eh, em] = endTime.split(':').map(Number);
-  return (eh * 60 + em) - (sh * 60 + sm);
+  const diff = (eh * 60 + em) - (sh * 60 + sm);
+  // diff < 0 veut dire que le créneau passe minuit, on rallonge à +24h.
+  return diff < 0 ? diff + 24 * 60 : diff;
 }
 
 function matchesDuration(duration: string, startTime: string, endTime: string): boolean {

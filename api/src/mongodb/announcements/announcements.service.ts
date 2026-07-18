@@ -84,13 +84,15 @@ export class AnnouncementsService {
       if (!slot.startTime || !slot.endTime) {
         throw new BadRequestException('Chaque disponibilité doit comporter une heure de début et de fin');
       }
-      if (slot.endTime <= slot.startTime) {
+      if (slot.endTime === slot.startTime) {
         throw new BadRequestException("L'heure de fin doit être postérieure à l'heure de début");
       }
       if (durationMinutes !== null) {
         const [sh, sm] = slot.startTime.split(':').map(Number);
         const [eh, em] = slot.endTime.split(':').map(Number);
-        const windowMinutes = (eh * 60 + em) - (sh * 60 + sm);
+        const rawWindow = (eh * 60 + em) - (sh * 60 + sm);
+        // rawWindow < 0 veut dire que le créneau passe minuit, on rallonge à +24h.
+        const windowMinutes = rawWindow < 0 ? rawWindow + 24 * 60 : rawWindow;
         if (windowMinutes !== durationMinutes) {
           throw new BadRequestException(
             `La plage horaire (${windowMinutes} min) doit correspondre à la durée de la séance déclarée (${durationMinutes} min)`,
