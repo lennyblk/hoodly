@@ -34,7 +34,8 @@ export class UsersService {
   }
 
   async findByNeighbourhood(neighbourhoodId: string) {
-    return this.usersRepository.find({ where: { neighbourhoodId } as any });
+    const users = await this.usersRepository.find({ where: { neighbourhoodId } as any });
+    return users.map(({ password, ...safeUser }) => safeUser);
   }
 
   async findAdmins() {

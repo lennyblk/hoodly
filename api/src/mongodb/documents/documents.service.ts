@@ -199,9 +199,13 @@ export class DocumentsService implements OnModuleInit {
       }
     } else if (dto.signerEmail) {
       const otherUser = await this.usersService.findByEmail(dto.signerEmail);
-      if (otherUser && otherUser._id.toString() !== userId) {
-        signers = [userId, otherUser._id.toString()];
+      if (!otherUser) {
+        throw new BadRequestException(`Aucun utilisateur trouvé avec l'email ${dto.signerEmail}`);
       }
+      if (otherUser._id.toString() === userId) {
+        throw new BadRequestException("Vous ne pouvez pas vous désigner vous-même comme signataire");
+      }
+      signers = [userId, otherUser._id.toString()];
     }
 
     const { buffer: pdfWithSigPage, zones: signatureZones } =
