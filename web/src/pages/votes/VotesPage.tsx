@@ -473,7 +473,7 @@ export default function VotesPage() {
       <div className="px-5 lg:px-8 pt-6 pb-4 bg-white border-b border-sable/20 flex-shrink-0">
         <div className="flex items-center justify-between mb-4">
           <h1 className="font-heading text-2xl font-bold text-charbon">Sondages</h1>
-          {canManage && (isAdmin || !!user?.neighbourhoodId) && (
+          {canManage && !isAdmin && !!user?.neighbourhoodId && (
             <button
               onClick={() => setShowModal(true)}
               className="bg-vert-foret text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-vert-moyen transition-colors flex items-center gap-2"
@@ -546,7 +546,7 @@ export default function VotesPage() {
         )}
       </div>
 
-      {showModal && (isAdmin || user?.neighbourhoodId) && (
+      {showModal && !isAdmin && user?.neighbourhoodId && (
         <CreateModal
           neighbourhoodId={user?.neighbourhoodId}
           onCreated={handleCreated}
