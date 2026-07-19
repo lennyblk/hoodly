@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { io, type Socket } from 'socket.io-client';
 import api from '../../api/axios';
+import { useSocket } from '../../contexts/SocketContext';
 
 interface Message {
   id: string;
@@ -44,7 +44,7 @@ export default function ChatView({ conversationId, currentUserId, otherUserName,
   const [capturedPhotoUrl, setCapturedPhotoUrl] = useState<string | null>(null);
   const [mediaError, setMediaError] = useState('');
   const capturedPhotoBlobRef = useRef<Blob | null>(null);
-  const socketRef = useRef<Socket | null>(null);
+  const { socket } = useSocket();
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const isLiveUpdateRef = useRef(false);
@@ -61,18 +61,18 @@ export default function ChatView({ conversationId, currentUserId, otherUserName,
   }, [conversationId]);
 
   useEffect(() => {
-    const socket = io(import.meta.env.VITE_API_URL ?? 'http://localhost:3000');
-    socketRef.current = socket;
+    if (!socket) return;
     socket.emit('joinConversation', conversationId);
-    socket.on('newMessage', (msg: Message) => {
+    const handler = (msg: Message) => {
       isLiveUpdateRef.current = true;
       setMessages((prev) => [...prev, msg]);
-    });
+    };
+    socket.on('newMessage', handler);
     return () => {
       socket.emit('leaveConversation', conversationId);
-      socket.disconnect();
+      socket.off('newMessage', handler);
     };
-  }, [conversationId]);
+  }, [socket, conversationId]);
 
   useEffect(() => {
     const behavior = isLiveUpdateRef.current ? 'smooth' : 'auto';
@@ -133,7 +133,7 @@ export default function ChatView({ conversationId, currentUserId, otherUserName,
     setInput('');
     setSending(true);
     try {
-      socketRef.current?.emit('sendMessage', {
+      socket?.emit('sendMessage', {
         conversationId,
         senderId: currentUserId,
         type: 'text',
@@ -159,7 +159,7 @@ export default function ChatView({ conversationId, currentUserId, otherUserName,
       const { data } = await api.post<{ fileId: string }>('/messages/upload', form, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
-      socketRef.current?.emit('sendMessage', {
+      socket?.emit('sendMessage', {
         conversationId,
         senderId: currentUserId,
         type: mediaType,

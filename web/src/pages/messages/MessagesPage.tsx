@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
-import { io, type Socket } from 'socket.io-client';
 import api from '../../api/axios';
 import { useUser } from '../../contexts/useUser';
+import { useSocket } from '../../contexts/SocketContext';
 import ChatView from './ChatView';
 
 interface Conversation {
@@ -47,11 +47,9 @@ export default function MessagesPage() {
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
-  const [onlineIds, setOnlineIds] = useState<Set<string>>(new Set());
+  const { socket, onlineIds } = useSocket();
   const [extraUsers, setExtraUsers] = useState<Record<string, NeighbourUser>>({});
   const [contactsLoaded, setContactsLoaded] = useState(false);
-  const socketRef = useRef<Socket | null>(null);
-  const [socketReady, setSocketReady] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -119,42 +117,23 @@ export default function MessagesPage() {
   }, [fetchConversations, fetchNeighbours]);
 
   useEffect(() => {
-    if (!user) return;
-    const socket = io(import.meta.env.VITE_API_URL ?? 'http://localhost:3000');
-    socketRef.current = socket;
-    socket.emit('register', user._id);
-    socket.on('onlineUsers', (ids: string[]) => setOnlineIds(new Set(ids)));
-    socket.on('userOnline', ({ userId }: { userId: string }) =>
-      setOnlineIds((prev) => new Set(prev).add(userId)),
-    );
-    socket.on('userOffline', ({ userId }: { userId: string }) =>
-      setOnlineIds((prev) => {
-        const next = new Set(prev);
-        next.delete(userId);
-        return next;
-      }),
-    );
-    socket.on('newMessage', (msg: { conversationId: string; type?: string; content?: string; fileName?: string }) => {
+    if (!socket) return;
+    const handler = (msg: { conversationId: string; type?: string; content?: string; fileName?: string }) => {
       setConversations((prev) =>
         prev.map((c) =>
           c.id === msg.conversationId ? { ...c, lastMessage: lastMessageLabel(msg) } : c,
         ),
       );
-    });
-    setSocketReady(true);
-    return () => {
-      setSocketReady(false);
-      socketRef.current = null;
-      socket.disconnect();
     };
-  }, [user]);
+    socket.on('newMessage', handler);
+    return () => { socket.off('newMessage', handler); };
+  }, [socket]);
 
 
   useEffect(() => {
-    const socket = socketRef.current;
-    if (!socketReady || !socket) return;
+    if (!socket) return;
     for (const conv of conversations) socket.emit('joinConversation', conv.id);
-  }, [socketReady, conversations]);
+  }, [socket, conversations]);
 
   async function openNewConvModal() {
     await fetchNeighbours();
