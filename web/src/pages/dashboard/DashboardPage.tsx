@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import TopBar from '../../components/layout/TopBar';
 import { useUser } from '../../contexts/useUser';
+import { useSocket } from '../../contexts/SocketContext';
 import NeighbourhoodBanner from '../../components/dashboard/NeighbourhoodBanner';
 import StatCard from '../../components/dashboard/StatCard';
 import QuickActionCard from '../../components/dashboard/QuickActionCard';
@@ -116,8 +117,9 @@ const quickActions = [
 export default function DashboardPage() {
   const { user } = useUser() as { user: User | null };
   const navigate = useNavigate();
+  const { onlineIds } = useSocket();
+  const [neighbourIds, setNeighbourIds] = useState<string[]>([]);
   const [dashboardMetrics, setDashboardMetrics] = useState({
-    activeNeighbours: 0,
     availableServices: 0,
     events: 0,
   });
@@ -127,12 +129,14 @@ export default function DashboardPage() {
     if (!nid) return;
 
     Promise.allSettled([
-      api.get<{ count: number }>('/users/count', { params: { neighbourhoodId: nid } }),
+      api.get<{ _id: string }[]>('/users/neighbourhood', { params: { neighbourhoodId: nid } }),
       api.get<Announcement[]>('/announcements', { params: { neighbourhoodId: nid } }),
       api.get<Event[]>('/events', { params: { neighbourhoodId: nid } }),
     ]).then(([usersRes, annRes, eventsRes]) => {
+      if (usersRes.status === 'fulfilled') {
+        setNeighbourIds(usersRes.value.data.map((u) => u._id));
+      }
       setDashboardMetrics({
-        activeNeighbours: usersRes.status === 'fulfilled' ? usersRes.value.data.count : 0,
         availableServices: annRes.status === 'fulfilled'
           ? annRes.value.data.filter((a) => a.status === 'open').length
           : 0,
@@ -143,13 +147,13 @@ export default function DashboardPage() {
     });
   }, [user?.neighbourhoodId]);
 
+  const activeNeighbours = neighbourIds.filter((id) => id !== user?._id && onlineIds.has(id)).length;
+
   const statsWithUser = STATS_CONFIG.map((config) => {
     let value = 0;
-    if (config.id === 'userPoints') {
-      value = user?.points ?? 0;
-    } else {
-      value = dashboardMetrics[config.id as keyof typeof dashboardMetrics] ?? 0;
-    }
+    if (config.id === 'userPoints') value = user?.points ?? 0;
+    else if (config.id === 'activeNeighbours') value = activeNeighbours;
+    else value = dashboardMetrics[config.id as keyof typeof dashboardMetrics] ?? 0;
     return { ...config, value };
   });
 
