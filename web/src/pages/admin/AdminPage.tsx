@@ -829,7 +829,6 @@ export default function AdminPage() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
   const [neighbourhoods, setNeighbourhoods] = useState<Neighbourhood[]>([]);
-  const [neighbourhoodCounts, setNeighbourhoodCounts] = useState<Record<string, number>>({});
   const [neighbourhoodLoading, setNeighbourhoodLoading] = useState(true);
   const [neighbourhoodSearch, setNeighbourhoodSearch] = useState('');
 
@@ -841,17 +840,7 @@ export default function AdminPage() {
 
   useEffect(() => {
     api.get<Neighbourhood[]>('/neighbourhoods')
-      .then(async ({ data }) => {
-        setNeighbourhoods(data);
-        const counts = await Promise.all(
-          data.map((n) =>
-            api.get<{ count: number }>('/users/count', { params: { neighbourhoodId: String(n.id) } })
-              .then(({ data }) => [String(n.id), data.count] as const)
-              .catch(() => [String(n.id), 0] as const),
-          ),
-        );
-        setNeighbourhoodCounts(Object.fromEntries(counts));
-      })
+      .then(({ data }) => setNeighbourhoods(data))
       .finally(() => setNeighbourhoodLoading(false));
   }, []);
 
@@ -999,7 +988,6 @@ export default function AdminPage() {
             <thead className="sticky top-0 z-10">
               <tr className="bg-creme border-b border-sable/30">
                 <th className="text-left px-5 py-3.5 font-semibold text-charbon/70 text-xs">Nom</th>
-                <th className="text-left px-5 py-3.5 font-semibold text-charbon/70 text-xs">Habitants actifs</th>
                 <th className="text-left px-5 py-3.5 font-semibold text-charbon/70 text-xs">Créé le</th>
               </tr>
             </thead>
@@ -1007,7 +995,6 @@ export default function AdminPage() {
               {filteredNeighbourhoods.map((n) => (
                 <tr key={String(n.id)} className="border-b border-sable/20 last:border-0 hover:bg-creme/40 transition-colors">
                   <td className="px-5 py-3.5 font-medium text-charbon">{n.name}</td>
-                  <td className="px-5 py-3.5 text-charbon/60">{neighbourhoodCounts[String(n.id)] ?? 0}</td>
                   <td className="px-5 py-3.5 text-charbon/60">
                     {n.createdAt ? new Date(n.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
                   </td>
