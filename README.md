@@ -1,48 +1,47 @@
 # Hoodly
 
-A collaborative neighbourhood platform that lets residents exchange services, sign digital documents, join local events and communicate through a secure multimedia messaging system.
+Plateforme de quartier collaborative permettant aux résidents d'échanger des services, signer des documents numériques, rejoindre des événements locaux et communiquer via une messagerie multimédia sécurisée.
 
 ---
 
-## Tech Stack
+## Stack technique
 
-| Category | Technology |
+| Catégorie | Technologie |
 |---|---|
 | Back-end | Node.js + NestJS |
-| Language | TypeScript |
-| Main database | MongoDB |
-| Social graph | Neo4j |
-| Local database (Java) | SQLite |
-| Auth | JWT + MFA (TOTP) + SSO |
-| Front-end | React, Leaflet |
-| Desktop client | Java + JavaFX |
-| Real-time | Socket.io (WebSocket) |
-| Containerization | Docker + Docker Compose |
+| Langage | TypeScript |
+| Base principale | MongoDB |
+| Graphe social | Neo4j |
+| Base locale (Java) | SQLite |
+| Auth | JWT (access + refresh) + OTP email |
+| Front-end | React + Vite + Tailwind CSS |
+| Client desktop | Java 17 + JavaFX 21 |
+| Temps réel | Socket.io (WebSocket) |
+| Containerisation | Docker + Docker Compose |
 | CI/CD | GitHub Actions |
-| Observabilty | Prometheus / Grafana |
+| Reverse proxy | Caddy |
 
+---
 
-## Prerequisites
+## Prérequis
 
 - [Node.js](https://nodejs.org) >= 20
 - [Docker](https://docker.com) + Docker Compose
-- [Java](https://adoptium.net) >= 17 (desktop client only)
-- [Maven](https://maven.apache.org) >= 3.9 (desktop client only)
+- [Java](https://adoptium.net) >= 17 (client desktop uniquement)
+- [Maven](https://maven.apache.org) >= 3.9 (client desktop uniquement)
 
 ---
 
-## Getting started (development)
+## Démarrage (développement)
 
 ```bash
 git clone https://github.com/lennyblk/hoodly.git
 cd hoodly
 
 cp .env.example .env
+# Remplir les variables d'environnement
 
-docker compose -f docker-compose.dev.yml up -d
-
-cd api && npm install
-npm run dev
+docker compose -f docker-compose.dev.yaml up -d
 ```
 
 | Service | URL |
@@ -52,160 +51,296 @@ npm run dev
 | React | `http://localhost:5173` |
 | Neo4j Browser | `http://localhost:7474` |
 
+### Seed (données de test)
+
+```bash
+docker exec hoodly_api_dev node dist/seed.js
+```
+
+Les emails de seed (`admin@hoodly.com`, `alice@hoodly.com`, etc.) passent l'OTP automatiquement — pas besoin de code réel.
+
 ---
 
 ## Production
 
+Le déploiement est automatisé via GitHub Actions à chaque push sur `main` :
+
+1. Lancement des tests Jest
+2. SSH sur le serveur → `git pull`
+3. Build et restart des containers Docker
+4. Exécution de la seed si la base est vide
+
 ```bash
-docker compose -f docker-compose.prod.yml up -d
+# Rebuild manuel avec la bonne VITE_API_URL
+VITE_API_URL=https://api-hoodly.lennyblk.dev docker compose -f docker-compose.prod.yaml up -d --build
 ```
 
 ---
 
-## Environment variables
-
-Copy `.env.example` and fill in the values:
+## Variables d'environnement
 
 ```env
 # MongoDB
-MONGODB_URI=mongodb://localhost:27017/hoodly
-
-# SQLite
-SQLITE_PATH=./hoodly_local.db
+MONGODB_URI=mongodb://root:root@mongo:27017/hoodly?authSource=admin
 
 # Neo4j
-NEO4J_URI=neo4j://localhost:7687
+NEO4J_URI=neo4j://neo4j:7687
 NEO4J_USER=neo4j
 NEO4J_PASSWORD=
 
 # JWT
 JWT_SECRET=
 JWT_EXPIRES_IN=15m
+JWT_REFRESH_SECRET=
 REFRESH_TOKEN_EXPIRES_IN=7d
+
+# OTP (signature de documents, modification email/mot de passe)
+OTP_SECRET=
+
+# Email (OTP)
+GMAIL_USER=
+GMAIL_APP_PASSWORD=
 
 # App
 PORT=3000
 NODE_ENV=development
+VITE_API_URL=http://localhost:3000
 ```
 
 ---
 
-## Project structure
+## Structure du projet
 
 ```
 hoodly/
-├── api/                          # Node.js + NestJS back-end
-│   ├── src/
-│   │   ├── auth/
-│   │   ├── users/
-│   │   ├── neighborhoods/
-│   │   ├── announcements/        # Neighbour services
-│   │   ├── documents/
-│   │   ├── events/
-│   │   ├── messages/
-│   │   ├── votes/
-│   │   ├── stats/
-│   │   ├── query-lang/           # Custom Lex/Yacc parser (Jison)
-│   │   └── index.ts
-│   └── Dockerfile
-├── web/                          # React — resident interface
-├── java/                         # Java JavaFX desktop app
-│   └── src/main/java/
-├── docker-compose.dev.yml
-├── docker-compose.prod.yml
-└── .env.example
+├── api/                          # Back-end NestJS
+│   └── src/
+│       ├── mongodb/
+│       │   ├── auth/             # Signup, signin, JWT, OTP
+│       │   ├── users/            # Profils, points, RGPD
+│       │   ├── announcements/    # Annonces de services
+│       │   ├── documents/        # Contrats PDF, signatures
+│       │   ├── events/           # Événements, RSVP, recommandations
+│       │   ├── messages/         # Messagerie, conversations
+│       │   ├── votes/            # Sondages de quartier
+│       │   ├── neighbourhoods/   # Quartiers (polygones GeoJSON)
+│       │   └── otp/              # Service OTP email
+│       ├── neo4j/                # Service graphe social
+│       ├── sqlite/
+│       │   └── incidents/        # Signalements (base SQLite)
+│       ├── emails/               # Templates React Email
+│       └── seed.ts               # Données de test
+├── web/                          # Front-end React
+│   └── src/
+│       ├── api/                  # Clients axios + types générés
+│       ├── components/           # Composants réutilisables
+│       ├── contexts/             # UserContext, SocketContext
+│       └── pages/                # Pages par feature
+├── java/                         # Client desktop JavaFX
+│   ├── src/main/java/org/example/
+│   ├── hoodly-plugin-api/        # Interface Plugin (système de plugins)
+│   ├── hoodly-plugins/           # Plugins embarqués
+│   └── pom.xml
+└── .github/workflows/
+    └── deploy.yml                # CI/CD GitHub Actions
 ```
 
 ---
 
-## Database models
+## Modèles de données
 
-### MongoDB — main collections
+### MongoDB — collections principales
 
-| Collection | Content |
+| Collection | Contenu |
 |---|---|
-| `users` | User accounts, roles, preferences |
-| `documents` | Contracts, PDFs, signature zones, statuses |
-| `events` | Neighbourhood events, participants |
-| `messages` | Chat messages (text, photo, voice) |
-| `announcements` | Service listings |
-| `votes` | Votes and results |
+| `users` | Comptes, rôles (`admin` / `moderateur` / `habitant`), points |
+| `neighbourhoods` | Quartiers avec polygones GeoJSON |
+| `events` | Événements, participants, RSVP |
+| `announcements` | Annonces de services (offres / demandes) |
+| `documents` | Contrats PDF, signataires, signatures |
+| `conversations` | Conversations de messagerie |
+| `messages` | Messages (texte, image, audio, fichier) |
+| `votes` | Sondages et résultats |
+| `pointstransactions` | Historique des mouvements de points |
 
-### Neo4j — social graph
+### Neo4j — graphe social
 
-| Node | Description |
+| Nœud | Description |
 |---|---|
-| `User` | Neighbourhood resident |
-| `Event` | Community event |
-| `Service` | Rendered service |
+| `User` | Résident du quartier |
+| `Event` | Événement communautaire |
 
-| Relationship | Triggered by | Status |
-|---|---|---|
-| `HELPED` | Announcement accepted (`PATCH /announcements/:id` with `acceptedBy`) |
-| `ATTENDED` | RSVP to event (`POST /events/:id/rsvp`) |
-| `INTERESTED_IN` | Swipe interest on event (`POST /events/:id/interest`) |
+| Relation | Déclenchée par |
+|---|---|
+| `ATTENDED` | RSVP à un événement (`POST /events/:id/rsvp`) |
+| `INTERESTED_IN` | Intérêt swipé sur un événement (`POST /events/:id/interest`) |
+| `HELPED` | Annonce acceptée (`PATCH /announcements/:id` avec `acceptedBy`) |
+
+### SQLite — base locale
+
+| Table | Contenu |
+|---|---|
+| `incidents` | Signalements de problèmes de quartier |
 
 ---
 
-## API Routes
+## Routes API
 
-> Full documentation available at `/api-docs` (Swagger).
+> Documentation complète disponible sur `/api-docs` (Swagger).
 
 ### Auth
-| Method | Route | Description | Access |
-|---|---|---|---|
-| POST | `/auth/register` | Create an account | Public |
-| POST | `/auth/login` | Sign in | Public |
-| POST | `/auth/logout` | Sign out | Authenticated |
-| POST | `/auth/mfa/verify` | Verify MFA code | Authenticated |
-| GET | `/me/export` | GDPR data export | Authenticated |
 
-### Neighborhoods
-| Method | Route | Description | Access |
+| Méthode | Route | Description | Accès |
 |---|---|---|---|
-| GET | `/neighborhoods` | List all neighborhoods | Authenticated |
-| POST | `/neighborhoods` | Create a neighborhood (GeoJSON) | Admin |
-| PATCH | `/neighborhoods/:id` | Update boundaries | Admin |
+| POST | `/auth/signup` | Créer un compte | Public |
+| POST | `/auth/signin` | Se connecter | Public |
+| POST | `/auth/logout` | Se déconnecter | Authentifié |
+| POST | `/auth/refresh` | Rafraîchir les tokens | Authentifié |
+| GET | `/auth/me` | Profil courant | Authentifié |
+| POST | `/auth/otp/send` | Envoyer un code OTP par email | Public |
+| POST | `/auth/otp/verify` | Vérifier un code OTP → retourne `otpToken` | Public |
 
-### Announcements
-| Method | Route | Description | Access | Status |
-|---|---|---|---|---|
-| GET | `/announcements` | List all announcements | Authenticated | 
-| POST | `/announcements` | Create an announcement | Authenticated |
-| GET | `/announcements/:id` | Get one announcement | Authenticated |
-| PATCH | `/announcements/:id` | Update / accept announcement — alimente `HELPED` | Moderator+ |
-| DELETE | `/announcements/:id` | Delete announcement | Admin |
+### Utilisateurs
+
+| Méthode | Route | Description | Accès |
+|---|---|---|---|
+| GET | `/users` | Lister tous les utilisateurs | Admin |
+| GET | `/users/count` | Nombre d'utilisateurs d'un quartier | Authentifié |
+| GET | `/users/neighbourhood` | Utilisateurs d'un quartier | Authentifié |
+| GET | `/users/admins` | Liste des admins | Authentifié |
+| GET | `/users/me/export` | Export RGPD | Authentifié |
+| GET | `/users/me/points/history` | Historique des points | Authentifié |
+| PATCH | `/users/me` | Modifier son profil (OTP requis si email/mdp) | Authentifié |
+| DELETE | `/users/me` | Supprimer son compte (RGPD) | Authentifié |
+| GET | `/users/:id` | Voir un utilisateur | Authentifié |
+| POST | `/users` | Créer un utilisateur | Admin |
+| POST | `/users/:id/points` | Ajuster les points | Admin |
+| PATCH | `/users/:id` | Modifier un utilisateur | Admin |
+| DELETE | `/users/:id` | Supprimer un utilisateur | Admin |
+
+### Quartiers
+
+| Méthode | Route | Description | Accès |
+|---|---|---|---|
+| GET | `/neighbourhoods` | Lister les quartiers | Authentifié |
+| POST | `/neighbourhoods` | Créer un quartier (GeoJSON) | Admin |
+| PATCH | `/neighbourhoods/:id` | Modifier les limites | Admin |
+| DELETE | `/neighbourhoods/:id` | Supprimer un quartier | Admin |
+
+### Annonces de services
+
+| Méthode | Route | Description | Accès |
+|---|---|---|---|
+| GET | `/announcements` | Lister les annonces | Authentifié |
+| POST | `/announcements` | Créer une annonce | Authentifié |
+| GET | `/announcements/:id` | Voir une annonce | Authentifié |
+| PATCH | `/announcements/:id` | Modifier / accepter → alimente `HELPED` | Authentifié |
+| DELETE | `/announcements/:id` | Supprimer | Admin |
 
 ### Documents
-| Method | Route | Description | Access |
-|---|---|---|---|
-| POST | `/documents/upload` | Upload a PDF | Authenticated |
-| POST | `/documents/:id/sign` | Sign a document (MFA required) | Authenticated |
-| GET | `/documents/:id` | View a document | Authenticated |
-| POST | `/documents/query` | Query using custom language | Authenticated |
 
-### Events
-| Method | Route | Description | Access | Status |
-|---|---|---|---|---|
-| GET | `/events` | List all events | Authenticated |
-| POST | `/events` | Create an event | Authenticated |
-| POST | `/events/:id/rsvp` | Join / leave an event (toggle) — alimente `ATTENDED` | Authenticated |
-| POST | `/events/:id/interest` | Swipe interest (toggle) — alimente `INTERESTED_IN` | Authenticated |
-| GET | `/events/recommendations` | Neo4j-powered suggestions (INTERESTED_IN + ATTENDED) | Authenticated |
-
-### Messaging
-| Method | Route | Description | Access |
+| Méthode | Route | Description | Accès |
 |---|---|---|---|
-| GET | `/conversations` | My conversations | Authenticated |
-| WS | `/chat` | WebSocket connection | Authenticated |
+| GET | `/documents` | Mes documents | Authentifié |
+| POST | `/documents` | Uploader un PDF | Authentifié |
+| GET | `/documents/:id` | Voir un document | Authentifié |
+| GET | `/documents/:id/file` | Télécharger le PDF | Authentifié |
+| POST | `/documents/:id/sign` | Signer (OTP requis) | Authentifié |
+| POST | `/documents/:id/refuse` | Refuser un contrat | Authentifié |
+
+### Événements
+
+| Méthode | Route | Description | Accès |
+|---|---|---|---|
+| GET | `/events` | Lister les événements | Authentifié |
+| POST | `/events` | Créer un événement | Authentifié |
+| GET | `/events/recommendations` | Suggestions Neo4j (INTERESTED_IN + ATTENDED) | Authentifié |
+| GET | `/events/:id` | Voir un événement | Authentifié |
+| PATCH | `/events/:id` | Modifier un événement | Modérateur+ |
+| POST | `/events/:id/cancel` | Annuler un événement | Modérateur+ |
+| DELETE | `/events/:id` | Supprimer | Admin |
+| POST | `/events/:id/rsvp` | Participer / se désinscrire (toggle) → `ATTENDED` | Authentifié |
+| POST | `/events/:id/interest` | Marquer un intérêt (toggle) → `INTERESTED_IN` | Authentifié |
+
+### Messagerie
+
+| Méthode | Route | Description | Accès |
+|---|---|---|---|
+| GET | `/conversations` | Mes conversations | Authentifié |
+| POST | `/conversations` | Démarrer une conversation | Authentifié |
+| GET | `/messages/:conversationId` | Messages d'une conversation | Authentifié |
+| POST | `/messages` | Envoyer un message (texte / fichier) | Authentifié |
+
+**WebSocket (Socket.io)**
+
+| Événement | Direction | Description |
+|---|---|---|
+| `register` | Client → Serveur | Déclarer sa présence en ligne |
+| `joinConversation` | Client → Serveur | Rejoindre une room de conversation |
+| `leaveConversation` | Client → Serveur | Quitter une room |
+| `sendMessage` | Client → Serveur | Envoyer un message |
+| `newMessage` | Serveur → Client | Nouveau message reçu |
+| `onlineUsers` | Serveur → Client | Liste initiale des utilisateurs en ligne |
+| `userOnline` | Serveur → Client | Un utilisateur vient de se connecter |
+| `userOffline` | Serveur → Client | Un utilisateur s'est déconnecté |
 
 ### Votes
-| Method | Route | Description | Access |
+
+| Méthode | Route | Description | Accès |
 |---|---|---|---|
-| GET | `/votes` | List active votes | Authenticated |
-| POST | `/votes` | Create a vote | Moderator         { userId, eventId: id, neighbourhoodId: event.neighbourhoodId },|
-| POST | `/votes/:id/cast` | Cast a vote | Authenticated |
-| GET | `/votes/:id/results` | View results | Authenticated |
+| GET | `/votes` | Lister les sondages | Authentifié |
+| POST | `/votes` | Créer un sondage | Modérateur |
+| GET | `/votes/:id` | Voir un sondage | Authentifié |
+| PATCH | `/votes/:id` | Modifier un sondage | Modérateur |
+| DELETE | `/votes/:id` | Supprimer | Admin |
+| POST | `/votes/:id/cast` | Voter | Authentifié |
+
+### Signalements (SQLite)
+
+| Méthode | Route | Description | Accès |
+|---|---|---|---|
+| GET | `/incidents` | Mes signalements / par quartier / tous | Habitant / Modérateur / Admin |
+| POST | `/incidents` | Créer un signalement | Authentifié |
+| GET | `/incidents/:id` | Voir un signalement | Authentifié |
+| PATCH | `/incidents/:id` | Modifier / résoudre | Modérateur+ |
+| DELETE | `/incidents/:id` | Supprimer | Admin |
+
+---
+
+## Rôles
+
+| Rôle | Description |
+|---|---|
+| `habitant` | Accès à son quartier uniquement |
+| `moderateur` | Gestion du quartier assigné (événements, votes, signalements) |
+| `admin` | Accès global à tous les quartiers et toutes les fonctionnalités |
+
+---
+
+## Client desktop (Java)
+
+```bash
+cd java
+
+# Installer la dépendance locale
+cd hoodly-plugin-api && mvn install && cd ..
+
+# Compiler et lancer
+mvn javafx:run
+
+# Générer le fat JAR (Windows / Linux)
+mvn package -DskipTests
+
+# Générer l'app macOS (double-clic)
+jpackage \
+  --type app-image \
+  --name "Hoodly" \
+  --input target \
+  --main-jar hoodly-desktop.jar \
+  --main-class org.example.Launcher \
+  --dest target/app \
+  --java-options "--enable-native-access=ALL-UNNAMED"
+```
 
 ---
 
@@ -213,24 +348,21 @@ hoodly/
 
 ```bash
 # API
-npm run dev            # Development with hot reload
-npm run build          # Compile TypeScript to JavaScript
-npm run start          # Run the compiled build
-npm run lint           # ESLint
-npm run test           # Unit tests (Jest)
-npm run test:e2e       # End-to-end tests (Playwright)
+npm run dev        # Développement avec hot reload
+npm run build      # Compilation TypeScript
+npm run start      # Lancer le build compilé
+npm run test       # Tests unitaires (Jest)
 
-# Java desktop client
-mvn clean package      # Build and generate the .jar
-mvn test               # Unit tests (JUnit)
+# Java
+mvn javafx:run     # Lancer l'app JavaFX
+mvn package        # Build fat JAR
+mvn test           # Tests unitaires (JUnit 5)
 ```
 
 ---
 
-## Authors
+## Auteurs
 
-Lenny BLACKETT
-Sarah GARCIA
-Malo LAVAL
+Lenny BLACKETT — Sarah GARCIA — Malo LAVAL
 
-Project built as part of the **ESGI** curriculum — Annual Project.
+Projet réalisé dans le cadre du cursus **ESGI** — Projet Annuel.
