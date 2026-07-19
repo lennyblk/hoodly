@@ -187,13 +187,29 @@ function VoteCard({ vote, currentUserId, onVoted, canDelete, onDelete, canManage
   );
 }
 
+interface Neighbourhood { _id: string; name: string; }
+
 interface CreateModalProps {
-  neighbourhoodId: string;
+  neighbourhoodId?: string;
   onCreated: (vote: Vote) => void;
   onClose: () => void;
 }
 
-function CreateModal({ neighbourhoodId, onCreated, onClose }: CreateModalProps) {
+function CreateModal({ neighbourhoodId: defaultNid, onCreated, onClose }: CreateModalProps) {
+  const isAdminMode = !defaultNid;
+  const [selectedNid, setSelectedNid] = useState('');
+  const [neighbourhoods, setNeighbourhoods] = useState<Neighbourhood[]>([]);
+
+  useEffect(() => {
+    if (isAdminMode) {
+      api.get<Neighbourhood[]>('/neighbourhoods').then(({ data }) => {
+        setNeighbourhoods(data);
+        if (data.length > 0) setSelectedNid(data[0]._id);
+      }).catch(() => {});
+    }
+  }, [isAdminMode]);
+
+  const neighbourhoodId = defaultNid ?? selectedNid;
   const [question, setQuestion] = useState('');
   const [type, setType] = useState<VoteType>('yesno');
   const [options, setOptions] = useState(['Option A', 'Option B']);
@@ -259,6 +275,22 @@ function CreateModal({ neighbourhoodId, onCreated, onClose }: CreateModalProps) 
         </div>
 
         <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
+          {/* Quartier — admin only */}
+          {isAdminMode && (
+            <div>
+              <label className="text-xs font-medium text-charbon/60 mb-1.5 block">Quartier *</label>
+              <select
+                value={selectedNid}
+                onChange={(e) => setSelectedNid(e.target.value)}
+                required
+                className="w-full border border-sable/40 rounded-xl px-3 py-2.5 text-sm text-charbon focus:outline-none focus:ring-2 focus:ring-vert-foret/30"
+              >
+                {neighbourhoods.map((n) => (
+                  <option key={n._id} value={n._id}>{n.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
           {/* Question */}
           <div>
             <label className="text-xs font-medium text-charbon/60 mb-1.5 block">Question *</label>
@@ -386,18 +418,21 @@ export default function VotesPage() {
     }
   }, [location.state, canManage]);
 
+  const isAdmin = user?.role === 'admin';
+
   const fetchVotes = useCallback(async () => {
-    if (!user?.neighbourhoodId) {
+    if (!isAdmin && !user?.neighbourhoodId) {
       setLoading(false);
       return;
     }
     try {
-      const { data } = await api.get<Vote[]>(`/votes?neighbourhoodId=${user.neighbourhoodId}`);
+      const url = isAdmin ? '/votes' : `/votes?neighbourhoodId=${user!.neighbourhoodId}`;
+      const { data } = await api.get<Vote[]>(url);
       setVotes(data);
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, isAdmin]);
 
   useEffect(() => {
     fetchVotes();
@@ -428,7 +463,7 @@ export default function VotesPage() {
     return true;
   });
 
-  if (user && !user.neighbourhoodId) {
+  if (user && !isAdmin && !user.neighbourhoodId) {
     return <NoNeighbourhoodState message="Rejoins un quartier pour voir les sondages" />;
   }
 
@@ -438,7 +473,7 @@ export default function VotesPage() {
       <div className="px-5 lg:px-8 pt-6 pb-4 bg-white border-b border-sable/20 flex-shrink-0">
         <div className="flex items-center justify-between mb-4">
           <h1 className="font-heading text-2xl font-bold text-charbon">Sondages</h1>
-          {canManage && !!user?.neighbourhoodId && (
+          {canManage && (isAdmin || !!user?.neighbourhoodId) && (
             <button
               onClick={() => setShowModal(true)}
               className="bg-vert-foret text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-vert-moyen transition-colors flex items-center gap-2"
@@ -511,9 +546,9 @@ export default function VotesPage() {
         )}
       </div>
 
-      {showModal && user?.neighbourhoodId && (
+      {showModal && (isAdmin || user?.neighbourhoodId) && (
         <CreateModal
-          neighbourhoodId={user.neighbourhoodId}
+          neighbourhoodId={user?.neighbourhoodId}
           onCreated={handleCreated}
           onClose={() => setShowModal(false)}
         />

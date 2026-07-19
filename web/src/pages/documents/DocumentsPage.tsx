@@ -67,12 +67,18 @@ function UploadModal({ onClose, onUploaded }: UploadModalProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (!user?.neighbourhoodId) return;
-    api
-      .get<NeighbourOption[]>('/users/neighbourhood', { params: { neighbourhoodId: user.neighbourhoodId } })
-      .then(({ data }) => setNeighbours(data.filter((n) => n.email !== user.email)))
-      .catch(() => setNeighbours([]));
-  }, [user?.neighbourhoodId, user?.email]);
+    if (user?.neighbourhoodId) {
+      api
+        .get<NeighbourOption[]>('/users/neighbourhood', { params: { neighbourhoodId: user.neighbourhoodId } })
+        .then(({ data }) => setNeighbours(data.filter((n) => n.email !== user.email)))
+        .catch(() => setNeighbours([]));
+    } else if (user?.role === 'admin') {
+      api
+        .get<NeighbourOption[]>('/users')
+        .then(({ data }) => setNeighbours(data.filter((n) => n.email !== user.email)))
+        .catch(() => setNeighbours([]));
+    }
+  }, [user?.neighbourhoodId, user?.email, user?.role]);
 
   const suggestions = signerEmail.trim()
     ? neighbours.filter((n) => n.email.toLowerCase().includes(signerEmail.trim().toLowerCase())).slice(0, 5)

@@ -48,9 +48,6 @@ function NeighbourhoodRoutes() {
 }
 
 function NonAdminRoutes() {
-  const { user } = useUser();
-  if (!user) return null;
-  if (user.role === 'admin') return <Navigate to="/admin" replace />;
   return <Outlet />;
 }
 
