@@ -180,6 +180,7 @@ async function seed() {
   const eids = {
     soiree: new ObjectId(), jardinage: new ObjectId(), vide_grenier: new ObjectId(), karaoke: new ObjectId(),
     cours_cuisine: new ObjectId(), rando_montmartre: new ObjectId(),
+    atelier_poterie: new ObjectId(), brunch_montmartre: new ObjectId(),
     concert: new ObjectId(), marche: new ObjectId(), reunion: new ObjectId(), fresque: new ObjectId(),
     theatre_belleville: new ObjectId(), repair_cafe: new ObjectId(),
     expo: new ObjectId(), yoga: new ObjectId(), brocante_marais: new ObjectId(),
@@ -206,6 +207,8 @@ async function seed() {
     ev(eids.karaoke, "Karaoké entre voisins", "Soirée karaoké au café du coin", "social", uids.julien, nids.montmartre, future(3), [uids.julien, uids.camille, uids.bob], [uids.alice], false, 5),
     ev(eids.cours_cuisine, "Cours de cuisine du monde", "Découvrez les recettes des voisins", "atelier", uids.camille, nids.montmartre, future(21), [uids.camille, uids.alice], [uids.julien], false, 2),
     ev(eids.rando_montmartre, "Rando urbaine Montmartre", "Balade historique dans les rues secrètes", "sport", uids.alice, nids.montmartre, future(9), [uids.alice, uids.julien], [uids.camille], false, 3),
+    ev(eids.atelier_poterie, "Atelier poterie", "Initiation au tournage recommandée par un voisin", "atelier", uids.bob, nids.montmartre, future(17), [uids.bob, uids.alice], [uids.julien, uids.camille], false, 2),
+    ev(eids.brunch_montmartre, "Brunch de quartier", "Brunch convivial organisé entre voisins", "social", uids.camille, nids.montmartre, future(24), [uids.camille, uids.julien], [uids.alice, uids.bob], false, 1),
     // Belleville
     ev(eids.concert, "Concert de rue", "Musiciens du quartier en plein air", "culture", uids.modo_belleville, nids.belleville, future(5), [uids.charlie, uids.diana, uids.karim], [uids.lea], false, 7),
     ev(eids.marche, "Marché solidaire", "Produits locaux et artisanat", "commerce", uids.modo_belleville, nids.belleville, future(10), [uids.charlie, uids.lea], [uids.diana, uids.karim], false, 6),
@@ -238,7 +241,7 @@ async function seed() {
     ev(eids.chorale_bm, "Chorale de quartier", "Chantez avec vos voisins tous les mercredis", "culture", uids.sophie, nids.bonmarche, future(5), [uids.sophie, uids.clara], [uids.remi], false, 2),
     ev(eids.lecture_bm, "Lecture au jardin", "Lectures à voix haute dans le jardin partagé", "culture", uids.clara, nids.bonmarche, future(17), [uids.clara], [uids.sophie, uids.remi], false, 1),
   ]);
-  console.log("32 evenements");
+  console.log("34 evenements");
 
   // ── Announcements ──────────────────────────────────────────────────────
   const avail = (daysAhead: number, startTime: string, endTime: string) =>
@@ -335,7 +338,7 @@ async function seed() {
 
   const allEvents = [
     // Montmartre
-    ...[eids.soiree, eids.jardinage, eids.vide_grenier, eids.karaoke, eids.cours_cuisine, eids.rando_montmartre].map(eid => ({ eid, nid: nids.montmartre })),
+    ...[eids.soiree, eids.jardinage, eids.vide_grenier, eids.karaoke, eids.cours_cuisine, eids.rando_montmartre, eids.atelier_poterie, eids.brunch_montmartre].map(eid => ({ eid, nid: nids.montmartre })),
     // Belleville
     ...[eids.concert, eids.marche, eids.reunion, eids.fresque, eids.theatre_belleville, eids.repair_cafe].map(eid => ({ eid, nid: nids.belleville })),
     // Marais
@@ -356,6 +359,8 @@ async function seed() {
     [uids.julien, eids.karaoke], [uids.camille, eids.karaoke], [uids.bob, eids.karaoke],
     [uids.camille, eids.cours_cuisine], [uids.alice, eids.cours_cuisine],
     [uids.alice, eids.rando_montmartre], [uids.julien, eids.rando_montmartre],
+    [uids.bob, eids.atelier_poterie], [uids.alice, eids.atelier_poterie],
+    [uids.camille, eids.brunch_montmartre], [uids.julien, eids.brunch_montmartre],
     // Belleville
     [uids.charlie, eids.concert], [uids.diana, eids.concert], [uids.karim, eids.concert],
     [uids.charlie, eids.marche], [uids.lea, eids.marche],
@@ -408,6 +413,8 @@ async function seed() {
     // Montmartre
     [uids.camille, eids.soiree], [uids.bob, eids.jardinage], [uids.julien, eids.jardinage], [uids.alice, eids.karaoke],
     [uids.camille, eids.vide_grenier],
+    [uids.julien, eids.atelier_poterie], [uids.camille, eids.atelier_poterie],
+    [uids.alice, eids.brunch_montmartre], [uids.bob, eids.brunch_montmartre],
     // Belleville
     [uids.lea, eids.concert], [uids.diana, eids.marche], [uids.karim, eids.marche], [uids.diana, eids.fresque],
     [uids.charlie, eids.concert], [uids.lea, eids.reunion],
