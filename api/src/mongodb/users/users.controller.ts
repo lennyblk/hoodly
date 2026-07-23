@@ -130,8 +130,12 @@ export class UsersController {
   @Patch('me')
   async updateMe(@Req() req: Request, @Body() dto: UpdateMeDto) {
     const user = req.user as { userId: string; email: string };
+    const currentUser = await this.usersService.findOne(user.userId);
 
-    if (dto.email || dto.password || dto.address) {
+    const emailChanged = dto.email !== undefined && dto.email !== currentUser.email;
+    const addressChanged = dto.address !== undefined && dto.address !== currentUser.address;
+
+    if (emailChanged || dto.password || addressChanged) {
       if (!dto.otpToken) {
         throw new BadRequestException('Un code OTP est requis pour modifier l\'email, le mot de passe ou l\'adresse');
       }

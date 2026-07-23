@@ -88,13 +88,13 @@ export default function EditProfilePage() {
     const payload: Record<string, string> = {
       firstName: form.firstName,
       lastName: form.lastName,
-      address: form.address,
     };
     const emailChanged = form.email !== user.email;
     const passwordChanged = !!form.password;
     const addressChanged = form.address !== (user.address ?? '');
     if (emailChanged) payload.email = form.email;
     if (passwordChanged) payload.password = form.password;
+    if (addressChanged) payload.address = form.address;
 
     setLoading(true);
     setError(null);
